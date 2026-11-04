@@ -42,20 +42,25 @@ base inicial verificable. Los precios actuales y el día cero llegan en la etapa
 Cliente de data912 con caché y tolerancia a caídas, dólar MEP, captura de historial
 propio y fijación del día cero.
 
-Antes de implementar, completar la captura inicial con cantidades y efectivo, además
-de precios y MEP, para que el patrimonio inicial sea reconstruible. Resolver con
-Claude la conversión histórica de los flujos a MEP antes de calcular un resultado
-integral en dólares; la fórmula de comparación de precios no alcanza.
+El día cero guarda cantidades, precios, dólar MEP y efectivo, de modo que el patrimonio
+inicial se pueda reconstruir sin depender de otro archivo. El efectivo se puede cargar
+después sin volver a tomar precios. Ver `docs/DOMINIO.md` y `docs/FORMATOS.md`.
 
 - Módulo: `cartera.precios`.
-- Comandos: `capturar`, `fijar-dia-cero`.
+- Comandos: `capturar`, `fijar-dia-cero`, `efectivo-dia-cero`.
 
 Cuando haya cotización, comparar el precio de compra de cada lote con el precio
 actual: si es más de cinco veces mayor (`compra > actual × 5`) o menor
 (`compra < actual / 5`), mostrar una advertencia con ticker y ambos precios por
 posible error de unidad o moneda. No bloquea la carga, no cambia los cálculos ni
-el origen del lote. Este control y su caso de prueba se implementan recién en la
-etapa 2; en la entrega actual solo queda especificado.
+el origen del lote.
+
+`actualizar-costos` también advierte cuando un lote estimado vuelve a pendiente, porque
+suele indicar que se usó un Excel viejo.
+
+En esta etapa no se calcula el resultado integral: solo se guarda su punto de partida.
+El resultado integral en pesos se implementa en la etapa 5, cuando existen los
+movimientos. El resultado integral en dólares queda fuera de alcance por ahora.
 
 **Listo cuando** pasa `tests/test_etapa2_*`.
 

@@ -49,7 +49,10 @@ de notas ambiguas. Reordenar filas o cambiar únicamente una nota de extracto no
 provoca esa advertencia. Las versiones completas quedan en el historial para revisar
 la modificación.
 
-### Control de precios previsto para la etapa 2
+Si un lote pasa de `estimado` a `pendiente`, también se emite una advertencia sin impedir
+la corrección, porque suele indicar que se usó un Excel viejo y se perdió una estimación.
+
+### Control de precios de la etapa 2
 
 Cuando haya cotización actual y precio de compra conocido, si el precio del lote es
 más de cinco veces mayor o menor que el actual, se muestra una advertencia con el
@@ -61,8 +64,30 @@ precio_compra > precio_actual × 5  o  precio_compra < precio_actual / 5
 
 Los límites exactos de cinco veces no disparan el aviso. Sin ambos precios no se
 hace esta comparación. La advertencia no bloquea la carga, no modifica ningún
-cálculo y el lote conserva su origen. Este control no se implementa en la etapa 1;
-su prueba se incorpora cuando se implemente la etapa 2.
+cálculo y el lote conserva su origen.
+
+## Día cero y patrimonio inicial
+
+El día cero es el punto de partida del resultado completo. Guarda una foto autosuficiente:
+cantidades, precios, dólar MEP y efectivo. Los costos no intervienen: un costo pendiente
+no impide fijarlo, y corregir costos después no lo altera.
+
+```text
+patrimonio_inicial_ars = valuación de las posiciones + efectivo ARS + efectivo USD × MEP
+```
+
+- **Efectivo negativo:** es válido. Un saldo deudor existe y resta del patrimonio.
+- **Efectivo en cero:** es un dato. No es lo mismo que un saldo faltante (`null`).
+- **Saldo faltante:** el patrimonio inicial es "sin dato" y se informa qué falta. Nunca se
+  completa con cero.
+- **Dólar MEP:** solo es necesario si el efectivo en dólares es distinto de cero.
+- **Cauciones abiertas:** el asesor las incluye en el efectivo en pesos, por su capital. La
+  tenencia del broker puede mostrarlas así, mientras el saldo del extracto no las incluye.
+- **Efectivo tardío:** el día cero se puede fijar sin efectivo y cargarlo después. Cargarlo
+  no vuelve a tomar precios.
+
+Los precios del día cero son el último operado al momento de fijarlo. Conviene hacerlo con
+el mercado cerrado, para que sean los de cierre, pero no es obligatorio.
 
 ## Resultados por posición y resultado completo
 

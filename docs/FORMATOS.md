@@ -167,16 +167,19 @@ muestra "sin dato", nunca cero.
 ### `dia_cero.json`
 
 ```json
-{"fecha": "2026-11-04", "fijado_en": "2026-11-04T17:05:00-03:00",
- "precios": {"AAA": 1200.0}, "mep": 1500.0}
+{"esquema_version": 2,
+ "fecha": "2026-11-04", "fijado_en": "2026-11-04T17:05:00-03:00",
+ "cantidades": {"AAA": 100.0},
+ "precios": {"AAA": 1200.0},
+ "mep": 1500.0,
+ "efectivo": {"fecha": "2026-11-04", "ARS": -1000.0, "USD": 10.0}}
 ```
 
-`mep` es `null` si no se pudo obtener; no impide fijar el día cero.
-
-Este es el formato original de la referencia de precios. Antes de la etapa 2 hay que
-ampliarlo de forma compatible para conservar también las cantidades y el efectivo
-iniciales que exige el resultado integral aprobado. Los saldos faltantes se conservan
-como faltantes y bloquean ese resultado, sin impedir los indicadores disponibles.
+`mep` es `null` si no se pudo obtener; no impide fijar el día cero. Dentro de `efectivo`,
+`fecha`, `ARS` y `USD` pueden ser `null`. Si no se recibió efectivo, las tres claves se guardan
+en `null`. Los saldos faltantes bloquean el patrimonio inicial, sin impedir los demás
+indicadores. Al cargar el efectivo después, se agrega `efectivo_cargado_en` en la raíz, con
+zona horaria.
 
 ### `movimientos.csv` y claves de los movimientos
 

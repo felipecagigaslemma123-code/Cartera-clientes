@@ -74,7 +74,9 @@ ClientePrecios(fetch, ruta_cache, ahora=None)
   .dolar_mep() -> Optional[Cotizacion]
 ```
 
-`fetch(url) -> list` hace el GET y lanza una excepción si falla. `ahora` es una función
+`fetch(url) -> list` hace el GET y lanza una excepción si falla. `ClientePrecios` trata
+como falla cualquier respuesta que no sea una lista: la API puede responder HTTP 200 con
+un objeto de error. `ahora` es una función
 sin argumentos que devuelve un `datetime` con zona horaria; se inyecta en las pruebas.
 
 `Cotizacion`: `ticker`, `ultimo`, `bid`, `ask`, `pct_dia`, `estado`, `consultado_en`.
@@ -83,14 +85,38 @@ sin argumentos que devuelve un `datetime` con zona horaria; se inyecta en las pr
 momento de la consulta que obtuvo ese dato, no la hora del último operado.
 
 ```python
-fijar_dia_cero(posiciones, cotizaciones, ruta, fecha, forzar=False, mep=None) -> dict
+fijar_dia_cero(posiciones, cotizaciones, ruta, fecha, forzar=False, mep=None, efectivo=None) -> dict
+cargar_efectivo_dia_cero(ruta, efectivo, forzar=False) -> dict
+patrimonio_inicial(posiciones, dia_cero) -> PatrimonioInicial
+advertencias_precio(lotes, posiciones, cotizaciones) -> list[str]
 capturar_historial(cotizaciones, ruta_csv) -> int   # filas agregadas
 ```
 
-`fijar_dia_cero` escribe el JSON de `FORMATOS.md` y devuelve su contenido. Lanza
-`ErrorDiaCero` si falta el precio de alguna posición, si alguna cotización no está en
-estado `"vivo"`, o si el archivo ya existe y `forzar` es falso. `capturar_historial`
-ignora las cotizaciones que no estén en estado `"vivo"`.
+`fijar_dia_cero` escribe el JSON de `FORMATOS.md` de forma atómica y devuelve su contenido.
+`efectivo` es un `dict` con `fecha`, `ARS` y `USD`, o `None`. Lanza `ErrorDiaCero` si falta
+el precio de alguna posición, si alguna cotización no está en estado `"vivo"`, si el
+efectivo es inválido, o si el archivo ya existe y `forzar` es falso.
+
+`cargar_efectivo_dia_cero` reemplaza solo `efectivo` y agrega `efectivo_cargado_en`, sin
+tocar cantidades, precios, `mep`, `fecha` ni `fijado_en`. Lanza `ErrorDiaCero` si el archivo
+no existe, si el efectivo es inválido, o si ya hay algún saldo cargado y `forzar` es falso.
+
+Un efectivo es inválido si `ARS` o `USD` no son un número finito o `null`. Los negativos y
+el cero son válidos; un booleano no. Antes de cargar, una clave ausente equivale a `null`.
+
+`patrimonio_inicial` recibe el contenido de `dia_cero.json` y devuelve un
+`PatrimonioInicial`:
+
+- `valuacion_posiciones`: valuación con las cantidades y los precios **guardados** en el día
+  cero. Las `posiciones` aportan solo `cotiza_cada`.
+- `efectivo_ars`, `efectivo_usd`: los saldos guardados, o `None`.
+- `total`: según `DOMINIO.md`, o `None` si hay faltantes.
+- `faltantes`: `list[str]`, con `"efectivo ARS"`, `"efectivo USD"` o `"dólar MEP"`.
+
+`advertencias_precio` devuelve un texto por lote que cumple la regla de `DOMINIO.md`, con
+ticker y ambos precios. Ignora lotes sin precio y cotizaciones sin `ultimo`.
+
+`capturar_historial` ignora las cotizaciones que no estén en estado `"vivo"`.
 
 ## `cartera.dashboard`
 
@@ -161,6 +187,7 @@ python3 -m cartera --datos RUTA actualizar-costos --cliente SLUG --archivo EXCEL
 python3 -m cartera --datos RUTA estado --cliente SLUG
 python3 -m cartera --datos RUTA capturar --cliente SLUG
 python3 -m cartera --datos RUTA fijar-dia-cero --cliente SLUG [--fecha AAAA-MM-DD] [--forzar]
+python3 -m cartera --datos RUTA efectivo-dia-cero --cliente SLUG --ars N --usd N [--fecha AAAA-MM-DD] [--forzar]
 python3 -m cartera --datos RUTA dashboard --cliente SLUG
 python3 -m cartera --datos RUTA alertas --cliente SLUG
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --ticker X --cantidad N --importe I [--nota N]
@@ -168,6 +195,27 @@ python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --t
 
 `--datos` se puede omitir si está definida `CARTERA_DATOS`. Errores de validación:
 código de salida distinto de cero, un mensaje por problema y **sin escribir nada**.
+
+### Comandos de la etapa 2
+
+Los tres exigen una base importada. Las consultas reales usan `urllib` con un tiempo de
+espera y un `User-Agent` genérico, sin datos del cliente ni del usuario.
+
+`capturar` consulta precios y dólar MEP, y agrega a `historial.csv` las cotizaciones vivas.
+El dólar MEP se guarda con el ticker `MEP`. Muestra cuántas filas agregó, lista cada especie
+que no está en estado `"vivo"` y las advertencias de `advertencias_precio`. Si ninguna
+cotización está viva, termina con código de salida distinto de cero.
+
+`fijar-dia-cero` consulta precios y dólar MEP, lee `efectivo.json` si existe y escribe
+`dia_cero.json`. `--fecha` tiene por defecto el día de hoy en Argentina y no puede ser futura.
+Al terminar muestra la valuación, el patrimonio inicial o qué le falta, y las advertencias
+de precios. Si `mep` queda en `null`, lo informa.
+
+`efectivo-dia-cero` carga los saldos en un día cero ya fijado, sin consultar precios. Acepta
+negativos (`--ars=-44656.61`) y `--fecha` tiene por defecto la del día cero.
+
+`estado` sigue sin consultar la red. Si existe un día cero, también muestra su fecha y el
+patrimonio inicial, o qué le falta.
 
 ### Persistencia y comandos de la etapa 1
 
