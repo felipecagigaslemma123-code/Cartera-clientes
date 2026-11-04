@@ -242,6 +242,8 @@ def main(argumentos=None):
     efectivo.add_argument("--usd", required=True, type=float, metavar="N")
     efectivo.add_argument("--fecha", metavar="AAAA-MM-DD")
     efectivo.add_argument("--forzar", action="store_true")
+    dashboard = comandos.add_parser("dashboard", help="Generar el tablero local autocontenido.")
+    dashboard.add_argument("--cliente", required=True, metavar="SLUG")
     opciones = parser.parse_args(argumentos)
     datos = opciones.datos if opciones.datos is not None else os.environ.get("CARTERA_DATOS")
     if not datos or not datos.strip():
@@ -255,6 +257,15 @@ def main(argumentos=None):
             _mostrar_actualizacion(actualizar_costos(datos, opciones.cliente, opciones.archivo))
         else:
             punto, contenido = cargar_cartera(datos, opciones.cliente)
+            if opciones.comando == "dashboard":
+                from .dashboard_archivos import crear_dashboard
+                carpeta = _ruta_cartera(datos, opciones.cliente).parent
+                entrega = crear_dashboard(punto, carpeta, opciones.cliente, consultar_json)
+                print("Dashboard guardado: {}".format(entrega["ruta"]))
+                _avisos_cotizaciones(entrega["cotizaciones"])
+                for aviso in entrega["avisos"]:
+                    print("ADVERTENCIA: " + aviso)
+                return 0
             if opciones.comando == "capturar":
                 return _capturar(datos, opciones.cliente, punto)
             if opciones.comando == "fijar-dia-cero":

@@ -5,9 +5,9 @@ desarrollo en [AGENTS.md](AGENTS.md) y etapas en [PLAN.md](PLAN.md).
 
 El objetivo aprobado es medir el resultado completo desde el día cero, incorporando
 movimientos y cobros. El desarrollo se entrega por etapas: Codex implementa, Claude
-revisa y Felipe valida los criterios. Están implementadas la base inicial y la etapa 2
-de precios y día cero. El tablero, las alertas y los movimientos corresponden a las
-etapas siguientes.
+revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios
+y el día cero, y el dashboard de la etapa 3. Las alertas y los movimientos corresponden
+a las etapas siguientes.
 
 ## Preparar el entorno
 
@@ -128,13 +128,59 @@ Esta etapa conserva el patrimonio inicial; no calcula el resultado integral con
 movimientos. Ese resultado en pesos corresponde a la etapa 5. El resultado integral
 en dólares continúa fuera de alcance.
 
+## Dashboard local
+
+Para generar la pantalla de la etapa 3 a partir de una base importada:
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA dashboard --cliente SLUG
+```
+
+El comando muestra la ruta de `clientes/SLUG/dashboard.html`. El archivo está pensado
+para abrirse con doble clic, sin servidor: contiene su HTML, estilos, gráficos SVG y
+script, sin dependencias externas. Se publica de forma atómica y con permisos `600`,
+para que solo lo lea o modifique su usuario. Contiene datos de la cartera y debe
+permanecer en su carpeta de datos.
+
+Muestra posiciones, cantidades, valuaciones y pesos, costos y su origen, resultados
+desde la compra, variación de precios desde el día cero, totales por tipo y en dólar
+MEP, niveles, vencimientos y gráficos del historial capturado. El efectivo actual y
+el inicial aparecen aparte, con su fecha; no se suman a las posiciones ni a los pesos.
+El día cero conserva la referencia de valuación y patrimonio inicial o sus faltantes.
+
+**No calcula un resultado completo.** Ese recuadro indica “se calcula cuando estén
+los movimientos”. La variación de precios es un indicador separado y el resultado
+desde la compra explica qué posiciones tienen costo completo y precio comparable.
+Los costos mixtos se identifican como “incluye estimado”.
+
+Al abrirse y cada 60 segundos, la página consulta una vez cada panel necesario y el
+MEP. Cada consulta tiene un máximo de 15 segundos y las rondas no se solapan. La hora
+mostrada es la de consulta, nunca la del último operado. Los precios embebidos se
+muestran como “Último dato” hasta que una consulta los confirme. Si falla una especie,
+conserva su último precio y su hora; si nunca tuvo precio, muestra “sin dato”. Aparecen
+avisos si falla la ronda, falta una consulta exitosa reciente o el archivo es de otro
+día. La página no guarda datos en el navegador.
+
+Los archivos opcionales ausentes se muestran como faltantes o “sin fijar”. Los gráficos
+usan solo las últimas 500 observaciones de cada especie y no se actualizan en vivo.
+Las filas inválidas del historial se omiten con un aviso visible. `dashboard` no agrega
+filas a `historial.csv`; para capturarlas se usa `capturar`. Si la fuente está caída,
+el HTML se genera igual y queda marcado con caché o “sin dato”.
+
+Los textos y el JSON embebido se escapan para que no puedan cortar el script. El HTML
+incluye una política CSP que limita las conexiones a data912. Las pruebas comprueban
+esa inclusión y la construcción segura; su aplicación efectiva en un navegador real
+sigue pendiente de la revisión visual de Claude, junto con el diseño en pantalla
+angosta y las consultas desde un archivo local. Ver [REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md).
+
 ## Verificación por etapa
 
-Para verificar las dos etapas y las comprobaciones adicionales:
+Para verificar las tres etapas y las comprobaciones adicionales:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa1*' -v
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa2*' -v
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa3*' -v
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_extra*' -v
 ```
 
@@ -144,13 +190,14 @@ La ejecución de todas las pruebas será apropiada al completar sus módulos:
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -v
 ```
 
-Claude revisó los cálculos de la etapa 1 y los aprobó. Su entrega histórica está en
-[REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md). La etapa 2 fue revisada y aprobada por
-Claude; la etapa 3 todavía no está implementada. Pasan las 64 pruebas originales de las
-etapas 1 y 2 y 148 adicionales.
-La verificación final y las limitaciones se registran en
-[REVISION_ETAPA2.md](docs/REVISION_ETAPA2.md). Las decisiones abiertas de las etapas
-posteriores figuran en el plan y el contrato.
+Claude revisó las etapas anteriores; sus entregas históricas están en
+[REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md) y [REVISION_ETAPA2.md](docs/REVISION_ETAPA2.md).
+La etapa 3 está implementada y queda pendiente de revisión de Claude. Pasan las 272
+pruebas acumuladas (28 de etapa 1, 36 de etapa 2, 30 de etapa 3 y 178 adicionales).
+Los resultados y lo que no pudo verificarse en el navegador se registran en
+[REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md). No se inició la etapa 4 ni se hicieron
+commits. Las decisiones abiertas de las etapas posteriores figuran en el plan y el
+contrato.
 
 Esta carpeta no contiene datos reales de clientes. Las salidas se guardan en la ruta
 de datos, separada del código; las demostraciones y pruebas usan datos ficticios.
