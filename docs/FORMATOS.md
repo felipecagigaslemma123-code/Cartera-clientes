@@ -75,6 +75,7 @@ $CARTERA_DATOS/clientes/<slug>/
   cartera.json         generado por importar
   historial_cartera/   versiones completas anteriores a actualizar-costos
   dia_cero.json        generado por fijar-dia-cero
+  historial_dia_cero/  versiones completas anteriores del día cero
   movimientos.csv      generado por movimiento
   historial.csv        generado por capturar
   cache_precios.json   generado

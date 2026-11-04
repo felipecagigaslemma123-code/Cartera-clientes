@@ -85,6 +85,10 @@ patrimonio_inicial_ars = valuación de las posiciones + efectivo ARS + efectivo 
   tenencia del broker puede mostrarlas así, mientras el saldo del extracto no las incluye.
 - **Efectivo tardío:** el día cero se puede fijar sin efectivo y cargarlo después. Cargarlo
   no vuelve a tomar precios.
+- **Fecha del efectivo:** no puede ser futura. Si falta o difiere de la del día cero, se advierte
+  sin bloquear, porque el saldo podría no corresponder a ese día.
+- **Volver a fijar:** con `--forzar`, la versión anterior siempre queda en el historial. Si no se
+  recibe efectivo nuevo, se conserva el ya cargado: volver a tomar precios no borra un saldo.
 
 Los precios del día cero son el último operado al momento de fijarlo. Conviene hacerlo con
 el mercado cerrado, para que sean los de cierre, pero no es obligatorio.

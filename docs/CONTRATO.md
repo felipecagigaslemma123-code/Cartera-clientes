@@ -208,11 +208,17 @@ cotización está viva, termina con código de salida distinto de cero.
 
 `fijar-dia-cero` consulta precios y dólar MEP, lee `efectivo.json` si existe y escribe
 `dia_cero.json`. `--fecha` tiene por defecto el día de hoy en Argentina y no puede ser futura.
+Tampoco se acepta un `efectivo.json` con fecha futura. Con `--forzar`, la versión anterior queda
+en `historial_dia_cero/` y, si `efectivo.json` no trae saldos, se conserva el efectivo ya cargado.
 Al terminar muestra la valuación, el patrimonio inicial o qué le falta, y las advertencias
 de precios. Si `mep` queda en `null`, lo informa.
 
 `efectivo-dia-cero` carga los saldos en un día cero ya fijado, sin consultar precios. Acepta
-negativos (`--ars=-44656.61`) y `--fecha` tiene por defecto la del día cero.
+negativos (`--ars=-44656.61`) y `--fecha` tiene por defecto la del día cero y no puede ser futura.
+Con `--forzar`, la versión anterior queda en `historial_dia_cero/`.
+
+Si hay saldos y su fecha falta o difiere de la del día cero, estos comandos y `estado` muestran una
+`ADVERTENCIA`, sin bloquear.
 
 `estado` sigue sin consultar la red. Si existe un día cero, también muestra su fecha y el
 patrimonio inicial, o qué le falta.

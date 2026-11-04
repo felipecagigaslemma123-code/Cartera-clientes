@@ -186,6 +186,15 @@ def _resumir_cambios(anterior, nuevo):
                 "revisá su costo y origen, también ante cambios ambiguos entre lotes. "
                 "La versión anterior se conserva en el historial.".format(ticker)
             )
+        estimados_antes = Counter(_clave_lote(lote) for lote in previos if lote.origen == "estimado")
+        estimados_despues = Counter(_clave_lote(lote) for lote in nuevos if lote.origen == "estimado")
+        pendientes_antes = Counter(_clave_lote(lote) for lote in previos if lote.origen == "pendiente")
+        pendientes_despues = Counter(_clave_lote(lote) for lote in nuevos if lote.origen == "pendiente")
+        if estimados_antes - estimados_despues and pendientes_despues - pendientes_antes:
+            advertencias.append(
+                "ADVERTENCIA {}: un lote estimado pudo volver a pendiente; "
+                "revisá si se usó un Excel viejo y se perdió una estimación.".format(ticker)
+            )
     return cambios, advertencias
 
 
