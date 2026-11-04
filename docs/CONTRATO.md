@@ -51,6 +51,11 @@ resumen_cartera(resultados) -> ResumenCartera
 todos los resultados son `None`. Sin `precio_dia_cero`, los dos campos `*_dia_cero*` son
 `None`. Los porcentajes son fracciones: `0.10` es 10%.
 
+Los campos `*_dia_cero*` comparan precios para la cantidad recibida; no representan el
+resultado integral con movimientos aprobado por Felipe. Ese cálculo requiere el
+patrimonio inicial, las tenencias posteriores, el efectivo y los flujos externos,
+y se especificará antes de implementarlo. La API de la etapa 1 se conserva.
+
 `ResumenCartera`:
 
 - `valuacion_total`: suma de las valuaciones conocidas.
@@ -99,6 +104,10 @@ generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrumentos,
 ticker. Los textos se escapan. El HTML generado no carga scripts, estilos ni fuentes
 externos.
 
+**Pendiente antes de etapa 3:** completar las entradas del tablero para incluir
+cantidades, unidades de cotización y referencias MEP/día cero. La firma actual no
+contiene toda la información necesaria para las salidas de `PLAN.md`.
+
 ## `cartera.alertas`
 
 ```python
@@ -138,10 +147,17 @@ consumió un lote pendiente, `costo` y `resultado` son `None`.
 
 Lanza `ErrorMovimiento` si se vende más de lo que hay.
 
+**Pendiente antes de etapa 5:** ampliar de forma compatible el resultado realizado
+para conservar el origen real o estimado de los costos vendidos. Completar el
+contrato de conciliación patrimonial y flujos, y revisar la metodología porcentual
+y la conversión histórica a MEP con Claude. Las pruebas actuales de lotes por sí
+solas no validan el resultado integral.
+
 ## Línea de comandos
 
 ```bash
 python3 -m cartera --datos RUTA importar --cliente SLUG --archivo EXCEL
+python3 -m cartera --datos RUTA actualizar-costos --cliente SLUG --archivo EXCEL
 python3 -m cartera --datos RUTA estado --cliente SLUG
 python3 -m cartera --datos RUTA capturar --cliente SLUG
 python3 -m cartera --datos RUTA fijar-dia-cero --cliente SLUG [--fecha AAAA-MM-DD] [--forzar]
@@ -152,3 +168,50 @@ python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --t
 
 `--datos` se puede omitir si está definida `CARTERA_DATOS`. Errores de validación:
 código de salida distinto de cero, un mensaje por problema y **sin escribir nada**.
+
+### Persistencia y comandos de la etapa 1
+
+`importar` valida el libro completo antes de escribir la base `cartera.json` descrita
+en `FORMATOS.md`. Guarda versión de esquema, fecha de importación y huella del Excel,
+además de posiciones y lotes. Rechaza una base ya existente sin sobrescribirla; no
+admite `--forzar`. Los movimientos futuros no modifican esta base inicial.
+
+`actualizar-costos` exige una base existente y valida el Excel completo con las
+mismas reglas de `importar`, incluidas las fechas futuras. Si cambia el conjunto de
+tickers, el nombre de alguna especie, su tipo, `cotiza_cada` o su cantidad total,
+falla sin escribir nada. Las cantidades totales deben ser iguales a las de la base,
+sin aplicar la tolerancia de cierre de lotes a esa comparación.
+
+Puede cambiar los lotes, fechas, precios, costos, orígenes y notas. Antes del
+reemplazo atómico de `cartera.json`, conserva la versión anterior completa en
+`historial_cartera/`, con nombre de fecha, hora y sufijo único; nunca pisa una
+versión previa. Si falla el respaldo o el reemplazo, la base anterior queda intacta.
+Si el respaldo ya estaba publicado cuando falla el reemplazo, permanece completo;
+su existencia no confirma que la actualización haya finalizado.
+Se mantienen `esquema_version=1` y los campos adicionales de la raíz y de `origen`;
+`importado_en` y `origen` se actualizan con la nueva importación.
+
+Si los datos interpretados no cambian, informa que no hay cambios y no escribe archivos
+ni modifica metadatos. El orden de posiciones y lotes no cuenta como cambio, ni
+los cambios en celdas que el importador ignora. Una corrección efectiva muestra por
+especie modificada el costo anterior/nuevo y ambos estados de origen.
+
+Si un lote de extracto cambia de costo o de origen, se advierte sin bloquear. Al no
+haber identificadores estables de lotes, la comprobación es conservadora: verifica
+que se conserven sus combinaciones de cantidad, fecha y costo. También advierte
+ante cambios simultáneos entre extractos y otros lotes que puedan ocultar una
+reasignación de origen, incluso si se mantienen los costos totales. Esto puede
+generar avisos ante ciertas ediciones de notas ambiguas. Reordenar filas o cambiar
+únicamente una nota de extracto no dispara este aviso.
+
+En ambos comandos, una fecha de compra posterior a hoy en Argentina es un error
+que indica hoja, fila y ticker. La fecha de hoy se acepta.
+
+`SLUG` comienza con letra o número y contiene solo letras ASCII, números, guiones
+o guiones bajos. La ruta de datos queda fuera del proyecto; los enlaces de carpetas
+de clientes no pueden desviar la lectura ni la escritura fuera de esa ruta.
+
+`estado` lee la base importada y muestra cantidades, costos y su origen. En esta
+etapa no consulta precios ni toma el costo como precio; indica "sin dato" para la
+valuación y los resultados que todavía no pueden calcularse. El resto de los
+comandos pertenece a las etapas siguientes.

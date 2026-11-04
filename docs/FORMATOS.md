@@ -59,8 +59,10 @@ Cada una agrega un error; se informan todos juntos:
 - `Origen` desconocido.
 - Lote estimado con precio menor o igual a cero.
 - Lote estimado con precio pero sin fecha.
+- Fecha de compra posterior a hoy, en hora de Argentina, en cualquier lote con
+  fecha; el error identifica hoja, fila y ticker. La fecha de hoy se acepta.
 
-Una fecha cargada sin precio no es un error: el lote sigue pendiente.
+Una fecha válida cargada sin precio no es un error: el lote sigue pendiente.
 
 ## Carpeta de datos
 
@@ -71,6 +73,7 @@ $CARTERA_DATOS/clientes/<slug>/
   niveles.json         lo escribe el asesor
   efectivo.json        lo escribe el asesor
   cartera.json         generado por importar
+  historial_cartera/   versiones completas anteriores a actualizar-costos
   dia_cero.json        generado por fijar-dia-cero
   movimientos.csv      generado por movimiento
   historial.csv        generado por capturar
@@ -79,6 +82,55 @@ $CARTERA_DATOS/clientes/<slug>/
   alertas.log          generado
   dashboard.html       generado
 ```
+
+### `cartera.json` — base importada (versión 1)
+
+```json
+{
+  "esquema_version": 1,
+  "importado_en": "2026-11-04T14:00:00-03:00",
+  "origen": {
+    "archivo": "punto_partida_demo.xlsx",
+    "sha256": "<huella SHA-256 de los bytes del Excel>"
+  },
+  "posiciones": [
+    {"ticker": "AAA", "especie": "CEDEAR Demo A", "tipo": "cedear", "cantidad": 100.0, "cotiza_cada": 1}
+  ],
+  "lotes": [
+    {"ticker": "AAA", "cantidad": 100.0, "origen": "pendiente", "fecha": null, "precio": null, "costo": null, "nota": "Falta estimar"}
+  ]
+}
+```
+
+`importado_en` tiene zona horaria de Argentina y registra la importación, no la fecha
+de compra ni el día cero. `origen.archivo` guarda solo el nombre del archivo, sin su
+ruta; `sha256` es la huella hexadecimal de 64 caracteres de sus bytes. Las fechas de
+lotes se guardan como `AAAA-MM-DD` o `null`; los demás campos conservan el significado
+de `cartera.punto_partida`. Los importes desconocidos se guardan como `null`.
+
+La base se escribe únicamente después de validar todo el Excel. Si `cartera.json` ya
+existe, `importar` falla sin modificarlo; no tiene opción `--forzar`. Para corregir
+costos se usa `actualizar-costos`, que exige esa base y conserva el conjunto de
+tickers, especie, tipo, `cotiza_cada` y cantidad total de cada posición. Los lotes
+pueden cambiar siempre que sigan cerrando con la cantidad de la especie.
+
+Antes de reemplazar atómicamente la base, se guardan todos los bytes de la versión
+anterior en `historial_cartera/cartera_FECHA_HORA_uuid.json`. Fecha y hora corresponden
+a Argentina; el sufijo único evita pisar versiones incluso en correcciones seguidas.
+Si falla el respaldo o el reemplazo, la base anterior queda intacta. Si el respaldo
+ya se publicó cuando falla el reemplazo, permanece completo; no confirma que la
+actualización haya finalizado. El esquema sigue en versión 1; se conservan los
+campos adicionales de la raíz y de `origen`, sin admitir campos desconocidos en
+los registros de posiciones y lotes. Se
+actualizan `importado_en`, el nombre y la huella del archivo nuevo.
+
+Si no cambia ningún dato interpretado, no se crea historial ni se modifica la base,
+aunque cambien el nombre del Excel, sus metadatos o el orden de filas. La detección
+compara posiciones y lotes, conservando sus repeticiones. Los movimientos futuros
+no sobrescriben esta base: se aplican sobre ella para reconstruir el estado.
+
+En la etapa 1, `estado` lee exclusivamente esta base. No interpreta costos como
+precios actuales ni consulta precios; donde corresponda muestra "sin dato".
 
 ### `perfil.json`
 
@@ -120,6 +172,11 @@ muestra "sin dato", nunca cero.
 ```
 
 `mep` es `null` si no se pudo obtener; no impide fijar el día cero.
+
+Este es el formato original de la referencia de precios. Antes de la etapa 2 hay que
+ampliarlo de forma compatible para conservar también las cantidades y el efectivo
+iniciales que exige el resultado integral aprobado. Los saldos faltantes se conservan
+como faltantes y bloquean ese resultado, sin impedir los indicadores disponibles.
 
 ### `movimientos.csv` y claves de los movimientos
 

@@ -24,23 +24,92 @@ ejemplo, el broker lista algunos CEDEARs como "Acciones". El tipo viene del Exce
 - El importe de cada lote de extracto viene ya calculado: **no recalcules** el costo con
   precio × cantidad.
 
-## Dos resultados
+### Correcciones y fechas de compra
+
+`actualizar-costos` permite corregir los lotes de la base sin perder versiones
+anteriores. Conserva exactamente las posiciones, especies, tipos, unidades de
+cotización y cantidades totales importadas. Los lotes, sus fechas, precios, costos,
+orígenes y notas pueden cambiar, respetando las validaciones y la tolerancia de
+cantidades de 0,5 por especie. La comparación de la cantidad total contra la base
+es exacta: esa tolerancia no habilita cambiarla.
+
+Una fecha de compra posterior a hoy, en `America/Argentina/Buenos_Aires`, es inválida
+en `importar` y `actualizar-costos`. La fecha de hoy se acepta. El error identifica
+la hoja `Lotes`, la fila y el ticker; se valida cualquier fecha de compra presente,
+tanto en lotes de extracto como en estimados o pendientes.
+
+La corrección muestra el costo y origen anterior y nuevo por especie modificada.
+Si cambia el costo de un lote de extracto o pasa a otro origen, se emite una
+advertencia clara sin impedir la corrección. Los lotes no tienen identificador
+estable: se advierte de forma conservadora cuando no se pueden conservar los
+extractos previos por su combinación de cantidad, fecha y costo. También se advierte
+ante cambios simultáneos entre extractos y otros lotes que puedan ocultar una
+reasignación de origen. Ese criterio conservador puede avisar ante ciertas ediciones
+de notas ambiguas. Reordenar filas o cambiar únicamente una nota de extracto no
+provoca esa advertencia. Las versiones completas quedan en el historial para revisar
+la modificación.
+
+### Control de precios previsto para la etapa 2
+
+Cuando haya cotización actual y precio de compra conocido, si el precio del lote es
+más de cinco veces mayor o menor que el actual, se muestra una advertencia con el
+ticker y ambos precios por posible error de unidad o moneda:
+
+```text
+precio_compra > precio_actual × 5  o  precio_compra < precio_actual / 5
+```
+
+Los límites exactos de cinco veces no disparan el aviso. Sin ambos precios no se
+hace esta comparación. La advertencia no bloquea la carga, no modifica ningún
+cálculo y el lote conserva su origen. Este control no se implementa en la etapa 1;
+su prueba se incorpora cuando se implemente la etapa 2.
+
+## Resultados por posición y resultado completo
+
+Los indicadores por posición se mantienen:
 
 | Resultado | Fórmula | Depende de estimaciones |
 |---|---|---|
 | Desde la compra | valuación − costo | Sí, si hay costos estimados |
-| Desde el día cero | valuación − valuación con el precio del día cero | No |
+| Comparación de precios desde el día cero | valuación − valuación de la misma cantidad con el precio del día cero | No |
 
-El resultado desde el día cero es el indicador principal de seguimiento.
+`resultado_posicion` calcula estos indicadores. La comparación de precios usa la
+cantidad recibida y no incorpora compras, ventas, aportes ni cobros. No debe
+presentarse como resultado integral cuando cambian las tenencias.
 
-El resultado en dólar MEP se calcula solo desde el día cero:
+**Criterio aprobado por Felipe el 04/11/2026:** el objetivo principal es el resultado
+completo de la cartera desde el día cero. En pesos:
 
 ```text
-resultado_usd = valuacion_hoy / mep_hoy − valuacion_dia_cero / mep_dia_cero
+resultado_integral_ars = patrimonio_final − patrimonio_inicial − aportes + retiros
 ```
 
-Valuación no es retorno total: rentas y dividendos cobrados no están en el precio. Se
-registran como movimientos y se muestran aparte.
+El patrimonio comprende las posiciones valuadas y el efectivo. El efectivo se muestra
+siempre aparte de las posiciones, aunque sí interviene en esta conciliación. Las
+compras y ventas intercambian posiciones y efectivo; no son aportes ni retiros. Las
+rentas y dividendos aumentan el efectivo y se muestran desglosados, sin sumarlos otra
+vez si ya están incluidos en el patrimonio final. Los importes netos de los movimientos
+incluyen los gastos aplicables.
+
+La base importada y sus versiones de costos se conservan; las tenencias posteriores
+se reconstruyen aplicando movimientos sobre ella. Para el resultado integral hace
+falta una referencia del día cero que conserve cantidades, precios y saldos de
+efectivo. Si falta algún dato
+necesario, se informa "sin dato" y qué falta; no se completa con ceros ni se presenta
+una suma parcial como resultado completo.
+
+La comparación estática en dólar MEP es:
+
+```text
+comparacion_usd = valuacion_hoy / mep_hoy − valuacion_dia_cero / mep_dia_cero
+```
+
+Solo es una comparación de valuaciones desde el día cero. Antes de implementar el
+resultado integral en dólares, hay que especificar con Claude la conversión histórica
+de aportes, retiros y demás flujos. La metodología de rentabilidad porcentual con
+movimientos también queda pendiente de revisión; no se publica un porcentaje integral
+hasta definirla. Estas ampliaciones corresponden a las etapas posteriores, no a la
+etapa 1.
 
 ## Vencimientos
 
