@@ -101,10 +101,11 @@ actualización, los cálculos y la recuperación ante una caída de la fuente.
 Comparar precios contra take profit y stop loss, avisar vencimientos y dejar
 constancia cuando no se pudo chequear. Pensado para una tarea programada.
 
-- Módulos: `cartera.alertas`, `cartera.notificar`.
+- Módulos: `cartera.alertas`, `cartera.alertas_comando`, `cartera.notificar`.
 - Comando: `alertas`.
 - Canales: notificación de macOS y Telegram.
-- Plantilla de `launchd` en `ops/`, para correr cada 5 minutos. **No la instales.**
+- Plantillas de `launchd` en `ops/`, para alertas y captura de historial. **No las instales.**
+- Reglas de la corrida, los canales y las credenciales en `docs/ALERTAS.md`.
 
 **Listo cuando** pasa `tests/test_etapa4_*`.
 

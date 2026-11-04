@@ -21,6 +21,7 @@ Leé en este orden:
 4. `docs/FORMATOS.md`: archivos de entrada y de salida.
 5. `docs/PRECIOS.md`: la fuente de precios y sus límites.
 6. `docs/DASHBOARD.md`: reglas de la pantalla, para la etapa 3.
+7. `docs/ALERTAS.md`: corrida, avisos y tareas programadas, para la etapa 4.
 
 ## Cómo trabajar
 
@@ -56,8 +57,8 @@ Leé en este orden:
   `CARTERA_DATOS`. No busques ni abras nada fuera de esta carpeta.
 - Nunca escribas salidas dentro de esta carpeta salvo en carpetas temporales de
   prueba. Las salidas van a la ruta de datos.
-- Las credenciales, como el token de Telegram, se leen de variables de entorno. Nunca
-  se guardan en un archivo ni se muestran en logs.
+- Las credenciales, como el token de Telegram, se leen de variables de entorno o del
+  Llavero de macOS. Nunca se guardan en un archivo ni se muestran en logs.
 - Los avisos por Telegram identifican al cliente por su `slug`, sin nombre ni importes.
 
 ## Reglas de negocio que no se negocian

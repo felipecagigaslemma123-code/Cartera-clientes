@@ -161,7 +161,7 @@ evaluar_vencimientos(instrumentos, estado, hoy, umbrales=(30, 15, 7, 1)) -> (lis
 ```
 
 `Evento`: `tipo`, `ticker`, `precio`, `nivel`, `mensaje`. `tipo` es `"take_profit"`,
-`"stop_loss"`, `"sin_chequeo"` o `"vencimiento"`. Ambas funciones reciben el estado
+`"stop_loss"`, `"sin_chequeo"`, `"vencimiento"` o `"control"`. Ambas funciones reciben el estado
 anterior como `dict`, no lo mutan y devuelven el nuevo. El estado debe ser serializable
 a JSON. Reglas en `DOMINIO.md`.
 
@@ -170,10 +170,35 @@ a JSON. Reglas en `DOMINIO.md`.
 ```python
 Notificador(canales)       # canales: lista de funciones (titulo, mensaje) -> None
   .enviar(eventos, slug) -> list[str]   # errores de los canales; no lanza excepción
+canal_macos(titulo, mensaje) -> None
+canal_telegram(titulo, mensaje) -> None
+credencial_telegram() -> Optional[tuple[str, str]]
+canales_disponibles() -> list
 ```
 
-Si un canal falla, los demás se intentan igual. Título y mensaje contienen el `slug` y
-nunca nombres ni importes de la cartera, solo ticker, tipo de evento y precio.
+`enviar` manda **un único mensaje por llamada** con todos los eventos, y un error por cada
+canal que falló. Sin eventos, no envía nada. Si un canal falla, los demás se intentan igual.
+Título y mensaje contienen el `slug` y nunca nombres ni importes de la cartera, solo ticker,
+tipo de evento y precio. Los errores no incluyen el texto original de la excepción. El módulo
+usa `subprocess.run` y `urlopen` importados de forma que las pruebas los puedan reemplazar:
+`cartera.notificar.subprocess.run` y `cartera.notificar.urlopen`.
+
+## `cartera.alertas_comando`
+
+```python
+correr_alertas(carpeta, punto, slug, fetch, canales, ahora) -> dict
+```
+
+Hace una corrida completa según `docs/ALERTAS.md`. `carpeta` es la del cliente y `punto` la base
+cargada. Devuelve `eventos`, `errores`, `entregado` (`True` si no había eventos o si algún canal los
+entregó) y `evaluo_niveles`.
+
+`ahora_argentina()` devuelve la hora actual con zona horaria de Argentina.
+
+El comando `alertas` llama a `cartera.notificar.canales_disponibles()` y a
+`cartera.alertas_comando.ahora_argentina()` por su módulo, para poder reemplazarlos en las pruebas,
+y usa `consultar_json` como `fetch`. Termina con código distinto de cero
+si `entregado` es falso.
 
 ## `cartera.movimientos`
 
