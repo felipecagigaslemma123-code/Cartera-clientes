@@ -20,6 +20,7 @@ Leé en este orden:
 3. `docs/DOMINIO.md`: convenciones de cálculo. Sin esto los números salen mal.
 4. `docs/FORMATOS.md`: archivos de entrada y de salida.
 5. `docs/PRECIOS.md`: la fuente de precios y sus límites.
+6. `docs/DASHBOARD.md`: reglas de la pantalla, para la etapa 3.
 
 ## Cómo trabajar
 

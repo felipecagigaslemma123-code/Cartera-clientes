@@ -74,10 +74,11 @@ HTML autocontenido que se abre sin servidor y actualiza precios en vivo.
 Tiene que mostrar:
 
 - **Por posición:** cantidad, precio, valuación, peso, variación del día, costo y
-  su origen, resultado desde la compra y resultado desde el día cero.
+  su origen, resultado desde la compra y variación de precios desde el día cero.
 - **Totales:** por tipo de activo y general, en pesos y en dólar MEP.
-- **Efectivo:** aparte, sin sumarse a las posiciones.
-- **Vencimientos:** los próximos 60 días, destacados.
+- **Efectivo:** aparte, sin sumarse a las posiciones. El actual y el del día cero.
+- **Día cero:** fecha, valuación y patrimonio inicial, o qué le falta.
+- **Vencimientos:** los próximos 60 días, destacados, y los ya vencidos.
 - **Niveles:** distancia al take profit y al stop loss de cada especie.
 - **Gráfico por especie:** SVG propio con el historial capturado.
 - **Estado de los datos:** hora de la última consulta y aviso visible si los precios
@@ -86,11 +87,14 @@ Tiene que mostrar:
 Si el navegador no puede consultar la API, muestra los precios embebidos al generar
 el archivo, marcados como tales.
 
-Antes de implementar, completar el contrato del tablero para entregarle cantidades,
-unidades de cotización y referencias MEP/día cero. Comprobar en el navegador la
-actualización, los cálculos y la recuperación ante caída de la fuente.
+**No muestra un resultado completo.** Hasta la etapa 5 no hay movimientos. El lugar del
+resultado completo indica "se calcula cuando estén los movimientos". La variación de
+precios no se presenta como resultado de la cartera.
 
-**Listo cuando** pasa `tests/test_etapa3_*` y Claude lo revisó en el navegador.
+Las reglas están en `docs/DASHBOARD.md`.
+
+**Listo cuando** pasa `tests/test_etapa3_*` y Claude comprobó en el navegador la
+actualización, los cálculos y la recuperación ante una caída de la fuente.
 
 ## Etapa 4: Alertas
 

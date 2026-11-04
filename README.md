@@ -145,9 +145,9 @@ PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -v
 ```
 
 Claude revisó los cálculos de la etapa 1 y los aprobó. Su entrega histórica está en
-[REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md). La etapa 2 está implementada y pendiente
-de revisión de Claude; no se inició la etapa 3 ni se hicieron commits. Pasan las 64
-pruebas originales de las etapas 1 y 2 y 148 adicionales.
+[REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md). La etapa 2 fue revisada y aprobada por
+Claude; la etapa 3 todavía no está implementada. Pasan las 64 pruebas originales de las
+etapas 1 y 2 y 148 adicionales.
 La verificación final y las limitaciones se registran en
 [REVISION_ETAPA2.md](docs/REVISION_ETAPA2.md). Las decisiones abiertas de las etapas
 posteriores figuran en el plan y el contrato.

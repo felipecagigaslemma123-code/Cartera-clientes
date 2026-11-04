@@ -122,7 +122,7 @@ ticker y ambos precios. Ignora lotes sin precio y cotizaciones sin `ultimo`.
 
 ```python
 generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrumentos,
-             efectivo, historial, generado_en) -> str
+             efectivo, historial, generado_en, posiciones=None, dia_cero=None, mep=None) -> str
 ```
 
 `cliente` es un `dict` con el contenido de `perfil.json`. `resultados` es una lista de
@@ -130,9 +130,27 @@ generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrumentos,
 ticker. Los textos se escapan. El HTML generado no carga scripts, estilos ni fuentes
 externos.
 
-**Pendiente antes de etapa 3:** completar las entradas del tablero para incluir
-cantidades, unidades de cotización y referencias MEP/día cero. La firma actual no
-contiene toda la información necesaria para las salidas de `PLAN.md`.
+`posiciones` es la lista de `Posicion`, `dia_cero` el contenido de `dia_cero.json` o `None`,
+y `mep` una `Cotizacion` o `None`. El comando siempre los pasa. Sin `posiciones` el HTML se
+genera igual, con los valores embebidos y sin recalcular en vivo.
+
+El HTML incluye sus datos en `<script id="datos-cartera" type="application/json">`, con el
+esquema de `docs/DASHBOARD.md`.
+
+### Comando `dashboard`
+
+`dashboard` exige una base importada. Consulta precios y dólar MEP una vez, actualiza la
+caché, lee los demás archivos del cliente y escribe `dashboard.html` de forma atómica.
+Muestra la ruta del archivo y cada especie sin precio vivo.
+
+- No agrega filas a `historial.csv`: eso lo hace `capturar`.
+- Termina con código 0 aunque la fuente esté caída, porque el archivo se genera igual y
+  queda marcado.
+- `perfil.json`, `niveles.json`, `instrumentos.json`, `efectivo.json`, `dia_cero.json` e
+  `historial.csv` son opcionales. Si faltan, se muestra "sin dato" o "sin fijar". Sin
+  perfil, se identifica al cliente por su `slug`.
+- En `historial.csv` usa solo las últimas 500 filas de cada ticker y no muestra el ticker
+  `MEP` como una posición.
 
 ## `cartera.alertas`
 
