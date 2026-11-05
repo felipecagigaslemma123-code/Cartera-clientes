@@ -100,6 +100,62 @@ antes de ese clic, no suenan. `avisos-estado` indica el resultado:
 En los últimos tres casos aclara que los avisos quedan en pantalla. Los niveles se leen de `niveles.json`
 al generar el archivo: cambiarlos requiere regenerarlo.
 
+## Descarga en Excel
+
+Botón `id="descargar-excel"`, con el texto `Descargar Excel`, en el encabezado junto a `actualizar`, y debajo
+`id="excel-estado"`. Al hacer clic genera un `.xlsx` en el navegador y lo descarga:
+
+- **Sin consultar la red.** Usa las posiciones y el MEP en memoria, ya actualizados por la última ronda. El archivo
+  coincide con la pantalla. También funciona en la vista estática, con los valores embebidos.
+- **Un `.xlsx` real**, que Excel abre sin advertencias: un ZIP sin compresión (método *stored*, con CRC-32) escrito en
+  el propio script, sin bibliotecas. Tipo `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.
+  No sirve un HTML o CSV renombrado. La política de seguridad de la página no cambia.
+- **Descarga:** `Blob`, `URL.createObjectURL` y un `<a download>` creado con `document.createElement`, al que se le
+  llama `click()`. Se libera la URL después.
+- **Nombre:** `cartera-<slug>-AAAA-MM-DD-HHMM.xlsx`, hora de Argentina. **El nombre del cliente no aparece** ni en el
+  nombre del archivo ni dentro de él: se identifica por el slug, porque un archivo se reenvía.
+- **`excel-estado`:** contiene `descargado` y la hora si salió bien; `No se pudo generar` si falló, sin interrumpir
+  las consultas ni las alertas.
+
+**Celdas.** Los importes, cantidades y porcentajes son números de verdad; un porcentaje se guarda como fracción con
+formato `%`. Una fecha es una fecha de Excel, con formato `dd/mm/yyyy`. Un dato faltante es el texto `sin dato`, nunca
+0, salvo el costo sin completar, que dice `falta estimar`. Los textos van como texto, de modo que `=1+1` no se ejecute
+como fórmula; se escapan los caracteres de XML y se quitan los de control que XML no admite. Fila 1 de cada hoja:
+encabezados en negrita.
+
+**Hoja `Resumen`:** etiqueta en la columna A y valor en la B, con estas etiquetas exactas.
+
+| Etiqueta | Valor |
+|---|---|
+| `Cliente` | Slug |
+| `Generado` | Hora de la descarga, Argentina, como texto `dd/mm/aaaa HH:MM` |
+| `Última consulta` | Igual que en pantalla: hora de la última ronda, o `sin dato` si no hubo ninguna |
+| `Dólar MEP` | MEP en memoria |
+| `Valuación conocida ARS` | Suma de las valuaciones conocidas |
+| `Valuación conocida USD` | Esa suma dividida por el MEP |
+| `Posiciones sin precio` | Cantidad |
+| `Posiciones sin confirmar en vivo` | Cantidad con estado distinto de `vivo` |
+| `Resultado desde la compra ARS` | Solo la parte con costo completo y precio, como en pantalla |
+| `Total conocido realizado ARS` | `historial.total_conocido`; solo con historial |
+| `Realizado de extracto ARS` | `historial.realizado_extracto`; solo con historial |
+| `Realizado con estimaciones ARS` | `historial.realizado_estimado`; solo con historial |
+
+**Hoja `Posiciones`:** una fila por posición, sin fila de total, con estos encabezados en este orden:
+`Ticker`, `Especie`, `Tipo`, `Cantidad`, `Último`, `Valuación ARS`, `Peso`, `Variación del día`, `Costo ARS`,
+`Origen del costo`, `Resultado ARS`, `Resultado %`, `Take profit`, `Stop loss`, `Vencimiento`, `Estado del precio`,
+`Hora de consulta`. `Origen del costo` y `Estado del precio` usan las mismas palabras que la pantalla.
+`Variación del día` se guarda como fracción: 1,5 % es 0,015. `Take profit`, `Stop loss` y `Vencimiento` sin definir
+quedan como celda vacía, porque no definirlos no es un dato faltante. `Hora de consulta` es texto `dd/mm/aaaa HH:MM`.
+
+**Hojas `Ventas` e `Ingresos`:** solo si `datos.historial` existe.
+
+- `Ventas`: una fila por `historial.realizados`, en el mismo orden, con `Ticker`, `Fecha`, `Clase`, `Cantidad`,
+  `Sin lote`, `Importe ARS`, `Costo ARS`, `Origen del costo`, `Resultado ARS`.
+- `Ingresos`: encabezados `Concepto`, `ARS`, `USD`, `Equivalente ARS`. Una fila por clase de `historial.ingresos`, con
+  las etiquetas de la pantalla (`Dividendos`, `Retenciones`, `Rentas`, `Caución colocada`, `Caución tomada`, `FCI`,
+  `Gastos`, `Compensaciones por error operativo`); una clase desconocida va con su clave, nunca se omite. Después,
+  `Aportes (no son ganancia)` y `Retiros (no son ganancia)`.
+
 ## Estados de cada precio
 
 Cada fila muestra uno de estos estados, con palabras y sin depender solo del color:

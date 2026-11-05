@@ -165,6 +165,17 @@ actualiza con el botón, y las alertas de niveles funcionan mientras tenga el da
 
 ---
 
+## Etapa 8: Descarga en Excel
+
+**Pedido de Felipe del 05/11/2026:** poder bajar la cartera en Excel desde el dashboard.
+
+- Botón en el encabezado que genera un `.xlsx` real en el navegador, con los mismos valores que muestra la
+  pantalla en ese momento, sin consultar la red ni agregar dependencias. Reglas en `docs/DASHBOARD.md`.
+
+**Listo cuando** pasa `tests/test_etapa8_*` y Claude abrió en Excel un archivo bajado del dashboard con datos reales.
+
+---
+
 ## Fuera de alcance
 
 - Evaluar lo operado en otro broker antes de la llegada del cliente.
