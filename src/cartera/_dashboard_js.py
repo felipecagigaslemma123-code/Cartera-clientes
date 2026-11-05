@@ -403,6 +403,265 @@ SCRIPT = r"""
       'Cartera sin posiciones y sin efectivo USD: el cálculo no necesita precios actuales.');
   }
 
+  // XLSX local: las cifras salen del estado que ya usa la pantalla. Los textos
+  // son inlineStr, por lo que ningún contenido se convierte en una fórmula.
+  function xmlExcel(valor) {
+    return String(valor).replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu, '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/\r/g, '&#13;');
+  }
+
+  function fechaDescargaExcel(fecha) {
+    const partes = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(fecha).map(parte => [parte.type, parte.value]));
+    return {texto: partes.day + '/' + partes.month + '/' + partes.year + ' ' + partes.hour + ':' + partes.minute,
+      nombre: partes.year + '-' + partes.month + '-' + partes.day + '-' + partes.hour + partes.minute};
+  }
+
+  const textoExcel = valor => ({tipo: 'texto', valor: valor === null || valor === undefined ? 'sin dato' : String(valor)});
+  const numeroExcel = (valor, estilo = 2, faltante = 'sin dato') => finito(valor) === null ? textoExcel(faltante) : {tipo: 'numero', valor, estilo};
+  function fechaExcel(valor, opcional = false) {
+    if (opcional && (valor === null || valor === undefined || valor === '')) return null;
+    const dias = diaFecha(valor);
+    if (dias === null) return textoExcel('sin dato');
+    // Excel conserva el día ficticio 29/02/1900 en su calendario de números de serie.
+    return {tipo: 'numero', valor: dias + 25569 - (valor < '1900-03-01' ? 1 : 0), estilo: 5};
+  }
+
+  function posicionesExcel() {
+    return posiciones.map(posicion => {
+      const calculada = calcular(posicion);
+      if (!habilitada) {
+        // Una vista estática también puede carecer de cantidades o unidades; no
+        // se pierden por eso los valores ya calculados y embebidos en el HTML.
+        if (Object.prototype.hasOwnProperty.call(posicion, 'valuacion')) calculada.valor = finito(posicion.valuacion);
+        if (Object.prototype.hasOwnProperty.call(posicion, 'resultado')) calculada.compra = finito(posicion.resultado);
+      }
+      return calculada;
+    });
+  }
+
+  function hojasExcel(generado) {
+    const calculadas = posicionesExcel();
+    const conocidas = calculadas.filter(posicion => posicion.valor !== null);
+    const total = suma(conocidas.map(posicion => posicion.valor));
+    const dolar = mep ? positivo(mep.ultimo) : null;
+    const comparables = conocidas.filter(posicion => posicion.costo !== null && posicion.compra !== null);
+    const costo = suma(comparables.map(posicion => posicion.costo));
+    const comparable = suma(comparables.map(posicion => posicion.valor));
+    const resultado = comparable !== null && costo !== null ? seguro(comparable - costo) : null;
+    const resumen = [
+      ['Concepto', 'Valor'], ['Cliente', datos.cliente && typeof datos.cliente.slug === 'string' ? datos.cliente.slug : ''],
+      ['Generado', generado.texto], ['Última consulta', ultimaConsulta === null ? 'sin dato' : hora(ultimaConsulta)],
+      ['Dólar MEP', numeroExcel(dolar)], ['Valuación conocida ARS', numeroExcel(total)],
+      ['Valuación conocida USD', numeroExcel(total !== null && dolar !== null ? seguro(total / dolar) : null)],
+      ['Posiciones sin precio', numeroExcel(calculadas.length - conocidas.length, 3)],
+      ['Posiciones sin confirmar en vivo', numeroExcel(calculadas.filter(posicion => posicion.estado !== 'vivo').length, 3)],
+      ['Resultado desde la compra ARS', numeroExcel(resultado)]
+    ];
+    const filas = [[
+      'Ticker', 'Especie', 'Tipo', 'Cantidad', 'Último', 'Valuación ARS', 'Peso', 'Variación del día', 'Costo ARS',
+      'Origen del costo', 'Resultado ARS', 'Resultado %', 'Take profit', 'Stop loss', 'Vencimiento',
+      'Estado del precio', 'Hora de consulta'
+    ]];
+    for (const posicion of calculadas) {
+      let resultadoPct = posicion.compra !== null && posicion.costo !== null ? seguro(posicion.compra / posicion.costo) : null;
+      if (!habilitada && Object.prototype.hasOwnProperty.call(posicion, 'resultado_pct')) resultadoPct = finito(posicion.resultado_pct);
+      filas.push([
+        textoExcel(posicion.ticker), textoExcel(posicion.especie || 'sin dato'), textoExcel(posicion.tipo || 'sin dato'),
+        numeroExcel(posicion.cantidad, 3), numeroExcel(positivo(posicion.ultimo)), numeroExcel(posicion.valor),
+        numeroExcel(posicion.valor !== null && positivo(total) !== null ? seguro(posicion.valor / total) : null, 4),
+        numeroExcel(finito(posicion.pct_dia) === null ? null : seguro(posicion.pct_dia / 100), 4),
+        numeroExcel(posicion.costo, 2, 'falta estimar'), textoExcel(origen(posicion.estado_costo)),
+        numeroExcel(posicion.compra, 2, posicion.costo === null ? 'falta estimar' : 'sin dato'),
+        numeroExcel(resultadoPct, 4, posicion.costo === null ? 'falta estimar' : 'sin dato'),
+        positivo(posicion.take_profit) === null ? null : numeroExcel(posicion.take_profit),
+        positivo(posicion.stop_loss) === null ? null : numeroExcel(posicion.stop_loss),
+        fechaExcel(posicion.vencimiento, true), textoExcel(estado(posicion.estado)), textoExcel(hora(posicion.consultado_en))
+      ]);
+    }
+    const hojas = [{nombre: 'Resumen', filas: resumen}, {nombre: 'Posiciones', filas}];
+    if (datos.historial && typeof datos.historial === 'object') {
+      const historial = datos.historial;
+      resumen.push(['Total conocido realizado ARS', numeroExcel(historial.total_conocido)],
+        ['Realizado de extracto ARS', numeroExcel(historial.realizado_extracto)],
+        ['Realizado con estimaciones ARS', numeroExcel(historial.realizado_estimado)]);
+      const ventas = [['Ticker', 'Fecha', 'Clase', 'Cantidad', 'Sin lote', 'Importe ARS', 'Costo ARS', 'Origen del costo', 'Resultado ARS']];
+      for (const venta of historial.realizados || []) {
+        ventas.push([textoExcel(venta.ticker), fechaExcel(venta.fecha), textoExcel(venta.clase), numeroExcel(venta.cantidad, 3),
+          numeroExcel(venta.cantidad_sin_lote, 3), numeroExcel(venta.importe_ars), numeroExcel(venta.costo_ars),
+          textoExcel(venta.origen_costo === 'incompleto' ? 'incompleto (sin dato)' : origen(venta.origen_costo)), numeroExcel(venta.resultado_ars)]);
+      }
+      const etiquetas = new Map([
+        ['dividendo', 'Dividendos'], ['retencion', 'Retenciones'], ['renta', 'Rentas'], ['caucion_colocada', 'Caución colocada'],
+        ['caucion_tomada', 'Caución tomada'], ['fci', 'FCI'], ['gastos', 'Gastos'], ['compensacion', 'Compensaciones por error operativo']
+      ]);
+      const ingresos = [['Concepto', 'ARS', 'USD', 'Equivalente ARS']];
+      const ingreso = (etiqueta, valores) => [textoExcel(etiqueta), ...['ARS', 'USD', 'equivalente_ars'].map(moneda => numeroExcel((valores || {})[moneda]))];
+      for (const [clase, valores] of Object.entries(historial.ingresos || {})) ingresos.push(ingreso(etiquetas.get(clase) || clase, valores));
+      ingresos.push(ingreso('Aportes (no son ganancia)', historial.aportes), ingreso('Retiros (no son ganancia)', historial.retiros));
+      hojas.push({nombre: 'Ventas', filas: ventas}, {nombre: 'Ingresos', filas: ingresos});
+    }
+    return hojas;
+  }
+
+  function columnaExcel(indice) {
+    let columna = '';
+    while (indice > 0) {
+      indice -= 1;
+      columna = String.fromCharCode(65 + indice % 26) + columna;
+      indice = Math.floor(indice / 26);
+    }
+    return columna;
+  }
+
+  function hojaXmlExcel(filas) {
+    const columnas = filas.reduce((maximo, fila) => Math.max(maximo, fila.length), 1);
+    const anchos = Array.from({length: columnas}, (_, columna) => {
+      const largo = filas.reduce((maximo, fila) => {
+        const celda = fila[columna];
+        const longitud = celda === null || celda === undefined ? 0 : String(typeof celda === 'object' ? celda.valor : celda).length;
+        return Math.max(maximo, longitud);
+      }, 0);
+      return Math.min(65, Math.max(12, largo + 2));
+    });
+    const contenido = filas.map((fila, indice) => '<row r="' + (indice + 1) + '">' + fila.map((bruto, columna) => {
+      if (bruto === null || bruto === undefined) return '';
+      const celda = typeof bruto === 'object' ? bruto : textoExcel(bruto);
+      const referencia = columnaExcel(columna + 1) + (indice + 1);
+      const estilo = indice === 0 ? 1 : celda.estilo || 0;
+      if (celda.tipo === 'numero' && finito(celda.valor) !== null) {
+        return '<c r="' + referencia + '" s="' + estilo + '"><v>' + celda.valor + '</v></c>';
+      }
+      return '<c r="' + referencia + '" s="' + estilo + '" t="inlineStr"><is><t xml:space="preserve">' + xmlExcel(celda.valor) + '</t></is></c>';
+    }).join('') + '</row>').join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<dimension ref="A1:' + columnaExcel(columnas) + Math.max(1, filas.length) + '"/>' +
+      '<sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/>' +
+      '<cols>' + anchos.map((ancho, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + ancho + '" customWidth="1"/>').join('') + '</cols>' +
+      '<sheetData>' + contenido + '</sheetData></worksheet>';
+  }
+
+  function estilosXmlExcel() {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="4"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.###############"/>' +
+      '<numFmt numFmtId="166" formatCode="0.00%"/><numFmt numFmtId="167" formatCode="dd/mm/yyyy"/></numFmts>' +
+      '<fonts count="2"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font></fonts>' +
+      '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+      [164, 165, 166, 167].map(id => '<xf numFmtId="' + id + '" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>').join('') +
+      '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  }
+
+  function archivosExcel(hojas) {
+    const cabecera = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    const relacion = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/';
+    const partes = [
+      ['[Content_Types].xml', cabecera + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+        hojas.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') + '</Types>'],
+      ['_rels/.rels', cabecera + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="' + relacion + 'officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', cabecera + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="' + relacion.slice(0, -1) + '">' +
+        '<bookViews><workbookView/></bookViews><sheets>' + hojas.map((hoja, i) => '<sheet name="' + xmlExcel(hoja.nombre) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', cabecera + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        hojas.map((_, i) => '<Relationship Id="rId' + (i + 1) + '" Type="' + relacion + 'worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+        '<Relationship Id="rId' + (hojas.length + 1) + '" Type="' + relacion + 'styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', estilosXmlExcel()]
+    ];
+    hojas.forEach((hoja, i) => partes.push(['xl/worksheets/sheet' + (i + 1) + '.xml', hojaXmlExcel(hoja.filas)]));
+    return partes;
+  }
+
+  let tablaCrcExcel = null;
+  function crc32Excel(bytes) {
+    if (tablaCrcExcel === null) {
+      tablaCrcExcel = Uint32Array.from({length: 256}, (_, indice) => {
+        let valor = indice;
+        for (let bit = 0; bit < 8; bit += 1) valor = valor & 1 ? 0xEDB88320 ^ valor >>> 1 : valor >>> 1;
+        return valor >>> 0;
+      });
+    }
+    let crc = 0xFFFFFFFF;
+    for (const byte of bytes) crc = tablaCrcExcel[(crc ^ byte) & 0xFF] ^ crc >>> 8;
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function zipExcel(archivos) {
+    const codificador = new TextEncoder();
+    const locales = [];
+    const centrales = [];
+    let desplazamiento = 0;
+    for (const [ruta, contenido] of archivos) {
+      const nombre = codificador.encode(ruta);
+      const bytes = codificador.encode(contenido);
+      if (bytes.length > 0xFFFFFFFF || desplazamiento > 0xFFFFFFFF) throw new Error('Libro demasiado grande');
+      const crc = crc32Excel(bytes);
+      const local = new Uint8Array(30 + nombre.length);
+      const vista = new DataView(local.buffer);
+      vista.setUint32(0, 0x04034B50, true); vista.setUint16(4, 20, true); vista.setUint16(6, 0x800, true);
+      vista.setUint16(8, 0, true); vista.setUint16(10, 0, true); vista.setUint16(12, 33, true);
+      vista.setUint32(14, crc, true); vista.setUint32(18, bytes.length, true); vista.setUint32(22, bytes.length, true);
+      vista.setUint16(26, nombre.length, true); local.set(nombre, 30);
+      const central = new Uint8Array(46 + nombre.length);
+      const directorio = new DataView(central.buffer);
+      directorio.setUint32(0, 0x02014B50, true); directorio.setUint16(4, 20, true); directorio.setUint16(6, 20, true);
+      directorio.setUint16(8, 0x800, true); directorio.setUint16(10, 0, true); directorio.setUint16(12, 0, true); directorio.setUint16(14, 33, true);
+      directorio.setUint32(16, crc, true); directorio.setUint32(20, bytes.length, true); directorio.setUint32(24, bytes.length, true);
+      directorio.setUint16(28, nombre.length, true); directorio.setUint32(42, desplazamiento, true); central.set(nombre, 46);
+      locales.push(local, bytes); centrales.push(central);
+      desplazamiento += local.length + bytes.length;
+    }
+    const tamanoDirectorio = centrales.reduce((total, parte) => total + parte.length, 0);
+    const fin = new Uint8Array(22);
+    const vista = new DataView(fin.buffer);
+    vista.setUint32(0, 0x06054B50, true); vista.setUint16(8, archivos.length, true); vista.setUint16(10, archivos.length, true);
+    vista.setUint32(12, tamanoDirectorio, true); vista.setUint32(16, desplazamiento, true);
+    const longitud = desplazamiento + tamanoDirectorio + fin.length;
+    if (longitud > 0xFFFFFFFF || archivos.length > 0xFFFF) throw new Error('Libro demasiado grande');
+    const salida = new Uint8Array(longitud);
+    let posicion = 0;
+    for (const parte of [...locales, ...centrales, fin]) { salida.set(parte, posicion); posicion += parte.length; }
+    return salida;
+  }
+
+  function descargarExcel() {
+    let url = null;
+    let enlace = null;
+    try {
+      const generado = fechaDescargaExcel(new Date());
+      const bytes = zipExcel(archivosExcel(hojasExcel(generado)));
+      const blob = new Blob([bytes], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      url = URL.createObjectURL(blob);
+      enlace = document.createElement('a');
+      enlace.href = url;
+      const slug = datos.cliente && typeof datos.cliente.slug === 'string' ? datos.cliente.slug : '';
+      enlace.download = 'cartera-' + slug.replace(/[\\/:*?"<>|\u0000-\u001F]/g, '_') + '-' + generado.nombre + '.xlsx';
+      enlace.hidden = true;
+      if (document.body) document.body.appendChild(enlace);
+      enlace.click();
+      const liberar = url;
+      setTimeout(() => { try { URL.revokeObjectURL(liberar); } catch (_) { /* La descarga ya se inició. */ } }, 1000);
+      url = null;
+      texto('excel-estado', 'Excel descargado · ' + generado.texto + '.');
+    } catch (_) {
+      texto('excel-estado', 'No se pudo generar el Excel. La página sigue funcionando.');
+    } finally {
+      if (url !== null) { try { URL.revokeObjectURL(url); } catch (_) { /* Sin efectos sobre la página. */ } }
+      try { if (enlace && typeof enlace.remove === 'function') enlace.remove(); } catch (_) { /* La limpieza no interrumpe el tablero. */ }
+    }
+  }
+
   function renderizarVencimientos() {
     const lista = elemento('vencimientos-lista');
     if (!lista) return;
@@ -529,6 +788,8 @@ SCRIPT = r"""
     boton.addEventListener('click', actualizar);
   }
   if (botonAvisos) botonAvisos.addEventListener('click', activarAvisos);
+  const botonExcel = elemento('descargar-excel');
+  if (botonExcel) botonExcel.addEventListener('click', descargarExcel);
   mostrarEstadoAvisos();
   renderizar();
   if (habilitada) {
