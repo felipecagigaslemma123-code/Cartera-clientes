@@ -111,15 +111,20 @@ constancia cuando no se pudo chequear. Pensado para una tarea programada.
 
 ## Etapa 5: Movimientos
 
-Registrar compras, ventas, rentas, dividendos, depósitos y retiros después del día
-cero, con baja de lotes por FIFO y resultado realizado. Conservar el origen real o
-estimado de los costos también en las ventas.
+Registrar compras, ventas, rentas, dividendos, depósitos, retiros, gastos y cambios de
+moneda después del día cero, con baja de lotes por FIFO y resultado realizado. Conservar
+el origen real o estimado de los costos también en las ventas.
 
-Conciliar posiciones y efectivo con la base inicial y los movimientos. El resultado
-monetario integral descuenta aportes y suma retiros; los cobros se cuentan una sola
-vez. Si faltan datos para la conciliación, se informa "sin dato". La metodología de
-rentabilidad porcentual queda pendiente de especificación y revisión, sin asumir que
-el resultado monetario dividido por el capital inicial sea suficiente.
+Reconstruir posiciones y efectivo a partir de la base y los movimientos, y controlar el
+efectivo calculado contra `efectivo.json`. El resultado monetario integral en pesos
+descuenta aportes y suma retiros; los cobros se cuentan una sola vez. Si faltan datos,
+se informa "sin dato" y qué falta. La metodología de rentabilidad porcentual queda
+pendiente de especificación y revisión, sin asumir que el resultado monetario dividido
+por el capital inicial sea suficiente.
+
+`estado`, `capturar`, `dashboard` y `alertas` pasan a usar la cartera actual. El
+dashboard muestra el resultado completo, el realizado y el efectivo calculado. Reglas en
+`docs/DOMINIO.md`, `docs/FORMATOS.md`, `docs/CONTRATO.md`, `docs/DASHBOARD.md` y `docs/ALERTAS.md`.
 
 - Módulo: `cartera.movimientos`.
 - Comando: `movimiento`.
@@ -127,7 +132,8 @@ el resultado monetario dividido por el capital inicial sea suficiente.
 La carga es manual por ahora. El lector de archivos del broker se especifica cuando
 haya un archivo de ejemplo: no lo inventes.
 
-**Listo cuando** pasa `tests/test_etapa5_*`.
+**Listo cuando** pasa `tests/test_etapa5_*` y Claude comprobó en el navegador el recálculo del
+resultado completo con precios en vivo.
 
 ---
 

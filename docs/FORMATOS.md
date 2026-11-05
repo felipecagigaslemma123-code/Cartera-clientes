@@ -184,12 +184,21 @@ zona horaria.
 
 ### `movimientos.csv` y claves de los movimientos
 
-Columnas: `fecha,tipo,ticker,cantidad,importe,nota`.
+Columnas: `fecha,tipo,ticker,cantidad,importe,moneda,tc,tipo_activo,nota`.
 
 - `fecha`: `AAAA-MM-DD`, o `date` al pasarlo a `aplicar_movimientos`.
-- `tipo`: `compra`, `venta`, `renta`, `dividendo`, `deposito`, `retiro`.
+- `tipo`: `compra`, `venta`, `renta`, `dividendo`, `deposito`, `retiro`, `gasto`, `compra_usd`, `venta_usd`.
+- `ticker`: según `DOMINIO.md`; vacío si no aplica.
 - `cantidad`: siempre positiva; vacía o 0 si no aplica.
-- `importe`: siempre positivo, neto en pesos. El tipo define el sentido.
+- `importe`: siempre positivo y neto. El tipo define el sentido.
+- `moneda`: `ARS` o `USD`. Vacía o ausente equivale a `ARS`.
+- `tc`: pesos por dólar. Obligatorio en USD; vacío en ARS.
+- `tipo_activo`: `cedear`, `accion`, `bono`, `on` o `letra`; solo para una especie nueva.
+- `nota`: texto libre, opcional.
+
+Lo escribe `movimiento`, en orden de carga, con encabezado y solo para el usuario. Para corregir un
+error se edita a mano: todo comando que lo lee valida el archivo completo e informa el número de fila
+de cada problema. Sin archivo, no hay movimientos.
 
 ### `historial.csv`
 

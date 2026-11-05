@@ -56,6 +56,15 @@ igual** y se emite, dentro o fuera de horario, un único evento por día de tipo
 `ticker` en `None`. Se conserva el estado anterior de vencimientos. Lo mismo vale si `niveles.json`
 o `instrumentos.json` no se pueden leer.
 
+## Movimientos
+
+Los niveles, los vencimientos y sus especies salen de la cartera actual. Un nivel de una especie
+conocida que ya se vendió toda se **ignora** y se indica en `avisos`: vender una especie no puede
+apagar las demás alertas.
+
+Si `movimientos.csv` es inválido, **la corrida sigue** con la base importada y emite un único
+`sin_chequeo` por día, con `ticker` en `None`. Se registra en `error_movimientos`, dentro del estado.
+
 ## Mensajes
 
 Una línea por evento, con el texto de `mensaje`:

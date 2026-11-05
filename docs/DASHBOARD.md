@@ -88,10 +88,18 @@ visible. También aparece si el archivo se generó otro día: las posiciones pue
   total desde la compra indica sobre qué parte de la cartera se calcula.
 - **Dólar MEP:** los totales en dólares se dividen por el MEP actual. Sin MEP, "sin dato". La variación
   desde el día cero usa `valuación_hoy / mep_hoy − valuación_día_cero / mep_día_cero`.
-- **Efectivo:** el actual y el del día cero se muestran aparte, con su fecha. No se suman a las
-  posiciones ni entran en los pesos.
-- **Resultado completo:** un recuadro indica "se calcula cuando estén los movimientos". No muestres
-  un número ahí, ni llames "resultado de la cartera" a la variación de precios.
+- **Efectivo:** el informado, el calculado y el del día cero se muestran aparte, con su fecha. No se
+  suman a las posiciones ni entran en los pesos.
+- **Resultado completo:** sección con `id="resultado-completo"`: patrimonio inicial, patrimonio final,
+  aportes, retiros, rentas, dividendos, gastos y el total. Si falta algo, "sin dato" y qué falta. Sin
+  porcentaje. Se recalcula en el navegador con los precios y el MEP en vivo, a partir de `integral` en
+  `datos-cartera`, y aclara si usa un último dato. No llames "resultado de la cartera" a la variación
+  de precios.
+- **Realizado:** sección con `id="resultado-realizado"`: una fila por venta, con origen del costo, y el
+  total de las que tienen costo. Un costo estimado se ve como estimado. Aclara que ya está incluido
+  en el resultado completo.
+- **Efectivo calculado:** un bloque más en la sección de efectivo, junto con el estado de la conciliación.
+  Si no concilia, un aviso visible con la diferencia y la sugerencia de revisar movimientos.
 - **Formato:** punto de miles y coma decimal, también en lo recalculado en el navegador.
 
 ## Vencimientos

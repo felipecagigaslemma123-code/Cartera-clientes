@@ -207,20 +207,70 @@ aplicar_movimientos(lotes, movimientos) -> (list[Lote], list[Realizado])
 ```
 
 `movimientos`: lista de `dict` con las claves de `FORMATOS.md`, en cualquier orden; se
-aplican por fecha. Una compra agrega un lote con `origen="extracto"`. Una venta consume
-lotes por FIFO, los más viejos primero, y los lotes sin fecha se consideran los más
-viejos. Prorratea el costo del lote parcial. Otros tipos no tocan los lotes.
+aplican por fecha, de forma estable. `moneda`, `tc` y `tipo_activo` pueden faltar. Una compra
+agrega un lote con `origen="extracto"`. Una venta consume lotes por FIFO, los más viejos
+primero, y los lotes sin fecha se consideran los más viejos. Prorratea el costo del lote
+parcial. Otros tipos no tocan los lotes. No modifica lo recibido.
 
-`Realizado`: `ticker`, `fecha`, `cantidad`, `importe`, `costo`, `resultado`. Si la venta
-consumió un lote pendiente, `costo` y `resultado` son `None`.
+`Realizado`: `ticker`, `fecha`, `cantidad`, `importe`, `costo`, `resultado`, `origen_costo`.
+`importe` está en pesos. Si la venta consumió un lote pendiente, `costo` y `resultado` son
+`None` y `origen_costo` es `"incompleto"`.
 
-Lanza `ErrorMovimiento` si se vende más de lo que hay.
+Lanza `ErrorMovimiento` (subclase de `ValueError`) si se vende más de lo que hay.
 
-**Pendiente antes de etapa 5:** ampliar de forma compatible el resultado realizado
-para conservar el origen real o estimado de los costos vendidos. Completar el
-contrato de conciliación patrimonial y flujos, y revisar la metodología porcentual
-y la conversión histórica a MEP con Claude. Las pruebas actuales de lotes por sí
-solas no validan el resultado integral.
+```python
+leer_movimientos(ruta) -> list[dict]
+validar_movimientos(punto, movimientos, fecha_dia_cero, hoy) -> None
+agregar_movimiento(ruta, punto, movimiento, fecha_dia_cero, hoy) -> dict
+cartera_actual(punto, movimientos) -> (PuntoPartida, list[Realizado])
+saldos_efectivo(efectivo, movimientos, hasta=None) -> dict
+flujos(movimientos) -> Flujos
+conciliar_efectivo(dia_cero, movimientos, efectivo) -> Conciliacion
+resultado_integral(posiciones_base, dia_cero, posiciones_actuales, movimientos, precios, mep) -> ResultadoIntegral
+```
+
+- `leer_movimientos`: `[]` si no existe el archivo. Devuelve `fecha` como `date`, `cantidad` e
+  `importe` como `float`, `moneda` normalizada, `tc` como `float` o `None`, y `ticker`,
+  `tipo_activo` y `nota` como texto. Un formato inválido lanza `ErrorMovimiento` con la fila.
+- `validar_movimientos`: aplica las reglas de `DOMINIO.md` y el historial completo, y lanza
+  `ErrorMovimiento`, con todos los problemas. Con `fecha_dia_cero=None` no compara contra el día cero.
+- `agregar_movimiento`: valida el historial con el movimiento nuevo y recién entonces agrega la fila,
+  bajo un bloqueo. Si falla, no escribe nada. Devuelve el movimiento normalizado.
+- `cartera_actual`: devuelve un `PuntoPartida` con posiciones y lotes actuales, sin modificar `punto`.
+- `saldos_efectivo`: `efectivo` es un `dict` con `ARS` y `USD`. Devuelve `{"ARS": ..., "USD": ...}`, con
+  `None` donde el saldo inicial es `None`. `hasta` limita a los movimientos de esa fecha o anteriores.
+- `Flujos`: `aportes`, `retiros`, `rentas`, `dividendos`, `gastos`, en pesos.
+- `Conciliacion`: `estado` (`"concilia"`, `"no_concilia"`, `"sin_control"`), `fecha`, `diferencias`
+  (`dict` por moneda, solo con las comparadas).
+- `ResultadoIntegral`: `patrimonio_inicial`, `valuacion_final`, `efectivo_ars`, `efectivo_usd`,
+  `patrimonio_final`, `flujos`, `total`, `faltantes` (`list[str]`). Lo que no se conoce es `None`.
+- `precios`: `dict` de ticker a número o `None`. `mep`: número o `None`. `dia_cero`: el `dict` guardado
+  o `None`.
+
+### Integración con los demás comandos
+
+| Usa | Comandos |
+|---|---|
+| Cartera actual | `estado`, `capturar`, `dashboard`, `alertas` |
+| Base importada | `importar`, `actualizar-costos`, `fijar-dia-cero`, `patrimonio_inicial` |
+
+- `fijar-dia-cero` se rechaza, incluso con `--forzar`, si algún movimiento tiene fecha igual o anterior
+  a la nueva, o si el archivo es inválido.
+- `generar_html` suma los parámetros opcionales `posiciones_base`, `integral`, `realizados` y
+  `conciliacion`. Sin `integral`, conserva el recuadro actual. `crear_dashboard` siempre pasa `integral`.
+- `crear_dashboard`, `capturar` y `estado` terminan con error si `movimientos.csv` es inválido, sin
+  escribir salidas. `correr_alertas` nunca se frena por eso: ver `ALERTAS.md`.
+- `correr_alertas` conserva su firma: recibe la base y aplica los movimientos adentro.
+- `datos-cartera` suma `integral`, `realizados` y `conciliacion`. `integral` tiene `total`,
+  `patrimonio_inicial`, `patrimonio_final`, `valuacion_final`, `efectivo` (`ARS`, `USD`), `aportes`,
+  `retiros`, `rentas`, `dividendos`, `gastos`, `faltantes` y `faltantes_fijos`: los que no dependen del
+  precio ni del MEP actuales, para que el navegador recalcule el resto. `realizados` lista los campos de
+  `Realizado`, con la fecha en ISO, y `conciliacion` los de `Conciliacion`.
+- El comando `movimiento` recibe los números y la fecha como texto y los valida: un dato mal escrito,
+  como `1.234,56`, termina con un mensaje y código 1, sin escribir nada. Al guardar, confirma el
+  movimiento e informa la tenencia de la especie, si corresponde.
+- `estado` muestra las posiciones actuales, el patrimonio inicial, el efectivo calculado por moneda, los
+  flujos y el realizado.
 
 ## Línea de comandos
 
@@ -233,6 +283,7 @@ python3 -m cartera --datos RUTA fijar-dia-cero --cliente SLUG [--fecha AAAA-MM-D
 python3 -m cartera --datos RUTA efectivo-dia-cero --cliente SLUG --ars N --usd N [--fecha AAAA-MM-DD] [--forzar]
 python3 -m cartera --datos RUTA dashboard --cliente SLUG
 python3 -m cartera --datos RUTA alertas --cliente SLUG
+python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha AAAA-MM-DD --tipo TIPO --importe N [--ticker T] [--cantidad N] [--moneda ARS|USD] [--tc N] [--tipo-activo TIPO] [--nota TEXTO]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --ticker X --cantidad N --importe I [--nota N]
 ```
 

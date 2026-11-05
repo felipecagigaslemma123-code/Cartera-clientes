@@ -102,6 +102,61 @@ class Movimientos(unittest.TestCase):
         )
         self.assertEqual([l.ticker for l in lotes], ["BBB"])
 
+    def test_compra_en_dolares_guarda_el_costo_en_pesos(self):
+        movimiento = dict(mov(D1, "compra", 10, 100.0), moneda="USD", tc=1500.0)
+        lotes, _ = aplicar_movimientos([], [movimiento])
+        self.assertAlmostEqual(lotes[0].costo, 150000.0)
+        self.assertIsNone(lotes[0].precio)
+
+    def test_venta_en_dolares_informa_el_importe_en_pesos(self):
+        movimiento = dict(mov(D1, "venta", 10, 100.0), moneda="USD", tc=1500.0)
+        _, realizados = aplicar_movimientos([lote(10, 100000.0, VIEJO)], [movimiento])
+        self.assertAlmostEqual(realizados[0].importe, 150000.0)
+        self.assertAlmostEqual(realizados[0].resultado, 50000.0)
+
+    def test_gasto_y_cambios_no_tocan_los_lotes(self):
+        for tipo in ("gasto", "compra_usd", "venta_usd"):
+            movimiento = dict(mov(D1, tipo, 0, 50.0, ticker=""), moneda="USD" if tipo != "gasto" else "ARS",
+                              tc=1500.0 if tipo != "gasto" else None)
+            lotes, realizados = aplicar_movimientos([lote(10, 1000.0, VIEJO)], [movimiento])
+            self.assertEqual(lotes[0].cantidad, 10, tipo)
+            self.assertEqual(realizados, [], tipo)
+
+    def test_misma_fecha_respeta_el_orden_de_carga(self):
+        lotes, _ = aplicar_movimientos(
+            [lote(10, 1000.0, VIEJO)],
+            [mov(D1, "venta", 10, 1500.0), mov(D1, "compra", 10, 1600.0)],
+        )
+        self.assertEqual(len(lotes), 1)
+        self.assertAlmostEqual(lotes[0].costo, 1600.0)
+
+    def test_venta_total_no_deja_un_lote_vacio(self):
+        lotes, _ = aplicar_movimientos([lote(10, 1000.0, VIEJO)], [mov(D1, "venta", 10, 1500.0)])
+        self.assertEqual(lotes, [])
+
+
+class OrigenDelCosto(unittest.TestCase):
+    def origen(self, lotes):
+        cantidad = sum(l.cantidad for l in lotes)
+        return aplicar_movimientos(lotes, [mov(D1, "venta", cantidad, 9000.0)])[1][0]
+
+    def test_extracto(self):
+        self.assertEqual(self.origen([lote(10, 1000.0, VIEJO)]).origen_costo, "extracto")
+
+    def test_estimado(self):
+        self.assertEqual(self.origen([lote(10, 1000.0, VIEJO, origen="estimado")]).origen_costo, "estimado")
+
+    def test_mixto(self):
+        realizado = self.origen([lote(10, 1000.0, VIEJO, origen="estimado"), lote(10, 2000.0, NUEVO)])
+        self.assertEqual(realizado.origen_costo, "mixto")
+        self.assertAlmostEqual(realizado.costo, 3000.0)
+
+    def test_un_lote_pendiente_vuelve_incompleta_toda_la_venta(self):
+        realizado = self.origen([lote(10, None, None, origen="pendiente"), lote(10, 2000.0, NUEVO)])
+        self.assertEqual(realizado.origen_costo, "incompleto")
+        self.assertIsNone(realizado.costo)
+        self.assertIsNone(realizado.resultado)
+
 
 if __name__ == "__main__":
     unittest.main()

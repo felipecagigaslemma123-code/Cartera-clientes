@@ -140,6 +140,82 @@ movimientos también queda pendiente de revisión; no se publica un porcentaje i
 hasta definirla. Estas ampliaciones corresponden a las etapas posteriores, no a la
 etapa 1.
 
+## Movimientos
+
+Se cargan a mano, con el comando `movimiento`, después del día cero. La base importada no cambia:
+las tenencias actuales salen de aplicar los movimientos sobre ella.
+
+| Tipo | Especie | Cantidad | Efectivo | Para el resultado integral |
+|---|---|---|---|---|
+| `compra` | obligatoria | obligatoria | baja | intercambio |
+| `venta` | obligatoria | obligatoria | sube | intercambio |
+| `renta` | obligatoria | no | sube | se desglosa |
+| `dividendo` | obligatoria | no | sube | se desglosa |
+| `deposito` | no | no | sube | aporte |
+| `retiro` | no | no | baja | retiro |
+| `gasto` | opcional | no | baja | se desglosa |
+| `compra_usd` | no | no | sube USD, baja ARS | intercambio |
+| `venta_usd` | no | no | baja USD, sube ARS | intercambio |
+
+- **Fecha:** la de concertación. Tiene que ser posterior al día cero, no futura en Argentina. Hasta
+  que liquide, el saldo del broker puede diferir del calculado.
+- **Importe:** positivo, neto y con gastos adentro, en la moneda del movimiento. No se recalcula con
+  precio × cantidad.
+- **Moneda:** `ARS` o `USD`; sin indicarla es `ARS`. En USD, `tc` es obligatorio: los pesos que vale
+  cada dólar ese día. En ARS, `tc` no se admite. `compra_usd` y `venta_usd` son siempre en USD: el
+  importe son los dólares y `tc` el cambio efectivo, de modo que `importe × tc` sean los pesos.
+- **Valor en pesos:** `importe`, o `importe × tc` en USD. Se usa para el costo de un lote y para
+  aportes, retiros, rentas, dividendos, gastos y ventas.
+- **Vencimiento o amortización:** se carga como `venta`, con una nota. Cambios de ratio, canjes y
+  cambios de ticker están fuera de alcance: no los aproximes.
+
+### Tenencias y lotes
+
+- Una compra agrega un lote `extracto`, con `costo` igual al valor en pesos y `precio` en `None`.
+- Una venta consume lotes por FIFO. Los lotes sin fecha son los más viejos, y se respeta el orden de
+  carga dentro de una misma fecha. Se rechaza vender más de lo que hay en lotes.
+- La cantidad de una posición es la base más compras menos ventas. En cero, deja de ser una posición.
+- La primera compra de una especie que no está en la base necesita `tipo_activo`. Su unidad sale de
+  la tabla de unidades y su nombre es el ticker. Si la especie ya existe, un `tipo_activo` distinto
+  se rechaza.
+- `renta`, `dividendo` y `gasto` solo admiten especies conocidas: de la base o compradas antes.
+
+### Resultado realizado
+
+Una venta genera un `Realizado`, con su costo por lotes y `origen_costo`: `extracto`, `estimado`,
+`mixto` o `incompleto`. Si consumió un lote pendiente, costo y resultado son "sin dato", nunca un
+resultado parcial. El total realizado suma solo lo que tiene costo, e indica cuántas ventas quedan
+afuera. Es informativo: **no se suma al resultado integral**, que ya lo incluye en el efectivo.
+
+### Efectivo calculado y conciliación
+
+El efectivo calculado es el del día cero más los movimientos, por moneda. Puede ser negativo. Un saldo
+inicial `null` deja esa moneda "sin dato", nunca cero.
+
+`efectivo.json` es el control: se compara con el saldo calculado **a su `fecha`**, moneda por moneda.
+Tolerancia: 1 peso y 0,01 dólar. La diferencia es informado − calculado.
+
+| Estado | Cuándo |
+|---|---|
+| `concilia` | Se comparó al menos una moneda y ninguna supera la tolerancia. |
+| `no_concilia` | Alguna moneda supera la tolerancia. |
+| `sin_control` | No hay fecha, es anterior al día cero o no se pudo comparar ninguna moneda. |
+
+El resultado integral usa siempre el saldo calculado. Si no concilia, se sigue mostrando, con un aviso
+visible y la diferencia: probablemente falte cargar un movimiento.
+
+### Resultado integral en pesos
+
+```text
+patrimonio_final = valuación actual + efectivo ARS + efectivo USD × MEP actual
+resultado_integral = patrimonio_final − patrimonio_inicial − aportes + retiros
+```
+
+No depende de los costos, así que las estimaciones no lo afectan. Si falta algo, `total` es "sin dato"
+y se lista qué falta: día cero, datos de `patrimonio_inicial`, efectivo, precio de una posición actual,
+o MEP actual con saldo en dólares distinto de cero. Con saldo en dólares cero, el MEP no hace falta.
+El resultado incluye la diferencia de cambio de los dólares. No se publica un porcentaje integral.
+
 ## Vencimientos
 
 El vencimiento de cada especie viene de `instrumentos.json`. **No lo deduzcas del
