@@ -272,6 +272,43 @@ resultado_integral(posiciones_base, dia_cero, posiciones_actuales, movimientos, 
 - `estado` muestra las posiciones actuales, el patrimonio inicial, el efectivo calculado por moneda, los
   flujos y el realizado.
 
+## `cartera.historial`
+
+```python
+leer_extracto(ruta) -> list[dict]
+consolidar(filas) -> (list[dict], list[str])
+clasificar(fila, cierres) -> str
+leer_ajustes(ruta) -> list[dict]
+leer_mep(ruta) -> dict[date, float]
+construir_historial(filas, ajustes=(), cierres=(), mep=None) -> Historial
+conciliar_tenencias(lotes, posiciones) -> dict
+correr_historial(carpeta, punto, fetch=None, actualizar_mep=False) -> Historial
+```
+
+Lanzan `ErrorHistorial` (subclase de `ValueError`) ante un archivo inválido.
+
+- `leer_extracto`: cada fila tiene `moneda` (`ARS`, `USD`), `cuenta` (`PESOS`, `DOLARES`, `CABLE`), `operado`
+  (`date`), `comprobante`, `numero`, `cantidad`, `especie` (texto, vacío si no hay), `importe`, `saldo`,
+  `referencia`, `archivo` y `fila`.
+- `consolidar`: quita duplicados y devuelve también los avisos de saldo.
+- `conciliar_tenencias`: `{ticker: {"derivada": n, "base": n, "diferencia": n}}`, solo con las diferencias que
+  superan la tolerancia.
+
+`Historial`:
+
+- `realizados`: lista de `RealizadoHistorico`: `ticker`, `fecha`, `cantidad`, `cantidad_sin_lote`, `importe_ars`,
+  `costo_ars`, `resultado_ars`, `origen_costo`, `clase` (`venta`, `cierre`).
+- `ingresos`: `dict` de clase (`dividendo`, `retencion`, `renta`, `caucion_colocada`, `caucion_tomada`, `fci`,
+  `gastos`) a `{"ARS": n, "USD": n, "equivalente_ars": n}`. Las clases sin datos valen cero.
+- `aportes`, `retiros`: el mismo formato.
+- `lotes`: lotes abiertos, como `Lote`, con costo en pesos o `None`.
+- `total_conocido`, `realizado_extracto`, `realizado_estimado`: números.
+- `ventas_sin_dato`, `valores_sin_dato`: enteros.
+- `sin_clasificar`: filas completas. `avisos`: textos.
+
+`datos-cartera` suma `historial`: `total_conocido`, `ingresos`, `aportes`, `retiros`, `realizados`,
+`ventas_sin_dato`, `valores_sin_dato`, `cantidad_sin_clasificar` y `avisos`.
+
 ## Línea de comandos
 
 ```bash
@@ -283,6 +320,7 @@ python3 -m cartera --datos RUTA fijar-dia-cero --cliente SLUG [--fecha AAAA-MM-D
 python3 -m cartera --datos RUTA efectivo-dia-cero --cliente SLUG --ars N --usd N [--fecha AAAA-MM-DD] [--forzar]
 python3 -m cartera --datos RUTA dashboard --cliente SLUG
 python3 -m cartera --datos RUTA alertas --cliente SLUG
+python3 -m cartera --datos RUTA historial --cliente SLUG [--actualizar-mep]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha AAAA-MM-DD --tipo TIPO --importe N [--ticker T] [--cantidad N] [--moneda ARS|USD] [--tc N] [--tipo-activo TIPO] [--nota TEXTO]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --ticker X --cantidad N --importe I [--nota N]
 ```

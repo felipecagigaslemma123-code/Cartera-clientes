@@ -129,18 +129,33 @@ dashboard muestra el resultado completo, el realizado y el efectivo calculado. R
 - Módulo: `cartera.movimientos`.
 - Comando: `movimiento`.
 
-La carga es manual por ahora. El lector de archivos del broker se especifica cuando
-haya un archivo de ejemplo: no lo inventes.
+La carga es manual. Leer los extractos del broker corresponde a la etapa 6.
 
 **Listo cuando** pasa `tests/test_etapa5_*` y Claude comprobó en el navegador el recálculo del
 resultado completo con precios en vivo.
+
+## Etapa 6: Rendimiento realizado
+
+**Decisión de Felipe del 05/11/2026:** además del seguimiento desde el día cero, quiere saber cuánto
+ganó o perdió con lo ya vendido y cobrado, desde que el cliente opera con él. Se construye primero lo
+realizado, y de esos mismos movimientos nace la cartera actual, que se controla contra la base.
+
+Leer los extractos de cuenta corriente del broker, clasificar cada renglón, calcular el resultado por
+venta y los ingresos (dividendos, rentas, cauciones, gastos), separados del dinero que entró o salió, y
+derivar los lotes abiertos. Lo operado en otro broker antes de llegar no se evalúa: entra a su precio del
+día de la transferencia. Reglas en `docs/HISTORIAL.md`.
+
+- Módulo: `cartera.historial`.
+- Comando: `historial`.
+- El dashboard suma una sección con este resultado.
+
+**Listo cuando** pasa `tests/test_etapa6_*`.
 
 ---
 
 ## Fuera de alcance
 
-- Reconstruir posiciones o costos anteriores al día cero.
-- Lector de archivos del broker, hasta tener un ejemplo.
+- Evaluar lo operado en otro broker antes de la llegada del cliente.
 - Resultado en dólares **desde la compra**. En esta versión, el resultado en dólar
   MEP se calcula solo desde el día cero.
 - Acceso programático al broker, órdenes o ejecución.
