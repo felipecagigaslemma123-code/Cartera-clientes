@@ -314,6 +314,102 @@ def _bloque_efectivo(titulo, efectivo):
                 _importe(efectivo["USD"]), _texto(efectivo.get("nota", "")))
 
 
+def _campo(objeto, nombre, defecto=None):
+    return objeto.get(nombre, defecto) if isinstance(objeto, dict) else getattr(objeto, nombre, defecto)
+
+
+def _datos_integral(integral):
+    if integral is None:
+        return None
+    flujos = _campo(integral, "flujos", {})
+    datos = {campo: _numero(_campo(integral, campo)) for campo in
+             ("total", "patrimonio_inicial", "patrimonio_final", "valuacion_final")}
+    datos["efectivo"] = {"ARS": _numero(_campo(integral, "efectivo_ars")),
+                          "USD": _numero(_campo(integral, "efectivo_usd"))}
+    datos.update({campo: _numero(_campo(flujos, campo)) for campo in
+                  ("aportes", "retiros", "rentas", "dividendos", "gastos")})
+    datos["faltantes"] = list(_campo(integral, "faltantes", []))
+    datos["faltantes_fijos"] = list(_campo(integral, "faltantes_fijos", []))
+    # También aceptar implementaciones que solo tengan los campos públicos mínimos.
+    if datos["patrimonio_inicial"] is None and not datos["faltantes_fijos"]:
+        datos["faltantes_fijos"].append("patrimonio inicial")
+    for moneda in ("ARS", "USD"):
+        etiqueta = "efectivo " + moneda + " calculado"
+        if datos["efectivo"][moneda] is None and etiqueta not in datos["faltantes_fijos"]:
+            datos["faltantes_fijos"].append(etiqueta)
+    return datos
+
+
+def _datos_realizados(realizados):
+    return [{"ticker": str(_campo(venta, "ticker")), "fecha": _fecha(_campo(venta, "fecha")),
+             "cantidad": _numero(_campo(venta, "cantidad")), "importe": _numero(_campo(venta, "importe")),
+             "costo": _numero(_campo(venta, "costo")), "resultado": _numero(_campo(venta, "resultado")),
+             "origen_costo": str(_campo(venta, "origen_costo"))} for venta in realizados or []]
+
+
+def _datos_conciliacion(conciliacion):
+    if conciliacion is None:
+        return {"estado": "sin_control", "fecha": None, "diferencias": {}}
+    return {"estado": str(_campo(conciliacion, "estado", "sin_control")),
+            "fecha": _fecha(_campo(conciliacion, "fecha")),
+            "diferencias": {str(moneda): _numero(valor) for moneda, valor in
+                            _campo(conciliacion, "diferencias", {}).items()}}
+
+
+def _resultado_completo(integral):
+    if integral is None:
+        return '<section class="sin-movimientos"><h2>Resultado completo</h2><p>Se calcula cuando estén los movimientos.</p></section>'
+    campos = [("inicial", "Patrimonio inicial", "patrimonio_inicial"),
+              ("valuacion", "Valuación actual de posiciones", "valuacion_final"),
+              ("final", "Patrimonio final", "patrimonio_final"),
+              ("aportes", "Aportes", "aportes"), ("retiros", "Retiros", "retiros"),
+              ("rentas", "Rentas", "rentas"), ("dividendos", "Dividendos", "dividendos"),
+              ("gastos", "Gastos", "gastos"), ("total", "Resultado completo ARS", "total")]
+    valores = ''.join('<dt>{}</dt><dd id="integral-{}"{}>{}</dd>'.format(
+        titulo, identificador, ' class="dato-destacado"' if identificador == 'total' else '',
+        _importe(integral[campo])) for identificador, titulo, campo in campos)
+    faltantes = "Faltan: " + ", ".join(integral["faltantes"]) if integral["faltantes"] else ""
+    return ('<section id="resultado-completo"><h2>Resultado completo en pesos</h2><dl>' + valores + '</dl>'
+            '<p id="integral-faltantes" class="aviso">' + _texto(faltantes) + '</p>'
+            '<p id="integral-estado" class="muted">Usa los últimos datos guardados hasta confirmar precios en vivo.</p>'
+            '<p class="muted">Patrimonio final menos patrimonio inicial y aportes, más retiros. '
+            'Las rentas, los dividendos y los gastos ya están incluidos en el efectivo calculado. '
+            'El resultado realizado también está incluido; no se suma nuevamente.</p></section>')
+
+
+def _resultado_realizado(realizados):
+    filas = []
+    for venta in realizados:
+        celdas = [venta["ticker"], _dia(venta["fecha"]), _cantidad(venta["cantidad"]),
+                  _importe(venta["importe"]), "falta estimar" if venta["costo"] is None else _importe(venta["costo"]),
+                  _origen(venta["origen_costo"]), "falta estimar" if venta["resultado"] is None else _importe(venta["resultado"])]
+        filas.append('<tr>' + ''.join('<td>{}</td>'.format(_texto(celda)) for celda in celdas) + '</tr>')
+    conocidas = [venta for venta in realizados if venta["resultado"] is not None]
+    total = _sumar(venta["resultado"] for venta in conocidas) if conocidas else 0.0
+    encabezados = ["Ticker", "Fecha", "Cantidad", "Importe ARS", "Costo ARS", "Origen del costo", "Realizado ARS"]
+    tabla = ('<div class="contenedor-tabla"><table><thead><tr>' +
+             ''.join('<th scope="col">' + _texto(titulo) + '</th>' for titulo in encabezados) +
+             '</tr></thead><tbody>' + ''.join(filas) + '</tbody></table></div>') if filas else '<p>Sin ventas registradas.</p>'
+    estimacion = "; incluye estimado" if any(v["origen_costo"] != "extracto" for v in conocidas) else ""
+    return ('<section id="resultado-realizado"><h2>Resultado realizado por venta</h2>' + tabla +
+            '<p>Total con costo conocido: ' + _importe(total) + ' ARS' + estimacion + '. ' +
+            str(len(realizados) - len(conocidas)) + ' ventas excluidas por costo incompleto.</p>'
+            '<p class="muted">Ya está incluido en el resultado completo mediante el efectivo. No se suma nuevamente.</p></section>')
+
+
+def _conciliacion(conciliacion):
+    estado = conciliacion["estado"]
+    fecha = _dia(conciliacion["fecha"])
+    if estado == "no_concilia":
+        diferencias = "; ".join(moneda + " " + _importe(valor) for moneda, valor in conciliacion["diferencias"].items())
+        texto = "El efectivo no concilia al {}. Diferencia informado menos calculado: {}. Revisá los movimientos.".format(fecha, diferencias)
+    elif estado == "concilia":
+        texto = "El efectivo concilia al {} dentro de la tolerancia (1 ARS y 0,01 USD).".format(fecha)
+    else:
+        texto = "Efectivo sin control: falta una fecha válida o saldos comparables con el día cero."
+    return '<p id="conciliacion-efectivo"{}>{}</p>'.format(' class="aviso"' if estado != "concilia" else '', _texto(texto))
+
+
 _ESTILOS = """
 :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17212b;background:#f5f7fa;font-size:15px;line-height:1.45}
 *{box-sizing:border-box}p,li,dd,h1,h2,h3{overflow-wrap:anywhere}body{margin:0}main{max-width:1520px;margin:auto;padding:24px;min-width:0}header{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:start}h1{font-size:1.85rem;margin:0 0 8px}h2{font-size:1.2rem;margin:0 0 14px}h3{font-size:1rem;margin:0 0 10px}p{margin:8px 0}section,.tarjeta{background:#fff;border:1px solid #d6dee7;border-radius:8px;padding:18px;margin-top:18px;min-width:0}button{background:#205b8c;border:0;color:#fff;font:inherit;padding:10px 16px;border-radius:5px;cursor:pointer}button:disabled{background:#677684;cursor:default}button:focus-visible{outline:3px solid #f1ad37;outline-offset:3px}.aviso{background:#fff4d9;border-left:4px solid #b57c0d;padding:10px 12px;border-radius:3px}.aviso:empty{display:none}.contenedor-tabla{overflow-x:auto;width:100%;max-width:100%;border:1px solid #dde3ea;border-radius:4px}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}th,td{text-align:left;border-bottom:1px solid #e2e7ed;padding:9px 10px;white-space:nowrap}th{background:#edf2f7;font-weight:600}thead th{position:sticky;top:0}.numero{text-align:right}.grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px}.grilla article{min-width:0}.grilla section{margin:0}dl{display:grid;grid-template-columns:auto 1fr;gap:5px 20px;margin:8px 0}dd{text-align:right;margin:0;font-variant-numeric:tabular-nums}.grafico{border:1px solid #dce3eb;border-radius:6px;padding:12px;min-width:0}.grafico svg{display:block;width:100%;height:auto}.grafico p{font-size:.83rem;color:#465666}.muted{color:#465666}.dato-destacado{font-size:1.15rem;font-weight:600}.sin-movimientos{border-left:4px solid #64788b}ul{padding-left:20px}li{margin:7px 0}[hidden]{display:none!important}.tabla-posiciones td:first-child,.tabla-posiciones th:first-child{position:sticky;left:0;z-index:1;font-weight:600;box-shadow:1px 0 0 #d6dee7}.tabla-posiciones td:first-child{background:#fff}.tabla-posiciones thead th:first-child{z-index:2}@media(max-width:600px){main{padding:12px}section,.tarjeta{padding:12px}h1{font-size:1.5rem}.grilla{grid-template-columns:minmax(0,1fr)}header>div{min-width:0;overflow-wrap:anywhere}}
@@ -321,16 +417,20 @@ _ESTILOS = """
 
 
 def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrumentos,
-                 efectivo, historial, generado_en, posiciones=None, dia_cero=None, mep=None):
+                 efectivo, historial, generado_en, posiciones=None, dia_cero=None, mep=None,
+                 posiciones_base=None, integral=None, realizados=None, conciliacion=None):
     """Genera una vista completa incluso si el navegador no logra consultar la fuente."""
     generado = _instante(generado_en)
     resultados = list(resultados)
     posiciones = list(posiciones) if posiciones is not None else None
     filas = _posiciones(resultados, cotizaciones, niveles, instrumentos, posiciones, dia_cero)
-    habilitada = posiciones is not None and bool(filas) and all(
+    habilitada = posiciones is not None and (bool(filas) or integral is not None) and all(
         fila["cantidad"] is not None and fila["cotiza_cada"] in (1, 100) and fila["endpoint"] in ENDPOINTS.values()
         for fila in filas)
-    referencia = _referencia(dia_cero, posiciones)
+    referencia = _referencia(dia_cero, posiciones_base if posiciones_base is not None else posiciones)
+    integral_datos = _datos_integral(integral)
+    realizados_datos = _datos_realizados(realizados)
+    conciliacion_datos = _datos_conciliacion(conciliacion)
     mep_valor = _numero(mep.ultimo, positivo=True) if mep is not None else None
     mep_datos = None if mep_valor is None else {"ultimo": mep_valor, "estado": mep.estado,
                                                "consultado_en": _instante(mep.consultado_en)}
@@ -341,7 +441,8 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
              "nombre": str(cliente.get("nombre") or cliente.get("slug") or "Cliente")},
              "posiciones": filas, "vencimientos": vencimientos, "dia_cero": referencia,
              "mep": mep_datos, "efectivo": actual,
-             "actualizacion_habilitada": habilitada, "avisos_datos": avisos_datos}
+             "actualizacion_habilitada": habilitada, "avisos_datos": avisos_datos,
+             "integral": integral_datos, "realizados": realizados_datos, "conciliacion": conciliacion_datos}
     serializado = json.dumps(datos, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     avisos_html = ('<section id="avisos-lectura" class="aviso"><h2>Estado de los archivos</h2><ul>' +
                    "".join("<li>" + _texto(aviso) + "</li>" for aviso in avisos_datos) + "</ul></section>") if avisos_datos else ""
@@ -367,6 +468,11 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
         if referencia["faltantes"]:
             texto_dia += "; faltan: " + ", ".join(referencia["faltantes"])
         caja_dia = referencia["efectivo"]
+    efectivo_calculado = ""
+    if integral_datos is not None:
+        calculado = dict(integral_datos["efectivo"], fecha=generado_en.astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date().isoformat(),
+                         nota="Reconstruido desde los saldos del día cero y los movimientos. Se usa para el patrimonio final.")
+        efectivo_calculado = _bloque_efectivo("Efectivo calculado", calculado)
     graficos = "".join(_grafico(fila["ticker"], historial.get(fila["ticker"], [])) for fila in filas)
     estado = "Precios guardados al generar este archivo: Último dato hasta que una consulta los confirme."
     if not habilitada:
@@ -393,9 +499,9 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
         '<tbody id="totales-body">' + _totales(filas, mep_datos) + '</tbody></table></div>'
         '<p id="resultado-compra">' + _texto(_resumen_compra(filas)) + '</p><p id="variacion-precios">' + _texto(_resumen_variacion(filas, referencia, mep_datos)) + '</p>'
         '<p class="muted">La variación de precios compara las mismas cantidades y no incluye movimientos ni cobros.</p></section>'
-        '<section class="sin-movimientos"><h2>Resultado completo</h2><p>Se calcula cuando estén los movimientos.</p></section>'
+        + _resultado_completo(integral_datos) + (_resultado_realizado(realizados_datos) if integral_datos is not None else "") +
         '<section><h2>Día cero</h2><p>' + _texto(texto_dia) + '</p></section>'
-        '<section><h2>Efectivo, separado de las posiciones</h2><div class="grilla">' + _bloque_efectivo("Efectivo actual", actual) + _bloque_efectivo("Efectivo del día cero", caja_dia) + '</div></section>'
+        '<section><h2>Efectivo, separado de las posiciones</h2><div class="grilla">' + _bloque_efectivo("Efectivo informado", actual) + efectivo_calculado + _bloque_efectivo("Efectivo del día cero", caja_dia) + '</div>' + (_conciliacion(conciliacion_datos) if integral_datos is not None else "") + '</section>'
         '<section><h2>Historial capturado por especie</h2><p class="muted">Los gráficos muestran las consultas guardadas y no se actualizan en vivo.</p><div class="grilla">' + graficos + '</div></section>'
         '<script id="datos-cartera" type="application/json">' + serializado + '</script><script>' + SCRIPT + '</script>'
         '<noscript><p class="aviso">JavaScript está desactivado. Se muestran los últimos datos guardados, sin consultar precios.</p></noscript>'

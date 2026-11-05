@@ -1,4 +1,4 @@
-"""Comandos de base inicial, precios y referencia del día cero."""
+"""Comandos de base, movimientos, precios y seguimiento patrimonial."""
 
 import argparse
 import json
@@ -14,6 +14,10 @@ from .dia_cero import _leer_dia_cero, _validar_efectivo
 from .precios import (
     ClientePrecios, ErrorDiaCero, advertencias_precio, capturar_historial,
     cargar_efectivo_dia_cero, fijar_dia_cero, patrimonio_inicial,
+)
+from .movimientos import (
+    agregar_movimiento, cartera_actual, conciliar_efectivo, flujos, leer_movimientos,
+    saldos_efectivo, validar_movimientos,
 )
 from .punto_partida import ErrorPuntoPartida
 from .transporte import consultar_json
@@ -35,7 +39,7 @@ def _origen(estado):
             "incompleto": "incompleto (falta estimar)"}[estado]
 
 
-def _mostrar_estado(slug, punto, contenido, referencia=None):
+def _mostrar_estado(slug, punto, contenido, referencia=None, base=None, movimientos=(), realizados=(), control=None):
     lineas = ["Cliente: {}".format(slug),
               "Base inicial importada: {}".format(contenido["importado_en"])]
     for posicion in punto.posiciones:
@@ -51,7 +55,38 @@ def _mostrar_estado(slug, punto, contenido, referencia=None):
         lineas.append("  Precio: sin dato · valuación: sin dato · resultado: sin dato")
     lineas.append("Sin cotizaciones actuales: no se informa valuación ni resultado de la cartera.")
     if referencia is not None:
-        lineas.extend(_lineas_dia_cero(punto, referencia))
+        lineas.extend(_lineas_dia_cero(base or punto, referencia))
+    saldos = saldos_efectivo(referencia["efectivo"] if referencia else {}, movimientos)
+    for moneda in ("ARS", "USD"):
+        valor = saldos[moneda]
+        lineas.append("Efectivo calculado {}: {}".format(moneda, "sin dato" if valor is None else _numero(valor)))
+    fondos = flujos(movimientos)
+    lineas.append("Flujos en ARS · aportes: {} · retiros: {} · rentas: {} · dividendos: {} · gastos: {}".format(
+        *(_numero(getattr(fondos, campo)) for campo in ("aportes", "retiros", "rentas", "dividendos", "gastos"))))
+    conocidos, excluidos = [], 0
+    for venta in realizados:
+        importe = "falta estimar" if venta.resultado is None else "$ " + _numero(venta.resultado)
+        lineas.append("Realizado de {}: {} · {} · origen: {}".format(
+            venta.ticker, venta.fecha.isoformat(), importe, _origen(venta.origen_costo)))
+        if venta.resultado is None:
+            excluidos += 1
+        else:
+            conocidos.append(venta.resultado)
+    if realizados:
+        from math import fsum
+        try:
+            total_realizado = "$ " + _numero(fsum(conocidos))
+        except OverflowError:
+            total_realizado = "sin dato (suma fuera de rango)"
+        lineas.append("Realizado con costo conocido: {} · ventas excluidas por costo incompleto: {}. "
+                      "Ya está incluido en el resultado completo; no se suma otra vez.".format(
+                          total_realizado, excluidos))
+    if control is not None:
+        lineas.append("Control de efectivo: {}.".format(control.estado.replace("_", " ")))
+        if control.estado == "no_concilia":
+            for moneda, diferencia in control.diferencias.items():
+                lineas.append("  Diferencia reportado menos calculado {}: {}".format(moneda, _numero(diferencia)))
+            lineas.append("ADVERTENCIA: revisá los movimientos; el resultado usa el efectivo calculado.")
     print("\n".join(lineas))
 
 
@@ -164,6 +199,9 @@ def _fijar_referencia(opciones, datos, punto):
     habia_dia_cero = ruta.exists()
     if habia_dia_cero and not opciones.forzar:
         raise ErrorDiaCero("El día cero ya existe; usá --forzar solo si querés volver a tomar la referencia.")
+    # Validar antes de consultar precios o modificar la foto y la caché.
+    movimientos = leer_movimientos(_archivo_cliente(datos, opciones.cliente, "movimientos.csv"))
+    validar_movimientos(punto, movimientos, fecha, hoy)
     efectivo = _leer_efectivo(datos, opciones.cliente)
     cliente = ClientePrecios(consultar_json, cache, persistir_cache=False)
     cotizaciones = cliente.obtener(punto.posiciones)
@@ -204,6 +242,34 @@ def _cargar_efectivo(opciones, datos, punto):
     return 0
 
 
+def _historia_actual(datos, slug, punto, referencia):
+    movimientos = leer_movimientos(_archivo_cliente(datos, slug, "movimientos.csv"))
+    fecha_cero = date.fromisoformat(referencia["fecha"]) if referencia else None
+    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    validar_movimientos(punto, movimientos, fecha_cero, hoy)
+    actual, realizados = cartera_actual(punto, movimientos)
+    return movimientos, actual, realizados
+
+
+def _movimiento(opciones, datos, punto):
+    ruta_cero = _archivo_cliente(datos, opciones.cliente, "dia_cero.json")
+    if not ruta_cero.exists():
+        raise ErrorDiaCero("Primero fijá el día cero para registrar movimientos.")
+    referencia = _leer_dia_cero(ruta_cero)
+    ruta = _archivo_cliente(datos, opciones.cliente, "movimientos.csv")
+    movimiento = {campo: getattr(opciones, campo) for campo in (
+        "fecha", "tipo", "ticker", "cantidad", "importe", "moneda", "tc", "tipo_activo", "nota")}
+    agregado = agregar_movimiento(ruta, punto, movimiento, date.fromisoformat(referencia["fecha"]),
+                                  datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date())
+    print("Movimiento guardado: {} · {} · {} {}.".format(
+        agregado["fecha"].isoformat(), agregado["tipo"], _numero(agregado["importe"]), agregado["moneda"]))
+    if agregado["ticker"]:
+        actual, _ = cartera_actual(punto, leer_movimientos(ruta))
+        cantidad = next((p.cantidad for p in actual.posiciones if p.ticker == agregado["ticker"]), 0)
+        print("Tenencia actual {}: {}.".format(agregado["ticker"], _cantidad(cantidad)))
+    return 0
+
+
 def _mostrar_actualizacion(resultado):
     if not resultado["cambios"]:
         print("No hay cambios en los datos de la cartera; no se escribió ningún archivo.")
@@ -219,7 +285,7 @@ def _mostrar_actualizacion(resultado):
 
 
 def main(argumentos=None):
-    parser = argparse.ArgumentParser(description="Seguimiento local de carteras: base inicial, precios y día cero.")
+    parser = argparse.ArgumentParser(description="Seguimiento local de carteras: base, movimientos y resultado completo.")
     parser.add_argument("--datos", metavar="RUTA", help="Carpeta de datos; alternativa: CARTERA_DATOS.")
     comandos = parser.add_subparsers(dest="comando", required=True)
     importar = comandos.add_parser("importar", help="Validar y conservar el Excel de punto de partida.")
@@ -228,7 +294,7 @@ def main(argumentos=None):
     actualizar = comandos.add_parser("actualizar-costos", help="Corregir lotes y costos conservando la versión anterior.")
     actualizar.add_argument("--cliente", required=True, metavar="SLUG")
     actualizar.add_argument("--archivo", required=True, metavar="EXCEL")
-    estado = comandos.add_parser("estado", help="Mostrar la base inicial y el origen de sus costos.")
+    estado = comandos.add_parser("estado", help="Mostrar tenencias actuales, efectivo, flujos y origen de costos.")
     estado.add_argument("--cliente", required=True, metavar="SLUG")
     capturar = comandos.add_parser("capturar", help="Consultar precios y guardar el historial observado.")
     capturar.add_argument("--cliente", required=True, metavar="SLUG")
@@ -246,6 +312,15 @@ def main(argumentos=None):
     dashboard.add_argument("--cliente", required=True, metavar="SLUG")
     alertas = comandos.add_parser("alertas", help="Chequear niveles y vencimientos y enviar avisos.")
     alertas.add_argument("--cliente", required=True, metavar="SLUG")
+    movimiento = comandos.add_parser("movimiento", help="Registrar un movimiento posterior al día cero.")
+    movimiento.add_argument("--cliente", required=True, metavar="SLUG")
+    for campo in ("fecha", "tipo", "importe"):
+        movimiento.add_argument("--" + campo, required=True)
+    for campo in ("ticker", "tipo-activo", "nota"):
+        movimiento.add_argument("--" + campo, default="")
+    movimiento.add_argument("--cantidad", default="")
+    movimiento.add_argument("--moneda", default="ARS")
+    movimiento.add_argument("--tc", default=None)
     opciones = parser.parse_args(argumentos)
     datos = opciones.datos if opciones.datos is not None else os.environ.get("CARTERA_DATOS")
     if not datos or not datos.strip():
@@ -287,15 +362,19 @@ def main(argumentos=None):
                 for aviso in entrega["avisos"]:
                     print("ADVERTENCIA: " + aviso)
                 return 0
-            if opciones.comando == "capturar":
-                return _capturar(datos, opciones.cliente, punto)
             if opciones.comando == "fijar-dia-cero":
                 return _fijar_referencia(opciones, datos, punto)
             if opciones.comando == "efectivo-dia-cero":
                 return _cargar_efectivo(opciones, datos, punto)
             ruta = _archivo_cliente(datos, opciones.cliente, "dia_cero.json")
             referencia = _leer_dia_cero(ruta) if ruta.exists() else None
-            _mostrar_estado(opciones.cliente, punto, contenido, referencia)
+            if opciones.comando == "movimiento":
+                return _movimiento(opciones, datos, punto)
+            movimientos, actual, realizados = _historia_actual(datos, opciones.cliente, punto, referencia)
+            if opciones.comando == "capturar":
+                return _capturar(datos, opciones.cliente, actual)
+            control = conciliar_efectivo(referencia, movimientos, _leer_efectivo(datos, opciones.cliente))
+            _mostrar_estado(opciones.cliente, actual, contenido, referencia, punto, movimientos, realizados, control)
     except ErrorPuntoPartida as error:
         for mensaje in error.errores:
             print(mensaje, file=sys.stderr)

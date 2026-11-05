@@ -197,8 +197,9 @@ Columnas: `fecha,tipo,ticker,cantidad,importe,moneda,tc,tipo_activo,nota`.
 - `nota`: texto libre, opcional.
 
 Lo escribe `movimiento`, en orden de carga, con encabezado y solo para el usuario. Para corregir un
-error se edita a mano: todo comando que lo lee valida el archivo completo e informa el número de fila
-de cada problema. Sin archivo, no hay movimientos.
+error se edita a mano, con un editor de texto y no con Excel, que puede cambiar los separadores: todo
+comando que lo lee valida el archivo completo e informa el número de fila de cada problema. Las líneas
+en blanco se ignoran. Sin archivo, no hay movimientos.
 
 ### `historial.csv`
 

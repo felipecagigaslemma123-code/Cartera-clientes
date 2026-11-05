@@ -14,6 +14,9 @@ from .calculos import resultado_posicion, resumen_cartera
 from .dashboard import generar_html
 from .dia_cero import _leer_dia_cero, _validar_efectivo
 from .precios import ClientePrecios, patrimonio_inicial
+from .movimientos import (
+    cartera_actual, conciliar_efectivo, leer_movimientos, resultado_integral, validar_movimientos,
+)
 
 
 class ErrorDashboard(ValueError):
@@ -138,7 +141,7 @@ def _publicar(ruta, html):
 def crear_dashboard(punto, carpeta, slug, fetch):
     carpeta = Path(carpeta)
     nombres = ("perfil.json", "niveles.json", "instrumentos.json", "efectivo.json",
-               "dia_cero.json", "historial.csv", "cache_precios.json", "dashboard.html")
+               "dia_cero.json", "movimientos.csv", "historial.csv", "cache_precios.json", "dashboard.html")
     rutas = {nombre: _camino(carpeta, nombre) for nombre in nombres}
     cliente = _perfil(_objeto_opcional(rutas["perfil.json"]), slug)
     niveles = _niveles(_objeto_opcional(rutas["niveles.json"]))
@@ -153,6 +156,12 @@ def crear_dashboard(punto, carpeta, slug, fetch):
     dia_cero = _leer_dia_cero(rutas["dia_cero.json"]) if rutas["dia_cero.json"].exists() else None
     if dia_cero is not None:
         patrimonio_inicial(punto.posiciones, dia_cero)
+    base = punto
+    movimientos = leer_movimientos(rutas["movimientos.csv"])
+    validar_movimientos(base, movimientos, date.fromisoformat(dia_cero["fecha"]) if dia_cero else None,
+                        datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date())
+    punto, realizados = cartera_actual(base, movimientos)
+    control = conciliar_efectivo(dia_cero, movimientos, efectivo)
     historial, avisos = _historial(rutas["historial.csv"], {p.ticker for p in punto.posiciones})
     cliente_precios = ClientePrecios(fetch, rutas["cache_precios.json"], persistir_cache=False)
     cotizaciones = cliente_precios.obtener(punto.posiciones)
@@ -162,6 +171,9 @@ def crear_dashboard(punto, carpeta, slug, fetch):
                                     dia_cero["precios"].get(p.ticker) if dia_cero else None)
                   for p in punto.posiciones]
     resumen = resumen_cartera(resultados)
+    integral = resultado_integral(base.posiciones, dia_cero, punto.posiciones, movimientos,
+                                  {ticker: c.ultimo for ticker, c in cotizaciones.items()},
+                                  mep.ultimo if mep else None)
     try:
         cliente_precios.guardar_cache()
     except OSError as error:
@@ -173,6 +185,8 @@ def crear_dashboard(punto, carpeta, slug, fetch):
                         cotizaciones=cotizaciones, niveles=niveles, instrumentos=instrumentos,
                         efectivo=efectivo, historial=historial,
                         generado_en=datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")),
-                        posiciones=punto.posiciones, dia_cero=dia_cero, mep=mep)
+                        posiciones=punto.posiciones, dia_cero=dia_cero, mep=mep,
+                        posiciones_base=base.posiciones, integral=integral,
+                        realizados=realizados, conciliacion=control)
     _publicar(rutas["dashboard.html"], html)
     return {"ruta": rutas["dashboard.html"], "cotizaciones": cotizaciones, "avisos": avisos}

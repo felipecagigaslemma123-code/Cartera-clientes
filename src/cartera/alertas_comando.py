@@ -16,6 +16,8 @@ from .alertas import (
     en_horario_mercado, evaluar_niveles, evaluar_vencimientos,
 )
 from .notificar import Notificador
+from .dia_cero import _leer_dia_cero
+from .movimientos import cartera_actual, leer_movimientos, validar_movimientos
 from .precios import ClientePrecios
 
 
@@ -50,7 +52,7 @@ def _leer_json(ruta, defecto):
 
 def _estado_vacio():
     return {"esquema_version": 1, "niveles": {}, "vencimientos": {}, "control": None,
-            "error_niveles": None, "error_instrumentos": None}
+            "error_niveles": None, "error_instrumentos": None, "error_movimientos": None}
 
 
 def _validar_estado(estado):
@@ -58,7 +60,7 @@ def _validar_estado(estado):
         raise ValueError("El estado no tiene una versión válida.")
     _validar_estado_niveles(estado.get("niveles"))
     _validar_estado_vencimientos(estado.get("vencimientos"))
-    for campo in ("control", "error_niveles", "error_instrumentos"):
+    for campo in ("control", "error_niveles", "error_instrumentos", "error_movimientos"):
         valor = estado.get(campo)
         if valor is not None:
             if not isinstance(valor, str):
@@ -109,12 +111,17 @@ def _cargar_estado(ruta, ahora):
         return _estado_vacio(), True
 
 
-def _niveles_validos(contenido, punto):
+def _niveles_validos(contenido, punto, conocidas=None, avisos=None):
     if not isinstance(contenido, dict):
         raise ValueError("niveles.json debe contener un objeto.")
     activos = {posicion.ticker for posicion in punto.posiciones}
+    conocidas = activos if conocidas is None else conocidas
     niveles = {}
     for ticker, valores in contenido.items():
+        if ticker in conocidas and ticker not in activos:
+            if avisos is not None:
+                avisos.append("{}: nivel ignorado porque la especie ya no tiene tenencia.".format(ticker))
+            continue
         if ticker not in activos or not isinstance(valores, dict):
             raise ValueError("niveles.json contiene una especie desconocida o un objeto inválido.")
         # Una clave mal escrita dejaría la especie sin control y sin que se note.
@@ -214,9 +221,27 @@ def correr_alertas(carpeta, punto, slug, fetch, canales, ahora):
         nuevo = copy.deepcopy(estado)
         eventos, avisos, evaluo_niveles = [], [], False
         hoy = ahora.date().isoformat()
+        conocidas = {p.ticker for p in punto.posiciones}
+        try:
+            movimientos = leer_movimientos(_ruta(carpeta, "movimientos.csv"))
+            ruta_cero = _ruta(carpeta, "dia_cero.json")
+            dia_cero = _leer_dia_cero(ruta_cero) if ruta_cero.exists() else None
+            validar_movimientos(punto, movimientos, date.fromisoformat(dia_cero["fecha"]) if dia_cero else None,
+                                ahora.date())
+            actual, _ = cartera_actual(punto, movimientos)
+            conocidas.update(m["ticker"] for m in movimientos if m["tipo"] == "compra")
+        except (ValueError, OSError):
+            actual = punto
+            avisos.append("movimientos.csv inválido o no se pudo validar: se usa la base importada; revisá el archivo y el día cero.")
+            if nuevo.get("error_movimientos") != hoy:
+                eventos.append(Evento("sin_chequeo", None, None, None,
+                                      "No se pudo reconstruir la cartera actual: movimientos.csv es inválido o no se puede validar. "
+                                      "Se chequea con la base importada; revisá el archivo y el día cero."))
+                nuevo["error_movimientos"] = hoy
+        punto = actual
         if en_horario_mercado(ahora):
             try:
-                niveles = _niveles_validos(_leer_json(rutas["niveles.json"], {}), punto)
+                niveles = _niveles_validos(_leer_json(rutas["niveles.json"], {}), punto, conocidas, avisos)
             except (ValueError, OSError):
                 niveles = None
                 avisos.append("niveles.json inválido: no se pudieron chequear los niveles.")

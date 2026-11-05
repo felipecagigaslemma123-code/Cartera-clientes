@@ -6,8 +6,8 @@ desarrollo en [AGENTS.md](AGENTS.md) y etapas en [PLAN.md](PLAN.md).
 El objetivo aprobado es medir el resultado completo desde el día cero, incorporando
 movimientos y cobros. El desarrollo se entrega por etapas: Codex implementa, Claude
 revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios,
-el día cero, el dashboard y las alertas. Los movimientos corresponden a la etapa 5,
-que todavía no se inició.
+el día cero, el dashboard, las alertas y la etapa 5: movimientos, efectivo reconstruido
+y resultado completo en pesos.
 
 ## Preparar el entorno
 
@@ -124,13 +124,71 @@ como vivo indica una respuesta válida de la API, sin garantizar la antigüedad 
 última operación. data912 es una fuente no oficial; sus límites y el tratamiento
 de caídas se detallan en [PRECIOS.md](docs/PRECIOS.md).
 
-Esta etapa conserva el patrimonio inicial; no calcula el resultado integral con
-movimientos. Ese resultado en pesos corresponde a la etapa 5. El resultado integral
-en dólares continúa fuera de alcance.
+La referencia inicial se conserva independiente de las tenencias actuales. La etapa 5
+la usa para el resultado completo en pesos; el resultado integral en dólares y un
+porcentaje integral continúan fuera de alcance.
+
+## Movimientos y resultado completo
+
+Primero debe existir un día cero. Esta plantilla usa una compra ficticia: reemplazá
+`RUTA`, `SLUG` y `AAAA-MM-DD` por los valores correspondientes. Los números usan punto
+decimal, sin miles:
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA movimiento --cliente SLUG --fecha AAAA-MM-DD --tipo compra --ticker NUE --cantidad 10 --importe 4000 --tipo-activo cedear --nota "Ejemplo ficticio"
+```
+
+La fecha debe ser posterior al día cero y no futura en Argentina. Se admiten `compra`,
+`venta`, `renta`, `dividendo`, `deposito`, `retiro`, `gasto`, `compra_usd` y `venta_usd`.
+`importe` siempre es el neto positivo de la operación; no se reconstruye multiplicando
+cantidad por precio. La moneda predeterminada es ARS. Para USD se agregan
+`--moneda USD --tc N`, con el cambio en pesos por dólar; ARS no admite `--tc`.
+Las conversiones `compra_usd` y `venta_usd` expresan el importe en dólares.
+
+Compras y ventas requieren ticker y cantidad positiva. Rentas y dividendos requieren
+una especie conocida; un gasto puede identificarla. Aportes, retiros y conversiones
+no llevan ticker. Una primera compra de una especie nueva requiere `--tipo-activo`
+(`cedear`, `accion`, `bono`, `on` o `letra`); una recompra conserva el tipo conocido.
+La confirmación informa la tenencia actual cuando hay una especie.
+
+Se guarda `clientes/SLUG/movimientos.csv`, con las nueve columnas de
+[FORMATOS.md](docs/FORMATOS.md). Conserva el orden de carga y los bytes anteriores;
+para calcular se ordena por fecha, respetando el orden de carga cuando coinciden.
+Cada carga valida el historial completo bajo bloqueo y publica un archivo privado
+atómicamente. Una carga retroactiva que vuelve inválida una venta posterior se rechaza
+sin cambiar el archivo. Las correcciones manuales también se validan al leerlo.
+
+Las ventas consumen los lotes más viejos por FIFO, incluidos primero los sin fecha,
+y prorratean su costo. El realizado distingue extracto, estimado, mixto e incompleto;
+si consumió algún costo pendiente, esa venta queda sin costo ni resultado conocido.
+Las cantidades actuales salen de la base más compras menos ventas: no se modifica
+`cartera.json`. `estado`, `capturar`, `dashboard` y `alertas` usan esa cartera actual.
+Fijar el día cero y calcular el patrimonio inicial usan siempre la base importada,
+incluso si una especie ya se vendió. `fijar-dia-cero` rechaza, aun con `--forzar`,
+un historial inválido o movimientos iguales o anteriores a la nueva referencia,
+antes de consultar precios o escribir salidas.
+
+El efectivo calculado parte de los saldos del día cero, aplica cada movimiento en su
+moneda y admite negativos. Un saldo inicial desconocido sigue siendo desconocido.
+Se compara contra `efectivo.json` a la fecha informada, incluyendo solo los movimientos
+hasta ese día, con tolerancia inclusiva de 1 ARS y 0,01 USD. Una diferencia muestra
+"no concilia" y pide revisar movimientos; el resultado usa el efectivo calculado.
+
+El resultado completo es patrimonio final menos patrimonio inicial y aportes, más
+retiros. El patrimonio final suma las posiciones actuales y el efectivo calculado,
+con USD convertido al MEP actual. Rentas, dividendos, gastos y ventas ya impactaron
+el efectivo: no se suman otra vez. No depende de conocer los costos. Si falta un
+saldo, la referencia inicial, un precio necesario o el MEP necesario, muestra
+"sin dato" y los faltantes; un saldo USD cero no necesita MEP.
+
+Un historial inválido hace fallar `estado`, `capturar` y `dashboard` sin escribir salidas.
+En alertas se conserva la continuidad con la base importada y se avisa una vez por día
+que no se pudo reconstruir la cartera actual. Los niveles de especies conocidas ya
+vendidas se ignoran con aviso, sin desactivar los demás.
 
 ## Dashboard local
 
-Para generar la pantalla de la etapa 3 a partir de una base importada:
+Para generar la pantalla a partir de una base importada y sus movimientos:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA dashboard --cliente SLUG
@@ -144,17 +202,22 @@ permanecer en su carpeta de datos.
 
 Muestra posiciones, cantidades, valuaciones y pesos, costos y su origen, resultados
 desde la compra, variación de precios desde el día cero, totales por tipo y en dólar
-MEP, niveles, vencimientos y gráficos del historial capturado. El efectivo actual y
-el inicial aparecen aparte, con su fecha; no se suman a las posiciones ni a los pesos.
-El día cero conserva la referencia de valuación y patrimonio inicial o sus faltantes.
+MEP, niveles, vencimientos y gráficos del historial capturado. El efectivo informado,
+el calculado y el inicial aparecen aparte, con su fecha y su control; no se suman a
+las posiciones ni a los pesos. El día cero conserva la referencia de valuación y
+patrimonio inicial o sus faltantes.
 
-**No calcula un resultado completo.** Ese recuadro indica “se calcula cuando estén
-los movimientos”. La variación de precios es un indicador separado y el resultado
-desde la compra explica qué posiciones tienen costo completo y precio comparable.
-Los costos mixtos se identifican como “incluye estimado”.
+Incluye el resultado completo en ARS, sus patrimonios y flujos, y las ventas realizadas
+con el origen de su costo y el número de ventas excluidas por costo incompleto.
+La variación de precios y el resultado desde la compra siguen como indicadores
+separados. Los costos mixtos se identifican como “incluye estimado”.
 
 Al abrirse y cada 60 segundos, la página consulta una vez cada panel necesario y el
-MEP. Cada consulta tiene un máximo de 15 segundos y las rondas no se solapan. La hora
+MEP. Con cada ronda recalcula también el resultado completo, usando los nuevos precios
+y MEP, el efectivo calculado y los flujos embebidos. Puede recuperar un resultado
+antes faltante si aparece el precio o MEP necesario; los faltantes del día cero o
+efectivo no se completan con cero. Para incorporar movimientos nuevos hay que volver
+a generar el HTML. Cada consulta tiene un máximo de 15 segundos y las rondas no se solapan. La hora
 mostrada es la de consulta, nunca la del último operado. Los precios embebidos se
 muestran como “Último dato” hasta que una consulta los confirme. Si falla una especie,
 conserva su último precio y su hora; si nunca tuvo precio, muestra “sin dato”. Aparecen
@@ -215,17 +278,14 @@ No se crearon bots ni se utilizaron credenciales reales en la verificación.
 
 ## Verificación por etapa
 
-Para verificar las cuatro etapas y las comprobaciones adicionales:
+Para verificar las cinco etapas y las comprobaciones adicionales:
 
 ```bash
-PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa1*' -v
-PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa2*' -v
-PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa3*' -v
-PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa4*' -v
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa*' -v
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_extra*' -v
 ```
 
-La ejecución de todas las pruebas será apropiada al completar sus módulos:
+También se puede ejecutar la suite completa:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -v
@@ -234,12 +294,12 @@ PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -v
 Claude revisó las etapas anteriores; sus entregas históricas están en
 [REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md) y [REVISION_ETAPA2.md](docs/REVISION_ETAPA2.md).
 La revisión del dashboard se documenta en [REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md).
-La etapa 4 está implementada y revisada por Claude; falta comprobar los avisos reales. Pasan
-las 386 pruebas acumuladas: 28 de etapa 1, 36 de etapa 2, 30 de etapa 3, 56 de etapa 4 y 236
-adicionales.
-Los resultados y límites de la verificación de alertas están en
-[REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). No se inició la etapa 5 ni se hicieron
-commits. Las decisiones abiertas figuran en el plan y el contrato.
+La etapa 4 está implementada y revisada por Claude; sus resultados y límites están en
+[REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). La etapa 5 está implementada y revisada por Claude: pasan 248 pruebas de etapas y 293
+adicionales, **541 en total**. Faltan comprobar el aspecto en pantalla, el doble clic en el archivo
+y los avisos reales. El detalle está en [REVISION_ETAPA5.md](docs/REVISION_ETAPA5.md). No se
+instalaron tareas programadas. Las decisiones abiertas
+figuran en el plan y el contrato.
 
 Esta carpeta no contiene datos reales de clientes. Las salidas se guardan en la ruta
 de datos, separada del código; las demostraciones y pruebas usan datos ficticios.

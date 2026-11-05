@@ -154,6 +154,52 @@ SCRIPT = r"""
       ' · USD ' + formato(diferenciaUsd) + ' · ' + conBase.length + ' de ' + calculadas.length + ' posiciones comparables.');
     texto('mep-dato', 'Dólar MEP: ' + formato(dolar) + (mep && dolar !== null ? ' · ' + estado(mep.estado) + ' · consulta ' + hora(mep.consultado_en) : ''));
     renderizarPosiciones(calculadas, total);
+    renderizarIntegral(calculadas);
+  }
+
+  function renderizarIntegral(calculadas) {
+    const integral = datos.integral;
+    if (!integral) return;
+    const faltantes = [...(integral.faltantes_fijos || [])];
+    const agregarFaltante = etiqueta => { if (!faltantes.includes(etiqueta)) faltantes.push(etiqueta); };
+    const inicial = finito(integral.patrimonio_inicial);
+    if (inicial === null && !faltantes.length) agregarFaltante('patrimonio inicial');
+    const caja = integral.efectivo || {};
+    const ars = finito(caja.ARS);
+    const usd = finito(caja.USD);
+    if (ars === null) agregarFaltante('efectivo ARS calculado');
+    if (usd === null) agregarFaltante('efectivo USD calculado');
+    for (const posicion of calculadas) {
+      if (posicion.valor === null) agregarFaltante('precio actual de ' + posicion.ticker);
+    }
+    // Una cartera vendida por completo tiene valuación cero; no necesita sus precios anteriores.
+    const valuacion = calculadas.some(posicion => posicion.valor === null) ? null :
+      seguro(calculadas.reduce((total, posicion) => total + posicion.valor, 0));
+    if (valuacion === null && calculadas.every(posicion => posicion.valor !== null)) agregarFaltante('valuación actual fuera de rango');
+    const dolar = mep ? positivo(mep.ultimo) : null;
+    if (usd !== null && usd !== 0 && dolar === null) agregarFaltante('dólar MEP actual');
+    const conversion = usd === 0 ? 0 : usd !== null && dolar !== null ? seguro(usd * dolar) : null;
+    if (usd !== null && usd !== 0 && dolar !== null && conversion === null) agregarFaltante('conversión de efectivo USD fuera de rango');
+    const patrimonio = valuacion !== null && ars !== null && conversion !== null ? seguro(valuacion + ars + conversion) : null;
+    if (valuacion !== null && ars !== null && conversion !== null && patrimonio === null) agregarFaltante('patrimonio final fuera de rango');
+    const aportes = finito(integral.aportes);
+    const retiros = finito(integral.retiros);
+    if (aportes === null) agregarFaltante('aportes');
+    if (retiros === null) agregarFaltante('retiros');
+    let total = faltantes.length === 0 && patrimonio !== null && inicial !== null ? seguro(patrimonio - inicial - aportes + retiros) : null;
+    if (!faltantes.length && total === null) agregarFaltante('resultado completo fuera de rango');
+    texto('integral-inicial', formato(inicial));
+    texto('integral-valuacion', formato(valuacion));
+    texto('integral-final', formato(patrimonio));
+    texto('integral-total', formato(total));
+    for (const campo of ['aportes', 'retiros', 'rentas', 'dividendos', 'gastos']) texto('integral-' + campo, formato(integral[campo]));
+    aviso('integral-faltantes', faltantes.length ? 'Sin dato; faltan: ' + faltantes.join(', ') + '.' : '');
+    const precioAnterior = calculadas.some(posicion => posicion.valor !== null && posicion.estado !== 'vivo');
+    const dolarAnterior = usd !== null && usd !== 0 && dolar !== null && mep.estado !== 'vivo';
+    texto('integral-estado', total === null ? 'Resultado sin dato: revisá los faltantes indicados.' : precioAnterior || dolarAnterior ?
+      'Usa un último dato guardado de precios o dólar MEP; consultá su estado y hora.' :
+      calculadas.length || (usd !== null && usd !== 0) ? 'Recalculado con los precios y el dólar MEP disponibles en esta consulta.' :
+      'Cartera sin posiciones y sin efectivo USD: el cálculo no necesita precios actuales.');
   }
 
   function renderizarVencimientos() {
@@ -260,8 +306,8 @@ SCRIPT = r"""
       else if (mep && positivo(mep.ultimo) !== null) mep.estado = 'cache';
       else mep = null;
       ultimaConsulta = ahora;
-      rondaFallida = exitos === 0;
-      if (exitos) ultimaExitosa = Date.now();
+      rondaFallida = posiciones.length ? exitos === 0 : marca === null;
+      if (exitos || (!posiciones.length && marca !== null)) ultimaExitosa = Date.now();
     } catch (_) {
       rondaFallida = true;
       ultimaConsulta = new Date().toISOString();
