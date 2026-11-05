@@ -57,8 +57,8 @@ La página no guarda nada en el navegador.
 
 ## Alertas de niveles
 
-Funcionan **solo con la página abierta**, y la página lo dice. Sección `id="alertas-panel"`, arriba de todo,
-con `id="alertas-estado"`, `id="alertas-lista"`, el botón `id="activar-avisos"` y `id="avisos-estado"`.
+Funcionan **solo con la página abierta**, y la página lo dice. Sección `id="alertas-panel"`, debajo del
+encabezado y de los avisos de datos, con `id="alertas-estado"`, `id="alertas-lista"`, el botón `id="activar-avisos"` y `id="avisos-estado"`.
 
 **Cuándo se evalúa:** al terminar cada ronda de consultas, nunca con los datos guardados al generar el
 archivo. Solo de lunes a viernes de 11:00 a 17:00, hora de Argentina, con 17:00 excluido.
@@ -86,8 +86,9 @@ página se vuelve a avisar lo que siga disparado, porque es preferible repetir a
 4. Si `Notification.permission` es `granted`, se envía **una** notificación por ronda, con todas las
    líneas. El título es `Alertas · <slug>`, sin nombre del cliente. Una falla no interrumpe nada.
 
-**`activar-avisos`:** al hacer clic pide el permiso de notificaciones y habilita el sonido, porque los
-navegadores lo exigen. `avisos-estado` indica el resultado:
+**`activar-avisos`:** al hacer clic pide el permiso de notificaciones, habilita el sonido, porque los
+navegadores lo exigen, y hace sonar el tono para confirmarlo. Las alertas que saltan al abrir la página,
+antes de ese clic, no suenan. `avisos-estado` indica el resultado:
 
 | Situación | Texto contiene |
 |---|---|

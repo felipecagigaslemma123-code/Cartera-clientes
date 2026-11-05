@@ -596,6 +596,18 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
         estado += " Vista estática sin actualización automática: faltan cantidades y unidades para recalcular."
     aviso_dia = "Este archivo se generó otro día; las posiciones pueden haber cambiado."
     otro_dia = generado_en.astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() != datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    con_niveles = any(fila["take_profit"] is not None or fila["stop_loss"] is not None for fila in filas)
+    estado_alertas = ("Sin chequear: esperando la primera consulta de precios en vivo." if con_niveles else
+                      "Sin niveles definidos para las posiciones actuales.")
+    panel_alertas = (
+        '<section id="alertas-panel" aria-labelledby="alertas-titulo"><h2 id="alertas-titulo">Alertas de niveles</h2>'
+        '<p id="alertas-estado" role="status" aria-live="polite">' + _texto(estado_alertas) + '</p>'
+        '<ul id="alertas-lista" aria-live="polite" aria-label="Alertas disparadas en esta página"></ul>'
+        '<button id="activar-avisos" type="button">Activar sonido y avisos</button>'
+        '<p id="avisos-estado">Avisos del sistema sin activar; los avisos quedan en pantalla.</p>'
+        '<p class="muted">Funcionan solo con esta página abierta, de lunes a viernes de 11:00 a 17:00. Consulta al abrirse, '
+        'cada 5 minutos y con Actualizar precios. Si cambian los niveles, generá el dashboard de nuevo. '
+        'Al recargar pueden repetirse las alertas, y el sonido necesita un clic en el botón.</p></section>')
     encabezados = ["Ticker", "Especie", "Tipo", "Cantidad", "Precio", "Valuación ARS", "Peso", "Variación del día",
                    "Costo ARS", "Origen del costo", "Desde la compra ARS", "Variación de precios día cero ARS", "Distancia TP", "Distancia SL", "Estado y consulta"]
     return ('<!doctype html><html lang="es-AR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -607,7 +619,7 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
         '<p id="aviso-datos" class="aviso" role="status" aria-live="polite">' + _texto(estado) + '</p>'
         '<p id="aviso-dia-distinto" class="aviso"' + ('' if otro_dia else ' hidden') + '>' + _texto(aviso_dia) + '</p>'
         '<p id="aviso-parcial" class="aviso"' + ('' if faltantes else ' hidden') + '>Totales parciales: ' + str(faltantes) + ' especies sin precio.</p>'
-        + avisos_html + '<section><h2>Vencimientos próximos y especies vencidas</h2><ul id="vencimientos-lista">' + lista_vencimientos + '</ul></section>'
+        + avisos_html + panel_alertas + '<section><h2>Vencimientos próximos y especies vencidas</h2><ul id="vencimientos-lista">' + lista_vencimientos + '</ul></section>'
         '<section><h2>Posiciones</h2><p class="muted">El efectivo se muestra aparte. Deslizá la tabla para ver todas las columnas.</p>'
         '<div class="contenedor-tabla" tabindex="0" aria-label="Posiciones de la cartera"><table class="tabla-posiciones"><thead><tr>' +
         ''.join('<th scope="col">' + _texto(titulo) + '</th>' for titulo in encabezados) + '</tr></thead><tbody id="posiciones-body">' + _filas_tabla(filas) + '</tbody></table></div></section>'

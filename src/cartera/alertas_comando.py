@@ -123,12 +123,12 @@ def _niveles_validos(contenido, punto, conocidas=None, avisos=None):
                 avisos.append("{}: nivel ignorado porque la especie ya no tiene tenencia.".format(ticker))
             continue
         if ticker not in activos or not isinstance(valores, dict):
-            raise ValueError("niveles.json contiene una especie desconocida o un objeto inválido.")
+            raise ValueError("niveles.json: {} es una especie desconocida o contiene un objeto inválido.".format(ticker))
         # Una clave mal escrita dejaría la especie sin control y sin que se note.
         if set(valores) - {"take_profit", "stop_loss"}:
-            raise ValueError("niveles.json contiene una clave desconocida.")
+            raise ValueError("niveles.json: {} contiene una clave desconocida.".format(ticker))
         valores = {lado: valores.get(lado) for lado in ("take_profit", "stop_loss")}
-        for valor in valores.values():
+        for lado, valor in valores.items():
             if valor is None:
                 continue
             try:
@@ -137,10 +137,10 @@ def _niveles_validos(contenido, punto, conocidas=None, avisos=None):
             except (ValueError, OverflowError):
                 valido = False
             if not valido:
-                raise ValueError("niveles.json contiene un nivel que no es positivo y finito o null.")
+                raise ValueError("niveles.json: {} {} debe ser positivo y finito o null.".format(ticker, lado))
         if valores["take_profit"] is not None and valores["stop_loss"] is not None:
             if valores["take_profit"] <= valores["stop_loss"]:
-                raise ValueError("niveles.json requiere take_profit mayor que stop_loss.")
+                raise ValueError("niveles.json: {} requiere take_profit mayor que stop_loss.".format(ticker))
         if any(valor is not None for valor in valores.values()):
             niveles[ticker] = valores
     return niveles
@@ -283,8 +283,8 @@ def correr_alertas(carpeta, punto, slug, fetch, canales, ahora):
         else:
             de_vencimientos, nuevo["vencimientos"] = evaluar_vencimientos(instrumentos, estado["vencimientos"], ahora.date())
             eventos.extend(de_vencimientos)
-        # Descubrir canales solo cuando hay avisos evita lecturas de credenciales
-        # en corridas simultáneas, fuera de horario o sin eventos nuevos.
+        # Obtener el canal solo cuando hay eventos conserva las corridas omitidas
+        # o sin avisos sin efectos de notificación.
         canales = list(canales) if eventos else []
         errores = Notificador(canales).enviar(eventos, slug)
         entregado = not eventos or bool(canales) and len(errores) < len(canales)

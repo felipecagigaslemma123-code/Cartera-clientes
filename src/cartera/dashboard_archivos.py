@@ -48,23 +48,13 @@ def _objeto_opcional(ruta):
     return contenido
 
 
-def _niveles(contenido):
-    contenido = contenido or {}
-    for ticker, niveles in contenido.items():
-        if not isinstance(ticker, str) or not ticker or not isinstance(niveles, dict):
-            raise ErrorDashboard("niveles.json contiene una especie o un objeto inválido.")
-        for clave in ("take_profit", "stop_loss"):
-            valor = niveles.get(clave)
-            if valor is None:
-                continue
-            try:
-                valido = (not isinstance(valor, bool) and isinstance(valor, (int, float))
-                          and math.isfinite(float(valor)) and valor > 0)
-            except (ValueError, OverflowError):
-                valido = False
-            if not valido:
-                raise ErrorDashboard("niveles.json: {} {} debe ser positivo y finito o null.".format(ticker, clave))
-    return contenido
+def _niveles(contenido, punto, conocidas, avisos):
+    # La pantalla y el comando manual deben interpretar el mismo niveles.json.
+    from .alertas_comando import _niveles_validos
+    try:
+        return _niveles_validos(contenido or {}, punto, conocidas, avisos)
+    except ValueError as error:
+        raise ErrorDashboard(str(error)) from None
 
 
 def _instrumentos(contenido):
@@ -144,7 +134,7 @@ def crear_dashboard(punto, carpeta, slug, fetch):
                "dia_cero.json", "movimientos.csv", "historial.csv", "cache_precios.json", "dashboard.html")
     rutas = {nombre: _camino(carpeta, nombre) for nombre in nombres}
     cliente = _perfil(_objeto_opcional(rutas["perfil.json"]), slug)
-    niveles = _niveles(_objeto_opcional(rutas["niveles.json"]))
+    niveles_brutos = _objeto_opcional(rutas["niveles.json"])
     instrumentos = _instrumentos(_objeto_opcional(rutas["instrumentos.json"]))
     efectivo_bruto = _objeto_opcional(rutas["efectivo.json"])
     efectivo = _validar_efectivo(efectivo_bruto)
@@ -163,6 +153,8 @@ def crear_dashboard(punto, carpeta, slug, fetch):
     punto, realizados = cartera_actual(base, movimientos)
     control = conciliar_efectivo(dia_cero, movimientos, efectivo)
     historial, avisos = _historial(rutas["historial.csv"], {p.ticker for p in punto.posiciones})
+    conocidas = {p.ticker for p in base.posiciones} | {m["ticker"] for m in movimientos if m["tipo"] == "compra"}
+    niveles = _niveles(niveles_brutos, punto, conocidas, avisos)
     historial_realizado = None
     ruta_extractos = carpeta / "extractos"
     if ruta_extractos.exists() or ruta_extractos.is_symlink():

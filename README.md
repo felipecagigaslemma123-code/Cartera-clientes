@@ -8,7 +8,8 @@ movimientos y cobros. El desarrollo se entrega por etapas: Codex implementa, Cla
 revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios,
 el día cero, el dashboard, las alertas, los movimientos y el resultado completo en pesos.
 La etapa 6 agrega el rendimiento realizado histórico a partir de extractos, separado
-del seguimiento desde el día cero.
+del seguimiento desde el día cero. La etapa 7 incorpora alertas de niveles mientras
+el dashboard está abierto, con actualización cada cinco minutos.
 
 ## Preparar el entorno
 
@@ -290,7 +291,7 @@ con el origen de su costo y el número de ventas excluidas por costo incompleto.
 La variación de precios y el resultado desde la compra siguen como indicadores
 separados. Los costos mixtos se identifican como “incluye estimado”.
 
-Al abrirse y cada 60 segundos, la página consulta una vez cada panel necesario y el
+Al abrirse, con el botón y cada 5 minutos, la página consulta una vez cada panel necesario y el
 MEP. Con cada ronda recalcula también el resultado completo, usando los nuevos precios
 y MEP, el efectivo calculado y los flujos embebidos. Puede recuperar un resultado
 antes faltante si aparece el precio o MEP necesario; los faltantes del día cero o
@@ -299,8 +300,8 @@ a generar el HTML. Cada consulta tiene un máximo de 15 segundos y las rondas no
 mostrada es la de consulta, nunca la del último operado. Los precios embebidos se
 muestran como “Último dato” hasta que una consulta los confirme. Si falla una especie,
 conserva su último precio y su hora; si nunca tuvo precio, muestra “sin dato”. Aparecen
-avisos si falla la ronda, falta una consulta exitosa reciente o el archivo es de otro
-día. La página no guarda datos en el navegador.
+avisos si falla toda la ronda, la última consulta exitosa tiene más de 11 minutos o el
+archivo es de otro día. La página conserva su estado solo en memoria mientras está abierta.
 
 Los archivos opcionales ausentes se muestran como faltantes o “sin fijar”. Los gráficos
 usan solo las últimas 500 observaciones de cada especie y no se actualizan en vivo.
@@ -314,49 +315,58 @@ esa inclusión y la construcción segura; su aplicación efectiva en un navegado
 sigue pendiente de la revisión visual de Claude, junto con el diseño en pantalla
 angosta y las consultas desde un archivo local. Ver [REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md).
 
-## Alertas y operación manual
+## Alertas con la página abierta
 
-El comando operativo de la etapa 4 es:
+El panel superior indica si está sin chequear, sin niveles, fuera de horario o
+chequeado, con fecha, hora y cantidad de especies. Si una especie con niveles no
+trajo precio vivo, dice “no se pudo chequear” y lista sus tickers.
+
+Los niveles se evalúan al terminar cada consulta, de lunes a viernes de 11:00 a
+17:00, hora de Argentina, con las 17:00 excluidas. Los datos guardados al generar
+el HTML y los de caché no disparan avisos. Se usa el bid positivo o, si falta, el
+último precio. Los feriados no están contemplados.
+
+Una alerta agrega una línea con hora, ticker, precio y nivel, y un contador al título
+de la pestaña. Las líneas quedan hasta cerrar o recargar la página. Cada evento se
+avisa una vez y se rearma al volver más de 1 % dentro del nivel; el límite exacto
+no rearma. Al recargar se reinicia el estado y pueden repetirse eventos todavía activos.
+
+El botón **Activar sonido y avisos** habilita el sonido y solicita permiso para las
+notificaciones del sistema. Con permiso, se envía una única notificación por ronda,
+con todos los eventos y el slug. Si el permiso está bloqueado, no hay soporte o falla
+el pedido, el panel lo indica y los avisos quedan en pantalla. El navegador puede
+impedir el sonido; eso no interrumpe los precios ni las alertas visibles.
+
+**Estas alertas funcionan solo mientras la página esté abierta.** Los niveles se
+cargan de `niveles.json` al generar el archivo: para cambiar niveles o tenencias hay
+que regenerarlo. El dashboard valida las mismas reglas que el comando manual:
+rechaza tickers desconocidos, claves mal escritas y take profit menor o igual al
+stop loss, antes de consultar precios o escribir. Los niveles de especies conocidas
+ya vendidas se ignoran con un aviso, manteniendo los demás controles.
+
+## Alertas por comando manual
+
+También se puede correr una revisión puntual:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA alertas --cliente SLUG
 ```
 
-Este comando puede enviar avisos reales por los canales configurados: no es una
-simulación. Durante esta entrega se comprobó exclusivamente con canales ficticios.
+El único canal es la notificación de macOS. Durante esta entrega se comprobaron
+solo entregas simuladas. El comando valida niveles, consulta únicamente los paneles
+necesarios dentro del horario de mercado y evalúa vencimientos incluso fuera de
+horario. Mantiene el control diario y los avisos explícitos cuando no se pudo chequear.
 
-Dentro del horario argentino de mercado, valida los niveles y consulta solo los
-paneles de las especies con algún take profit o stop loss. Usa el bid y, si falta,
-el último operado; las cotizaciones de caché no disparan niveles. El aviso se rearma
-al volver más de un 1 % dentro del nivel o al cambiar ese nivel. No se repite mientras
-sigue disparado. Siempre se evalúan los vencimientos, incluso fuera de horario.
-
-La primera corrida dentro del horario envía un control diario: indica cuántas
-especies tienen niveles o que no hay niveles definidos. Un archivo de niveles
-inválido produce un aviso único de falta de chequeo, sin impedir los vencimientos, y un
-`instrumentos.json` inválido hace lo mismo sin impedir los niveles.
-Los datos de precios faltantes también quedan identificados; no se presentan como
-un chequeo exitoso.
-
-Se agrupan todos los eventos de una corrida en un mensaje por canal. Si falla un
-canal, se intentan los demás. Si ninguno entrega, no se confirma el estado nuevo y
-la próxima corrida vuelve a intentar; el comando termina con error. Si alguno
-entrega, se confirma el estado y el fallo del otro queda en el registro.
-
-El estado se guarda de forma atómica. Un archivo ilegible se conserva como copia
-privada y se evalúa desde un estado vacío, aunque puedan repetirse avisos. El registro
-`alertas.log` solo agrega líneas, con permisos privados, sin nombres de clientes,
-importes de cartera ni credenciales. Un bloqueo por cliente evita corridas simultáneas;
-no se descubren canales en una corrida omitida o sin eventos nuevos.
-
-Las plantillas para alertas cada cinco minutos y captura de lunes a viernes de 11 a
-17 están en `ops/`. **No están instaladas ni activadas.** La guía de preparación,
-marcadores, instalación manual posterior y límites está en [ops/README.md](ops/README.md).
-No se crearon bots ni se utilizaron credenciales reales en la verificación.
+Los eventos de una corrida se agrupan en un mensaje. Si la entrega falla, no se
+confirma el estado nuevo y la siguiente corrida puede reintentar; termina con error.
+Sin eventos, no envía nada. El estado se guarda atómicamente en `estado_alertas.json`
+y `alertas.log` agrega registros privados, sin nombres ni importes de la cartera.
+Un bloqueo evita corridas simultáneas. Este estado es independiente de la memoria
+de alertas del dashboard.
 
 ## Verificación por etapa
 
-Para verificar las seis etapas y las comprobaciones adicionales:
+Para verificar las siete etapas y las comprobaciones adicionales:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa*' -v
@@ -375,10 +385,14 @@ La revisión del dashboard se documenta en [REVISION_ETAPA3.md](docs/REVISION_ET
 La etapa 4 está implementada y revisada por Claude; sus resultados y límites están en
 [REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). La etapa 5 está implementada y revisada por
 Claude; su detalle está en [REVISION_ETAPA5.md](docs/REVISION_ETAPA5.md).
-La etapa 6 está implementada y revisada por Claude: pasan **300 pruebas de etapas y
-373 adicionales, 673 en total**. Codex agregó 78 pruebas sin modificar las existentes ni los fixtures; la revisión ajustó dos por la clase de compensaciones. El alcance, los criterios de borde y los controles pendientes están
-en [REVISION_ETAPA6.md](docs/REVISION_ETAPA6.md). No se hicieron commits ni se instalaron
-tareas programadas. Las decisiones abiertas figuran en el plan y el contrato.
+La etapa 6 está implementada y revisada por Claude; el alcance y los controles
+pendientes están en [REVISION_ETAPA6.md](docs/REVISION_ETAPA6.md).
+La etapa 7 está implementada y revisada por Claude: pasan **317 pruebas de etapas y
+388 adicionales, 705 en total**. Falta probar la notificación y el sonido en un navegador real. Se agregaron 29 pruebas sin modificar las existentes,
+los fixtures ni la especificación. La lógica de alertas, sonido y permisos se probó
+con simulaciones; queda verificar su comportamiento en un navegador real.
+El detalle está en [REVISION_ETAPA7.md](docs/REVISION_ETAPA7.md). No se hicieron commits.
+Las decisiones abiertas figuran en el plan y el contrato.
 
 Esta carpeta no contiene datos reales de clientes. Las salidas se guardan en la ruta
 de datos, separada del código; las demostraciones y pruebas usan datos ficticios.

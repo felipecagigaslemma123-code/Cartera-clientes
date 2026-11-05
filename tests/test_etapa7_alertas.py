@@ -180,6 +180,31 @@ class Alertas(unittest.TestCase):
         r = self.ejecutar("await nodos['activar-avisos'].listeners.click(); await vaciar();", permiso="default", pedido="denied")
         self.assertIn("bloqueadas", r["avisos"].lower())
 
+    def test_activar_hace_sonar_el_tono(self):
+        audio = """
+globalThis.tonos = 0;
+globalThis.AudioContext = class {
+  constructor() { this.state = 'suspended'; this.currentTime = 0; this.destination = {}; }
+  async resume() { this.state = 'running'; }
+  createOscillator() { return {frequency: {}, connect() {}, start() { globalThis.tonos += 1; }, stop() {}}; }
+  createGain() { return {gain: {}, connect() {}}; }
+};
+"""
+        codigo = "const DATOS = {};\nconst PANELES = {};\n".format(json.dumps(datos()), json.dumps(paneles())) + PRELUDIO + ABIERTO + NODOS + audio + SCRIPT + r"""
+(async () => {
+  await vaciar();
+  const antes = globalThis.tonos;
+  await nodos['activar-avisos'].listeners.click();
+  await vaciar();
+  print(JSON.stringify({antes, despues: globalThis.tonos}));
+})().catch(error => print(JSON.stringify({error: String(error)})));
+"""
+        with tempfile.TemporaryDirectory(prefix="alertas-js-") as temporal:
+            ruta = Path(temporal) / "prueba.js"
+            ruta.write_text(codigo, encoding="utf-8")
+            proceso = subprocess.run([MOTOR, str(ruta)], cwd=str(RAIZ), capture_output=True, text=True, timeout=15)
+        self.assertEqual(json.loads(proceso.stdout.strip().splitlines()[-1]), {"antes": 0, "despues": 1}, proceso.stderr)
+
     def test_ya_concedido_al_abrir(self):
         self.assertIn("activas", self.ejecutar()["avisos"].lower())
 
@@ -209,6 +234,7 @@ class Pantalla(unittest.TestCase):
         for identificador in ("alertas-panel", "alertas-estado", "alertas-lista", "activar-avisos", "avisos-estado"):
             self.assertIn('id="{}"'.format(identificador), html)
         self.assertIn("abierta", html.lower())
+        self.assertLess(html.index("</header>"), html.index('id="alertas-panel"'))
         self.assertNotIn("localStorage", html)
 
 

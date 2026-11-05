@@ -63,6 +63,207 @@ SCRIPT = r"""
     mep.estado = mep.ultimo === null ? 'sin_dato' : 'cache';
   }
 
+
+  const tituloOriginal = typeof document.title === 'string' ? document.title : 'Cartera';
+  const estadoNiveles = new Map();
+  const botonAvisos = elemento('activar-avisos');
+  let cantidadAlertas = 0;
+  let ultimoChequeo = null;
+  let especiesChequeadas = 0;
+  let especiesSinChequear = [];
+  let contextoAudio = null;
+  let falloPermiso = false;
+  let falloNotificacion = false;
+  const relojMercado = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Buenos_Aires', weekday: 'short',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  });
+
+  function enHorarioMercado() {
+    const partes = Object.fromEntries(relojMercado.formatToParts(new Date()).map(parte => [parte.type, parte.value]));
+    const minutos = Number(partes.hour) * 60 + Number(partes.minute);
+    return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(partes.weekday) && minutos >= 11 * 60 && minutos < 17 * 60;
+  }
+
+  function conNiveles() {
+    return posiciones.filter(posicion => positivo(posicion.take_profit) !== null || positivo(posicion.stop_loss) !== null);
+  }
+
+  function mostrarEstadoAlertas() {
+    const configuradas = conNiveles().length;
+    if (!configuradas) {
+      texto('alertas-estado', 'Alertas sin niveles definidos. Leé los niveles al generar nuevamente el archivo.');
+    } else if (!enHorarioMercado()) {
+      texto('alertas-estado', 'Alertas fuera de horario: se chequean de lunes a viernes de 11:00 a 17:00, hora de Argentina.');
+    } else if (ultimoChequeo === null) {
+      texto('alertas-estado', 'Alertas sin chequear: esperando la primera ronda de precios en vivo.');
+    } else {
+      texto('alertas-estado', 'Chequeado ' + hora(ultimoChequeo) + ': ' + especiesChequeadas + ' de ' + configuradas +
+        ' especies con niveles.' + (especiesSinChequear.length ? ' No se pudo chequear: ' + especiesSinChequear.join(', ') + '.' : ''));
+    }
+  }
+
+  function mostrarEstadoAvisos(permiso) {
+    try {
+      if (falloPermiso || falloNotificacion || typeof globalThis.Notification !== 'function') {
+        texto('avisos-estado', 'Notificaciones no disponibles. Los avisos quedan en pantalla.');
+        return;
+      }
+      const estado = permiso || globalThis.Notification.permission;
+      texto('avisos-estado', estado === 'granted' ?
+        'Notificaciones activas. El sonido se habilita con el botón si el navegador lo permite.' :
+        estado === 'denied' ? 'Notificaciones bloqueadas. Los avisos quedan en pantalla.' :
+        'Notificaciones sin activar. Los avisos quedan en pantalla.');
+    } catch (_) {
+      texto('avisos-estado', 'Notificaciones no disponibles. Los avisos quedan en pantalla.');
+    }
+  }
+
+  function obtenerAudio() {
+    if (contextoAudio) return contextoAudio;
+    const Constructor = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (typeof Constructor !== 'function') return null;
+    contextoAudio = new Constructor();
+    return contextoAudio;
+  }
+
+  async function habilitarSonido() {
+    try {
+      const contexto = obtenerAudio();
+      if (contexto && typeof contexto.resume === 'function') await contexto.resume();
+    } catch (_) {
+      // El navegador puede impedir sonido: el cartel siempre queda disponible.
+    }
+  }
+
+  function sonar() {
+    try {
+      const contexto = obtenerAudio();
+      if (!contexto || contexto.state === 'suspended' || contexto.state === 'closed') return;
+      const tono = contexto.createOscillator();
+      const volumen = contexto.createGain();
+      tono.type = 'sine';
+      tono.frequency.value = 880;
+      volumen.gain.value = 0.12;
+      tono.connect(volumen);
+      volumen.connect(contexto.destination);
+      tono.start(contexto.currentTime);
+      tono.stop(contexto.currentTime + 0.18);
+    } catch (_) {
+      // Ninguna falla de audio puede interrumpir las consultas o los avisos visuales.
+    }
+  }
+
+  async function activarAvisos() {
+    // Comenzar dentro del gesto del usuario, antes de esperar el permiso.
+    const sonido = habilitarSonido();
+    falloPermiso = false;
+    try {
+      if (typeof globalThis.Notification !== 'function') {
+        mostrarEstadoAvisos();
+        return;
+      }
+      let permiso = globalThis.Notification.permission;
+      if (permiso !== 'granted') {
+        if (typeof globalThis.Notification.requestPermission !== 'function') throw new Error('Sin soporte');
+        permiso = await globalThis.Notification.requestPermission();
+        if (!['granted', 'denied', 'default'].includes(permiso)) throw new Error('Permiso no disponible');
+      }
+      mostrarEstadoAvisos(permiso);
+    } catch (_) {
+      falloPermiso = true;
+      mostrarEstadoAvisos();
+    } finally {
+      await sonido;
+      sonar();
+    }
+  }
+
+  function notificarRonda(lineas) {
+    sonar();
+    try {
+      if (typeof globalThis.Notification === 'function' && globalThis.Notification.permission === 'granted') {
+        const slug = datos.cliente && typeof datos.cliente.slug === 'string' ? datos.cliente.slug : '';
+        new globalThis.Notification('Alertas · ' + slug, {body: lineas.join('\n')});
+        falloNotificacion = false;
+        mostrarEstadoAvisos();
+      }
+    } catch (_) {
+      falloNotificacion = true;
+      mostrarEstadoAvisos();
+    }
+  }
+
+  function volvioDentroDelNivel(referencia, nivel, campo) {
+    // Comparar las expresiones decimales evita que 0,27 × 0,99 redondee
+    // por encima de 0,2673 y convierta el límite exacto en un rearme.
+    const decimal = valor => {
+      const [mantisa, potencia = '0'] = valor.toString().split('e');
+      const fraccion = mantisa.split('.')[1] || '';
+      return {coeficiente: BigInt(mantisa.replace('.', '')), exponente: Number(potencia) - fraccion.length};
+    };
+    const precio = decimal(referencia);
+    const limite = decimal(nivel);
+    const exponente = Math.min(precio.exponente, limite.exponente);
+    const izquierda = precio.coeficiente * 100n * 10n ** BigInt(precio.exponente - exponente);
+    const factor = campo === 'take_profit' ? 99n : 101n;
+    const derecha = limite.coeficiente * factor * 10n ** BigInt(limite.exponente - exponente);
+    return campo === 'take_profit' ? izquierda < derecha : izquierda > derecha;
+  }
+
+  function evaluarAlertas() {
+    if (!elemento('alertas-lista')) return;
+    const configuradas = conNiveles();
+    if (!configuradas.length || !enHorarioMercado()) {
+      mostrarEstadoAlertas();
+      return;
+    }
+    const nuevas = [];
+    especiesChequeadas = 0;
+    especiesSinChequear = [];
+    ultimoChequeo = new Date().toISOString();
+    for (const posicion of configuradas) {
+      const referencia = positivo(posicion.bid) || positivo(posicion.ultimo);
+      if (posicion.estado !== 'vivo' || referencia === null) {
+        especiesSinChequear.push(String(posicion.ticker));
+        continue;
+      }
+      especiesChequeadas += 1;
+      for (const campo of ['take_profit', 'stop_loss']) {
+        const nivel = positivo(posicion[campo]);
+        const clave = JSON.stringify([posicion.ticker, campo]);
+        if (nivel === null) {
+          estadoNiveles.delete(clave);
+          continue;
+        }
+        let registro = estadoNiveles.get(clave);
+        if (!registro || registro.nivel !== nivel) registro = {nivel, disparada: false};
+        if (registro.disparada && volvioDentroDelNivel(referencia, nivel, campo)) {
+          registro.disparada = false;
+        }
+        const alcanzado = campo === 'take_profit' ? referencia >= nivel : referencia <= nivel;
+        if (!registro.disparada && alcanzado) {
+          registro.disparada = true;
+          nuevas.push(String(posicion.ticker) + (campo === 'take_profit' ? ' take profit' : ' stop loss') +
+            ': precio ' + formato(referencia) + ', nivel ' + formato(nivel));
+        }
+        estadoNiveles.set(clave, registro);
+      }
+    }
+    if (nuevas.length) {
+      const lista = elemento('alertas-lista');
+      for (const linea of nuevas) {
+        const nodo = document.createElement('li');
+        nodo.textContent = hora(ultimoChequeo) + ' · ' + linea;
+        lista.appendChild(nodo);
+      }
+      cantidadAlertas += nuevas.length;
+      document.title = '(' + cantidadAlertas + ') ' + tituloOriginal;
+      notificarRonda(nuevas);
+    }
+    mostrarEstadoAlertas();
+  }
+
   function calcular(posicion) {
     const ultimo = positivo(posicion.ultimo);
     const unidades = positivo(posicion.cotiza_cada);
@@ -226,7 +427,7 @@ SCRIPT = r"""
 
   function renderizarAvisos() {
     texto('ultima-consulta', ultimaConsulta === null ? 'Consulta al generar el archivo: ' + hora(datos.generado_en) : 'Última consulta: ' + hora(ultimaConsulta));
-    const desactualizada = ultimaExitosa === null || Date.now() - ultimaExitosa > 5 * 60 * 1000;
+    const desactualizada = ultimaExitosa === null || Date.now() - ultimaExitosa > 11 * 60 * 1000;
     const detalle = !habilitada ? 'Vista estática: faltan cantidades o unidades para recalcular. Los precios son los embebidos al generar el archivo.' :
       rondaFallida ? 'No se pudo actualizar ninguna posición en la última ronda. Se muestran los últimos datos disponibles.' :
       desactualizada ? 'Sin una consulta exitosa reciente de posiciones: los datos pueden estar desactualizados.' :
@@ -245,6 +446,8 @@ SCRIPT = r"""
     if (habilitada) renderizarTotales(posiciones.map(calcular));
     renderizarVencimientos();
     renderizarAvisos();
+    mostrarEstadoAlertas();
+    mostrarEstadoAvisos();
   }
 
   async function panel(endpoint) {
@@ -317,6 +520,7 @@ SCRIPT = r"""
       ocupada = false;
       if (boton) boton.disabled = !habilitada;
       renderizar();
+      evaluarAlertas();
     }
   }
 
@@ -324,10 +528,12 @@ SCRIPT = r"""
     boton.disabled = !habilitada;
     boton.addEventListener('click', actualizar);
   }
+  if (botonAvisos) botonAvisos.addEventListener('click', activarAvisos);
+  mostrarEstadoAvisos();
   renderizar();
   if (habilitada) {
     actualizar();
-    setInterval(() => { renderizar(); actualizar(); }, 60000);
+    setInterval(() => { renderizar(); actualizar(); }, 300000);
   }
 })();
 """
