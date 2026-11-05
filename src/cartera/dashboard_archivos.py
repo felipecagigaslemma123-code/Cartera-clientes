@@ -163,6 +163,16 @@ def crear_dashboard(punto, carpeta, slug, fetch):
     punto, realizados = cartera_actual(base, movimientos)
     control = conciliar_efectivo(dia_cero, movimientos, efectivo)
     historial, avisos = _historial(rutas["historial.csv"], {p.ticker for p in punto.posiciones})
+    historial_realizado = None
+    ruta_extractos = carpeta / "extractos"
+    if ruta_extractos.exists() or ruta_extractos.is_symlink():
+        # El historial es independiente de los movimientos desde el día cero y no
+        # publica realizado.csv ni actualiza el MEP al generar la pantalla.
+        try:
+            from .historial import _cargar_historial
+            historial_realizado = _cargar_historial(carpeta, base)
+        except (ValueError, OSError) as error:
+            avisos.append("No se pudo calcular el rendimiento realizado histórico: {}".format(error))
     cliente_precios = ClientePrecios(fetch, rutas["cache_precios.json"], persistir_cache=False)
     cotizaciones = cliente_precios.obtener(punto.posiciones)
     mep = cliente_precios.dolar_mep()
@@ -187,6 +197,6 @@ def crear_dashboard(punto, carpeta, slug, fetch):
                         generado_en=datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")),
                         posiciones=punto.posiciones, dia_cero=dia_cero, mep=mep,
                         posiciones_base=base.posiciones, integral=integral,
-                        realizados=realizados, conciliacion=control)
+                        realizados=realizados, conciliacion=control, historial_realizado=historial_realizado)
     _publicar(rutas["dashboard.html"], html)
     return {"ruta": rutas["dashboard.html"], "cotizaciones": cotizaciones, "avisos": avisos}

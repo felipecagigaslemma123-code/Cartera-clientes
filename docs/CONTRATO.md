@@ -299,7 +299,7 @@ Lanzan `ErrorHistorial` (subclase de `ValueError`) ante un archivo inválido.
 - `realizados`: lista de `RealizadoHistorico`: `ticker`, `fecha`, `cantidad`, `cantidad_sin_lote`, `importe_ars`,
   `costo_ars`, `resultado_ars`, `origen_costo`, `clase` (`venta`, `cierre`).
 - `ingresos`: `dict` de clase (`dividendo`, `retencion`, `renta`, `caucion_colocada`, `caucion_tomada`, `fci`,
-  `gastos`) a `{"ARS": n, "USD": n, "equivalente_ars": n}`. Las clases sin datos valen cero.
+  `gastos`, `compensacion`) a `{"ARS": n, "USD": n, "equivalente_ars": n}`. Las clases sin datos valen cero.
 - `aportes`, `retiros`: el mismo formato.
 - `lotes`: lotes abiertos, como `Lote`, con costo en pesos o `None`.
 - `total_conocido`, `realizado_extracto`, `realizado_estimado`: números.

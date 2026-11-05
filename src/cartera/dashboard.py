@@ -410,6 +410,120 @@ def _conciliacion(conciliacion):
     return '<p id="conciliacion-efectivo"{}>{}</p>'.format(' class="aviso"' if estado != "concilia" else '', _texto(texto))
 
 
+def _valor_historial(valor):
+    """Conserva todos los campos de revisión en un JSON finito y con fechas ISO."""
+    if isinstance(valor, (datetime, date)):
+        return valor.isoformat()
+    if isinstance(valor, dict):
+        return {str(clave): _valor_historial(dato) for clave, dato in valor.items()}
+    if isinstance(valor, (list, tuple)):
+        return [_valor_historial(dato) for dato in valor]
+    if valor is None or isinstance(valor, (str, bool)):
+        return valor
+    if isinstance(valor, (int, float)):
+        return valor if _numero(valor) is not None else None
+    return str(valor)
+
+
+def _datos_historial(historial):
+    if historial is None:
+        return None
+    campos_venta = ("ticker", "fecha", "cantidad", "cantidad_sin_lote", "importe_ars",
+                    "costo_ars", "resultado_ars", "origen_costo", "clase")
+    datos = {campo: _campo(historial, campo) for campo in
+             ("total_conocido", "realizado_extracto", "realizado_estimado", "ingresos", "aportes", "retiros",
+              "ventas_sin_dato", "valores_sin_dato", "avisos")}
+    datos["realizados"] = [{campo: _campo(venta, campo) for campo in campos_venta}
+                            for venta in _campo(historial, "realizados", [])]
+    datos["sin_clasificar"] = list(_campo(historial, "sin_clasificar", []))
+    datos["cantidad_sin_clasificar"] = len(datos["sin_clasificar"])
+    for campo in ("diferencias_tenencias", "diferencias_costos"):
+        datos[campo] = _campo(historial, campo, {})
+    return _valor_historial(datos)
+
+
+def _tabla_historial(encabezados, filas):
+    return ('<div class="contenedor-tabla"><table><thead><tr>' +
+            ''.join('<th scope="col">' + _texto(titulo) + '</th>' for titulo in encabezados) +
+            '</tr></thead><tbody>' + ''.join('<tr>' + ''.join('<td>' + _texto(celda) + '</td>' for celda in fila) +
+                                          '</tr>' for fila in filas) + '</tbody></table></div>')
+
+
+def _texto_historial(valor):
+    if valor is None:
+        return "sin dato"
+    if isinstance(valor, (dict, list)):
+        return json.dumps(valor, ensure_ascii=False, allow_nan=False)
+    return str(valor)
+
+
+def _rendimiento_realizado(historial):
+    if historial is None:
+        return ""
+    sin_ventas = historial["ventas_sin_dato"] or 0
+    sin_valores = historial["valores_sin_dato"] or 0
+    sin_clasificar = historial["sin_clasificar"]
+    avisos = historial["avisos"] or []
+    parcial = bool(sin_ventas or sin_valores or sin_clasificar or avisos)
+    partes = ['<section id="rendimiento-realizado"><h2>Rendimiento realizado histórico</h2>',
+              '<p class="muted">Lo vendido y cobrado según extractos y ajustes. Es un cálculo separado del '
+              'resultado desde el día cero: no lo reemplaza ni se suma a él. Los precios en vivo no modifican este historial.</p>',
+              '<p class="dato-destacado">Total conocido: ' + _importe(historial["total_conocido"]) + ' ARS.</p>',
+              '<p' + (' class="aviso"' if parcial else '') + '>' +
+              ('Resultado parcial; revisá los faltantes y avisos. ' if parcial else 'Se suman los renglones clasificados con valor conocido. ') +
+              str(sin_ventas) + ' ventas o cierres sin resultado conocido; ' + str(sin_valores) +
+              ' valores sin equivalente en pesos; ' + str(len(sin_clasificar)) + ' renglones sin clasificar.</p>',
+              '<dl><dt>Realizado de extracto</dt><dd>' + _importe(historial["realizado_extracto"]) +
+              ' ARS</dd><dt>Realizado que incluye estimaciones</dt><dd>' + _importe(historial["realizado_estimado"]) + ' ARS</dd></dl>']
+    etiquetas = {"dividendo": "Dividendos", "retencion": "Retenciones", "renta": "Rentas",
+                 "caucion_colocada": "Caución colocada", "caucion_tomada": "Caución tomada",
+                 "fci": "FCI", "gastos": "Gastos", "compensacion": "Compensaciones por error operativo"}
+    ingresos = historial["ingresos"] or {}
+    filas = []
+    for clase, titulo in etiquetas.items():
+        ingreso = ingresos.get(clase) or {}
+        filas.append([titulo] + [_importe(ingreso.get(moneda)) for moneda in ("ARS", "USD", "equivalente_ars")])
+    partes.append('<h3>Ingresos y gastos</h3>' + _tabla_historial(["Clase", "ARS", "USD", "Equivalente ARS"], filas))
+    fondos = []
+    for clave, titulo in (("aportes", "Aportes"), ("retiros", "Retiros")):
+        fondo = historial[clave] or {}
+        fondos.append([titulo] + [_importe(fondo.get(moneda)) for moneda in ("ARS", "USD", "equivalente_ars")])
+    partes.append('<h3>Dinero del cliente</h3>' + _tabla_historial(["Flujo", "ARS", "USD", "Equivalente ARS"], fondos) +
+                  '<p class="muted">Aportes y retiros se informan aparte y no son ganancia.</p>')
+    ventas = []
+    for venta in historial["realizados"]:
+        ventas.append([venta["ticker"], _dia(venta["fecha"]), venta["clase"], _cantidad(venta["cantidad"]),
+                       _cantidad(venta["cantidad_sin_lote"]), _importe(venta["importe_ars"]),
+                       _importe(venta["costo_ars"]), "incompleto (sin dato)" if venta["origen_costo"] == "incompleto"
+                       else _origen(venta["origen_costo"]), _importe(venta["resultado_ars"])])
+    partes.append('<h3>Ventas y cierres</h3>' + (_tabla_historial(
+        ["Ticker", "Fecha", "Clase", "Cantidad", "Sin lote", "Importe ARS", "Costo ARS", "Origen del costo", "Resultado ARS"],
+        ventas) if ventas else '<p>Sin ventas ni cierres registrados.</p>'))
+    partes.append('<h3>Control contra la base importada</h3>')
+    for clave, titulo in (("diferencias_tenencias", "Diferencias de cantidad"), ("diferencias_costos", "Diferencias de costo")):
+        diferencias = historial.get(clave) or {}
+        partes.append('<h4>' + titulo + '</h4>')
+        if diferencias:
+            partes.append('<ul>' + ''.join('<li>' + _texto(ticker) + ': ' + _texto(_texto_historial(valores)) + '</li>'
+                                          for ticker, valores in diferencias.items()) + '</ul>')
+        else:
+            partes.append('<p>Sin diferencias informadas.</p>')
+    if avisos:
+        partes.append('<h3>Avisos del historial</h3><ul class="aviso">' +
+                      ''.join('<li>' + _texto(aviso) + '</li>' for aviso in avisos) + '</ul>')
+    partes.append('<h3>Renglones sin clasificar</h3>')
+    if not sin_clasificar:
+        partes.append('<p>No hay renglones sin clasificar.</p>')
+    else:
+        partes.append('<p class="aviso">Estos renglones no se suman. Se muestran completos para revisar.</p>')
+        for indice, fila in enumerate(sin_clasificar, 1):
+            partes.append('<article><h4>Renglón ' + str(indice) + '</h4><dl>' +
+                          ''.join('<dt>' + _texto(clave) + '</dt><dd>' + _texto(_texto_historial(valor)) + '</dd>'
+                                  for clave, valor in fila.items()) + '</dl></article>')
+    partes.append('</section>')
+    return ''.join(partes)
+
+
 _ESTILOS = """
 :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17212b;background:#f5f7fa;font-size:15px;line-height:1.45}
 *{box-sizing:border-box}p,li,dd,h1,h2,h3{overflow-wrap:anywhere}body{margin:0}main{max-width:1520px;margin:auto;padding:24px;min-width:0}header{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:start}h1{font-size:1.85rem;margin:0 0 8px}h2{font-size:1.2rem;margin:0 0 14px}h3{font-size:1rem;margin:0 0 10px}p{margin:8px 0}section,.tarjeta{background:#fff;border:1px solid #d6dee7;border-radius:8px;padding:18px;margin-top:18px;min-width:0}button{background:#205b8c;border:0;color:#fff;font:inherit;padding:10px 16px;border-radius:5px;cursor:pointer}button:disabled{background:#677684;cursor:default}button:focus-visible{outline:3px solid #f1ad37;outline-offset:3px}.aviso{background:#fff4d9;border-left:4px solid #b57c0d;padding:10px 12px;border-radius:3px}.aviso:empty{display:none}.contenedor-tabla{overflow-x:auto;width:100%;max-width:100%;border:1px solid #dde3ea;border-radius:4px}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}th,td{text-align:left;border-bottom:1px solid #e2e7ed;padding:9px 10px;white-space:nowrap}th{background:#edf2f7;font-weight:600}thead th{position:sticky;top:0}.numero{text-align:right}.grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:18px}.grilla article{min-width:0}.grilla section{margin:0}dl{display:grid;grid-template-columns:auto 1fr;gap:5px 20px;margin:8px 0}dd{text-align:right;margin:0;font-variant-numeric:tabular-nums}.grafico{border:1px solid #dce3eb;border-radius:6px;padding:12px;min-width:0}.grafico svg{display:block;width:100%;height:auto}.grafico p{font-size:.83rem;color:#465666}.muted{color:#465666}.dato-destacado{font-size:1.15rem;font-weight:600}.sin-movimientos{border-left:4px solid #64788b}ul{padding-left:20px}li{margin:7px 0}[hidden]{display:none!important}.tabla-posiciones td:first-child,.tabla-posiciones th:first-child{position:sticky;left:0;z-index:1;font-weight:600;box-shadow:1px 0 0 #d6dee7}.tabla-posiciones td:first-child{background:#fff}.tabla-posiciones thead th:first-child{z-index:2}@media(max-width:600px){main{padding:12px}section,.tarjeta{padding:12px}h1{font-size:1.5rem}.grilla{grid-template-columns:minmax(0,1fr)}header>div{min-width:0;overflow-wrap:anywhere}}
@@ -418,7 +532,7 @@ _ESTILOS = """
 
 def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrumentos,
                  efectivo, historial, generado_en, posiciones=None, dia_cero=None, mep=None,
-                 posiciones_base=None, integral=None, realizados=None, conciliacion=None):
+                 posiciones_base=None, integral=None, realizados=None, conciliacion=None, historial_realizado=None):
     """Genera una vista completa incluso si el navegador no logra consultar la fuente."""
     generado = _instante(generado_en)
     resultados = list(resultados)
@@ -431,6 +545,7 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
     integral_datos = _datos_integral(integral)
     realizados_datos = _datos_realizados(realizados)
     conciliacion_datos = _datos_conciliacion(conciliacion)
+    historial_datos = _datos_historial(historial_realizado)
     mep_valor = _numero(mep.ultimo, positivo=True) if mep is not None else None
     mep_datos = None if mep_valor is None else {"ultimo": mep_valor, "estado": mep.estado,
                                                "consultado_en": _instante(mep.consultado_en)}
@@ -443,6 +558,8 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
              "mep": mep_datos, "efectivo": actual,
              "actualizacion_habilitada": habilitada, "avisos_datos": avisos_datos,
              "integral": integral_datos, "realizados": realizados_datos, "conciliacion": conciliacion_datos}
+    if historial_datos is not None:
+        datos["historial"] = historial_datos
     serializado = json.dumps(datos, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     avisos_html = ('<section id="avisos-lectura" class="aviso"><h2>Estado de los archivos</h2><ul>' +
                    "".join("<li>" + _texto(aviso) + "</li>" for aviso in avisos_datos) + "</ul></section>") if avisos_datos else ""
@@ -499,7 +616,7 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
         '<tbody id="totales-body">' + _totales(filas, mep_datos) + '</tbody></table></div>'
         '<p id="resultado-compra">' + _texto(_resumen_compra(filas)) + '</p><p id="variacion-precios">' + _texto(_resumen_variacion(filas, referencia, mep_datos)) + '</p>'
         '<p class="muted">La variación de precios compara las mismas cantidades y no incluye movimientos ni cobros.</p></section>'
-        + _resultado_completo(integral_datos) + (_resultado_realizado(realizados_datos) if integral_datos is not None else "") +
+        + _resultado_completo(integral_datos) + (_resultado_realizado(realizados_datos) if integral_datos is not None else "") + _rendimiento_realizado(historial_datos) +
         '<section><h2>Día cero</h2><p>' + _texto(texto_dia) + '</p></section>'
         '<section><h2>Efectivo, separado de las posiciones</h2><div class="grilla">' + _bloque_efectivo("Efectivo informado", actual) + efectivo_calculado + _bloque_efectivo("Efectivo del día cero", caja_dia) + '</div>' + (_conciliacion(conciliacion_datos) if integral_datos is not None else "") + '</section>'
         '<section><h2>Historial capturado por especie</h2><p class="muted">Los gráficos muestran las consultas guardadas y no se actualizan en vivo.</p><div class="grilla">' + graficos + '</div></section>'

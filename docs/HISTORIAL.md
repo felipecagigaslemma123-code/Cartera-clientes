@@ -43,6 +43,7 @@ Liquida, Operado, Comprobante, Numero, Cantidad, Especie, Precio, Importe, Saldo
 | `VENTA CAUCION CONTADO` + `COMPRA CAUCION TERMINO` | `caucion_tomada` | Costo: suma de las dos patas |
 | `SUSCRIPCION FCI`, `LIQUIDACION RESCATE FCI` | `fci` | Suma de los importes |
 | `CREDITO DERMERC-`, `N C ARANCELES` | `gastos` | Con su signo |
+| `NOTA DE CREDITO EO` | `compensacion` | Ingreso: lo que el broker devolvió por un error operativo |
 | `RECIBO DE COBRO` | `aporte` | Dinero del cliente, **no es ganancia** |
 | `ORDEN DE PAGO` | `retiro` | Dinero del cliente, **no es ganancia** |
 | `NOTA DE CREDITO U$S`, `NOTA DE DEBITOS U$S` con referencia `CONV CABLE A ME` | `conversion` | Traspaso interno, no cuenta |
@@ -54,8 +55,8 @@ las dos patas no se suma y genera un aviso con sus números, porque solo contien
 
 ## Orden y lotes
 
-Se procesa por fecha. Dentro de un mismo día: primero compras, ajustes incluidos, y después ventas y
-cierres, en orden de `Numero`. Los lotes se consumen por FIFO y los de la misma fecha, en orden de creación.
+Se procesa por fecha. Dentro de un mismo día: primero las compras del extracto, después las de ajustes,
+y al final ventas y cierres, en orden de `Numero`. Los lotes se consumen por FIFO y los de la misma fecha, en orden de creación.
 
 - **Compra:** origen `extracto`, costo igual al importe absoluto.
 - **Venta sin lotes suficientes:** no es un error, porque puede faltar un extracto. El resultado es "sin
@@ -87,7 +88,7 @@ tiene resultado "sin dato".
 
 ```text
 total conocido = realizado con costo + dividendos + retenciones + rentas
-               + caución colocada + caución tomada + FCI + gastos
+               + caución colocada + caución tomada + FCI + gastos + compensaciones
 ```
 
 - **Aportes y retiros:** se informan, nunca entran en el total.
@@ -101,7 +102,7 @@ total conocido = realizado con costo + dividendos + retenciones + rentas
 
 Los lotes abiertos se comparan por especie contra las posiciones de la base. Se informan las diferencias de
 cantidad, con tolerancia de 0,5. Esta etapa **no modifica la base** ni el cálculo del resultado desde el día
-cero. Un costo derivado distinto del de la base se informa, no se corrige.
+cero. Un costo derivado que difiere del de la base en más de 1 peso se informa, no se corrige.
 
 ## Salidas
 

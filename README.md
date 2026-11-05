@@ -6,8 +6,9 @@ desarrollo en [AGENTS.md](AGENTS.md) y etapas en [PLAN.md](PLAN.md).
 El objetivo aprobado es medir el resultado completo desde el día cero, incorporando
 movimientos y cobros. El desarrollo se entrega por etapas: Codex implementa, Claude
 revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios,
-el día cero, el dashboard, las alertas y la etapa 5: movimientos, efectivo reconstruido
-y resultado completo en pesos.
+el día cero, el dashboard, las alertas, los movimientos y el resultado completo en pesos.
+La etapa 6 agrega el rendimiento realizado histórico a partir de extractos, separado
+del seguimiento desde el día cero.
 
 ## Preparar el entorno
 
@@ -181,10 +182,87 @@ el efectivo: no se suman otra vez. No depende de conocer los costos. Si falta un
 saldo, la referencia inicial, un precio necesario o el MEP necesario, muestra
 "sin dato" y los faltantes; un saldo USD cero no necesita MEP.
 
-Un historial inválido hace fallar `estado`, `capturar` y `dashboard` sin escribir salidas.
+Un `movimientos.csv` inválido hace fallar `estado`, `capturar` y `dashboard` sin escribir salidas.
 En alertas se conserva la continuidad con la base importada y se avisa una vez por día
 que no se pudo reconstruir la cartera actual. Los niveles de especies conocidas ya
 vendidas se ignoran con aviso, sin desactivar los demás.
+
+## Rendimiento realizado histórico
+
+La etapa 6 responde cuánto se ganó o perdió con lo ya vendido y cobrado desde que el
+cliente opera con el asesor. Es un cálculo independiente: no se suma al resultado
+desde el día cero ni modifica `cartera.json`, `dia_cero.json` o `movimientos.csv`.
+Requiere una base importada para comparar las tenencias, pero no requiere día cero.
+
+En `clientes/SLUG/`, preparar:
+
+```text
+extractos/*.xlsx          cuentas corrientes, con períodos que pueden superponerse
+ajustes_historial.csv     opcional: compras, ventas, rentas, dividendos y gastos faltantes
+cierres.json              opcional: lista de tickers cuyo pago final cierra la posición
+mep_diario.csv            opcional: fecha,mep
+```
+
+Se lee la primera hoja de cada Excel. El título debe identificar PESOS o DOLARES;
+DOLARES CABLE se conserva como cuenta CABLE. Encabezado exacto de la primera fila:
+
+```text
+Liquida,Operado,Comprobante,Numero,Cantidad,Especie,Precio,Importe,Saldo,Referencia
+```
+
+Las reglas y comprobantes admitidos están en [HISTORIAL.md](docs/HISTORIAL.md).
+Los períodos superpuestos se consolidan por la identidad especificada del renglón;
+un mismo número con otro importe se conserva. Si el saldo no cierra con el anterior
+más el importe, se avisa con archivo y fila, sin frenar el cálculo.
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA historial --cliente SLUG
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA historial --cliente SLUG --actualizar-mep
+```
+
+El primer comando usa solo los archivos locales. `--actualizar-mep` consulta los
+históricos de AL30 y AL30D, calcula su cociente de cierres en las fechas comunes y
+actualiza `mep_diario.csv`, conservando los días anteriores ya disponibles. Para USD
+se usa el MEP del día o el último anterior de hasta cinco días corridos; un ajuste
+puede indicar su propio `tc`. Sin cambio utilizable, el equivalente en pesos queda
+"sin dato", con aviso. Los ajustes USD sin `tc` usan la misma búsqueda histórica.
+
+Compras y ajustes de compra crean lotes; ventas y cierres consumen FIFO. Los ajustes
+se identifican como estimados. Una transferencia desde otro broker se carga como
+compra al valor de entrada de ese día: no se calcula lo ganado antes de llegar.
+Si una venta excede los lotes disponibles, se informa la cantidad sin lote y su
+resultado queda desconocido. Los pagos de cierre de una especie en una fecha se
+agrupan para cerrar toda la cantidad abierta.
+
+Dividendos, retenciones, rentas, cauciones completas, FCI y gastos conservan sus
+signos. Las cauciones se agrupan por moneda, clase y fecha; una pata sin contraparte
+se excluye con aviso, sin sumar su capital. Aportes y retiros se informan aparte y
+no son ganancia. Las conversiones internas especificadas tampoco forman resultado.
+
+El informe muestra los ingresos en ARS, USD y equivalente en pesos, realizado por
+especie y origen del costo, total **conocido**, faltantes y diferencias de cantidad
+y costo contra la base. Si falta parte del equivalente de una clase, ese equivalente
+se muestra desconocido; el total conserva los demás valores individuales conocidos.
+No se publica un porcentaje. Todo comprobante desconocido o vacío se lista completo,
+con archivo y fila, y no se suma. No se lo omite ni se lo clasifica por parecido.
+
+Se escribe `realizado.csv`, una fila por venta o cierre, con permisos `600`; las
+celdas numéricas desconocidas quedan vacías. Las salidas se preparan completas antes
+de reemplazarlas. Si falla un reemplazo posterior, se intenta restaurar lo ya
+publicado; las corridas concurrentes se serializan. Sin extractos o ante un archivo
+inválido, termina con error sin cambiar salidas. No corrige la base automáticamente.
+
+Demostración ficticia cubierta por las pruebas: aporte de 5.000, compra de 10 AAA
+por 1.000, venta total por 1.500 y dividendo de 70 producen un total conocido de
+**570 ARS** (500 de venta más 70 de dividendo). El aporte queda afuera. La comparación
+con la base demo informa las diferencias de tenencias correspondientes.
+
+Si existe `extractos/`, `dashboard` agrega “Rendimiento realizado histórico”, con
+sus desgloses, avisos y todos los renglones sin clasificar. Si el cálculo falla,
+genera el resto del tablero con un aviso; sin carpeta, no agrega la sección.
+Generar el dashboard no escribe `realizado.csv` ni actualiza el MEP diario. La sección
+es histórica: precios y MEP en vivo siguen afectando solo los indicadores anteriores.
+Para incorporar nuevos extractos o ajustes hay que volver a generar el HTML.
 
 ## Dashboard local
 
@@ -226,7 +304,7 @@ día. La página no guarda datos en el navegador.
 
 Los archivos opcionales ausentes se muestran como faltantes o “sin fijar”. Los gráficos
 usan solo las últimas 500 observaciones de cada especie y no se actualizan en vivo.
-Las filas inválidas del historial se omiten con un aviso visible. `dashboard` no agrega
+Las filas inválidas del historial de precios (`historial.csv`) se omiten con un aviso visible. `dashboard` no agrega
 filas a `historial.csv`; para capturarlas se usa `capturar`. Si la fuente está caída,
 el HTML se genera igual y queda marcado con caché o “sin dato”.
 
@@ -278,7 +356,7 @@ No se crearon bots ni se utilizaron credenciales reales en la verificación.
 
 ## Verificación por etapa
 
-Para verificar las cinco etapas y las comprobaciones adicionales:
+Para verificar las seis etapas y las comprobaciones adicionales:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa*' -v
@@ -295,11 +373,13 @@ Claude revisó las etapas anteriores; sus entregas históricas están en
 [REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md) y [REVISION_ETAPA2.md](docs/REVISION_ETAPA2.md).
 La revisión del dashboard se documenta en [REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md).
 La etapa 4 está implementada y revisada por Claude; sus resultados y límites están en
-[REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). La etapa 5 está implementada y revisada por Claude: pasan 248 pruebas de etapas y 293
-adicionales, **541 en total**. Faltan comprobar el aspecto en pantalla, el doble clic en el archivo
-y los avisos reales. El detalle está en [REVISION_ETAPA5.md](docs/REVISION_ETAPA5.md). No se
-instalaron tareas programadas. Las decisiones abiertas
-figuran en el plan y el contrato.
+[REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). La etapa 5 está implementada y revisada por
+Claude; su detalle está en [REVISION_ETAPA5.md](docs/REVISION_ETAPA5.md).
+La etapa 6 está implementada y revisada por Claude: pasan **300 pruebas de etapas y
+373 adicionales, 673 en total**. Codex agregó 78 pruebas sin modificar ninguna existente; la revisión ajustó dos por la clase de compensaciones,
+ni los fixtures. El alcance, los criterios de borde y los controles pendientes están
+en [REVISION_ETAPA6.md](docs/REVISION_ETAPA6.md). No se hicieron commits ni se instalaron
+tareas programadas. Las decisiones abiertas figuran en el plan y el contrato.
 
 Esta carpeta no contiene datos reales de clientes. Las salidas se guardan en la ruta
 de datos, separada del código; las demostraciones y pruebas usan datos ficticios.

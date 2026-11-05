@@ -284,6 +284,56 @@ def _mostrar_actualizacion(resultado):
     print("Costos actualizados. Versión anterior completa: {}".format(resultado["historial"]))
 
 
+def _importe_historial(valor):
+    return "sin dato" if valor is None else _numero(valor)
+
+
+def _mostrar_historial(historial, carpeta):
+    lineas = ["Rendimiento realizado histórico · cálculo independiente del día cero."]
+    titulos = {"dividendo": "Dividendos", "retencion": "Retenciones", "renta": "Rentas",
+               "caucion_colocada": "Cauciones colocadas", "caucion_tomada": "Cauciones tomadas",
+               "fci": "FCI", "gastos": "Gastos", "compensacion": "Compensaciones por error operativo"}
+    for campo, bolsa in list(historial.ingresos.items()) + [("aportes", historial.aportes), ("retiros", historial.retiros)]:
+        lineas.append("{}: ARS {} · USD {} · equivalente ARS {}{}".format(
+            titulos.get(campo, campo.capitalize()), _importe_historial(bolsa["ARS"]),
+            _importe_historial(bolsa["USD"]), _importe_historial(bolsa["equivalente_ars"]),
+            " · dinero del cliente, fuera del resultado" if campo in ("aportes", "retiros") else ""))
+    por_especie = {}
+    for realizado in historial.realizados:
+        por_especie.setdefault(realizado.ticker, []).append(realizado)
+    for ticker, realizados in sorted(por_especie.items()):
+        conocidos = [r.resultado_ars for r in realizados if r.resultado_ars is not None]
+        suma = float(sum((Decimal(str(v)) for v in conocidos), Decimal(0))) if conocidos else None
+        from math import isfinite
+        if suma is not None and not isfinite(suma):
+            suma = None
+        lineas.append("Realizado de {}: ARS {} · {} ventas/cierres sin dato.".format(
+            ticker, _importe_historial(suma), sum(r.resultado_ars is None for r in realizados)))
+        for r in realizados:
+            lineas.append("  {} · {} · cantidad {} · sin lote {} · importe ARS {} · costo ARS {} · resultado ARS {} · origen {}".format(
+                r.fecha.isoformat(), r.clase, _cantidad(r.cantidad), _cantidad(r.cantidad_sin_lote),
+                _importe_historial(r.importe_ars), _importe_historial(r.costo_ars),
+                _importe_historial(r.resultado_ars), "incompleto (sin dato)" if r.origen_costo == "incompleto" else _origen(r.origen_costo)))
+    lineas.append("Realizado de extracto: ARS {} · realizado que incluye estimaciones: ARS {}.".format(
+        _importe_historial(historial.realizado_extracto), _importe_historial(historial.realizado_estimado)))
+    lineas.append("Total conocido: ARS {}. Ventas/cierres sin dato: {}; valores sin dato: {}; renglones sin clasificar: {}.".format(
+        _importe_historial(historial.total_conocido), historial.ventas_sin_dato,
+        historial.valores_sin_dato, len(historial.sin_clasificar)))
+    if historial.ventas_sin_dato or historial.valores_sin_dato or historial.sin_clasificar or historial.avisos:
+        lineas.append("Total conocido sujeto a revisión: revisá los faltantes y avisos; no se presenta como un resultado completo.")
+    for aviso in historial.avisos:
+        lineas.append("ADVERTENCIA: " + aviso)
+    for fila in historial.sin_clasificar:
+        lineas.append("SIN CLASIFICAR (no se suma): " + json.dumps(fila, ensure_ascii=False, allow_nan=False, default=str))
+    for titulo, diferencias in (("Cantidades", historial.diferencias_tenencias), ("Costos ARS", historial.diferencias_costos)):
+        for ticker, valores in diferencias.items():
+            lineas.append("{} de {}: derivada {} · base {} · diferencia {}.".format(
+                titulo, ticker, _importe_historial(valores["derivada"]),
+                _importe_historial(valores["base"]), _importe_historial(valores["diferencia"])))
+    lineas.append("Ventas y cierres guardados: {}".format(carpeta / "realizado.csv"))
+    print("\n".join(lineas))
+
+
 def main(argumentos=None):
     parser = argparse.ArgumentParser(description="Seguimiento local de carteras: base, movimientos y resultado completo.")
     parser.add_argument("--datos", metavar="RUTA", help="Carpeta de datos; alternativa: CARTERA_DATOS.")
@@ -321,6 +371,9 @@ def main(argumentos=None):
     movimiento.add_argument("--cantidad", default="")
     movimiento.add_argument("--moneda", default="ARS")
     movimiento.add_argument("--tc", default=None)
+    historial = comandos.add_parser("historial", help="Calcular lo vendido y cobrado desde los extractos.")
+    historial.add_argument("--cliente", required=True, metavar="SLUG")
+    historial.add_argument("--actualizar-mep", action="store_true", help="Actualizar MEP diario con cierres históricos de AL30 y AL30D.")
     opciones = parser.parse_args(argumentos)
     datos = opciones.datos if opciones.datos is not None else os.environ.get("CARTERA_DATOS")
     if not datos or not datos.strip():
@@ -334,6 +387,12 @@ def main(argumentos=None):
             _mostrar_actualizacion(actualizar_costos(datos, opciones.cliente, opciones.archivo))
         else:
             punto, contenido = cargar_cartera(datos, opciones.cliente)
+            if opciones.comando == "historial":
+                from .historial import correr_historial
+                carpeta = _ruta_cartera(datos, opciones.cliente).parent
+                historial = correr_historial(carpeta, punto, fetch=consultar_json, actualizar_mep=opciones.actualizar_mep)
+                _mostrar_historial(historial, carpeta)
+                return 0
             if opciones.comando == "alertas":
                 from . import alertas_comando, notificar
                 carpeta = _ruta_cartera(datos, opciones.cliente).parent

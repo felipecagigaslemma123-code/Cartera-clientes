@@ -49,7 +49,7 @@ class Clasificacion(unittest.TestCase):
                  "VENTA TRADING": "venta", "DIVIDENDOS": "dividendo", "RETENCION": "retencion",
                  "SUSCRIPCION FCI": "fci", "LIQUIDACION RESCATE FCI": "fci", "CREDITO DERMERC-": "gastos",
                  "N C ARANCELES": "gastos", "RECIBO DE COBRO": "aporte", "ORDEN DE PAGO": "retiro",
-                 "ALGO NUEVO": "sin_clasificar", "NOTA DE CREDITO EO": "sin_clasificar"}
+                 "ALGO NUEVO": "sin_clasificar", "NOTA DE CREDITO EO": "compensacion"}
         for comprobante, clase in casos.items():
             self.assertEqual(clasificar(f(D1, comprobante, 1.0), []), clase, comprobante)
 
@@ -152,9 +152,15 @@ class Ingresos(unittest.TestCase):
         self.assertEqual(h.total_conocido, 0)
 
     def test_sin_clasificar_no_suma_y_se_lista(self):
-        h = construir_historial([f(D1, "NOTA DE CREDITO EO", 500.0, referencia="ERROR OP")])
+        h = construir_historial([f(D1, "NOTA NUEVA", 500.0)])
         self.assertEqual(h.total_conocido, 0)
         self.assertEqual(len(h.sin_clasificar), 1)
+
+    def test_compensacion_por_error_operativo_es_ingreso(self):
+        h = construir_historial([f(D1, "NOTA DE CREDITO EO", 500.0, referencia="ERROR OP")])
+        self.assertAlmostEqual(h.ingresos["compensacion"]["ARS"], 500.0)
+        self.assertAlmostEqual(h.total_conocido, 500.0)
+        self.assertEqual(h.sin_clasificar, [])
 
     def test_conversion_no_cuenta(self):
         h = construir_historial([f(D1, "NOTA DE CREDITO U$S", 10.0, moneda="USD", cuenta="DOLARES", referencia="CONV CABLE A ME"),
