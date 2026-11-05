@@ -138,7 +138,7 @@ class JavaScriptDashboard(unittest.TestCase):
         self.assertIn("14,58", r["variacion"])
         self.assertIn("1 de 3", r["compra"])
         self.assertTrue(r["original"])
-        self.assertEqual(r["intervalos"], [60000])
+        self.assertEqual(r["intervalos"], [300000])
 
     def test_caida_posterior_conserva_precios_y_hora_y_avisa(self):
         r = self.ejecutar("fallar = true; instante += 60000; await nodos.actualizar.listeners.click(); await vaciar();")

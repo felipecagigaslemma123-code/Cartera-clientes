@@ -43,7 +43,7 @@ dentro de su propio contenedor.
 
 ## Actualización en vivo
 
-Al abrir la página y cada 60 segundos:
+Al abrir la página, al apretar el botón y cada 5 minutos:
 
 1. Consulta **una vez** cada panel que usan las posiciones, más `/live/mep`. Nunca pide especie
    por especie. No inicia una ronda si la anterior no terminó. Corta cada consulta a los 15
@@ -54,6 +54,50 @@ Al abrir la página y cada 60 segundos:
 4. Recalcula con las mismas fórmulas de `DOMINIO.md`, usando `cantidad` y `cotiza_cada`.
 
 La página no guarda nada en el navegador.
+
+## Alertas de niveles
+
+Funcionan **solo con la página abierta**, y la página lo dice. Sección `id="alertas-panel"`, arriba de todo,
+con `id="alertas-estado"`, `id="alertas-lista"`, el botón `id="activar-avisos"` y `id="avisos-estado"`.
+
+**Cuándo se evalúa:** al terminar cada ronda de consultas, nunca con los datos guardados al generar el
+archivo. Solo de lunes a viernes de 11:00 a 17:00, hora de Argentina, con 17:00 excluido.
+
+**Reglas:** las de `DOMINIO.md`. Referencia: `bid`, o `ultimo` si no hay. Solo con precio en estado `vivo`. Una
+vez por evento, con rearme al volver más de 1 % adentro del nivel. El estado vive en memoria: al recargar la
+página se vuelve a avisar lo que siga disparado, porque es preferible repetir a perder.
+
+**`alertas-estado`** nunca queda vacío, y un silencio no parece un "todo en orden":
+
+| Situación | Texto contiene |
+|---|---|
+| Ninguna especie con niveles | `sin niveles` |
+| Fuera de horario | `fuera de horario` |
+| Antes de la primera ronda | `sin chequear` |
+| Ronda evaluada | `chequeado`, la hora y la cantidad de especies |
+| Especies sin precio en vivo | además, `no se pudo chequear` y sus tickers |
+
+**Al dispararse:**
+
+1. Se agrega una línea a `alertas-lista`, que queda hasta cerrar la página, con la hora y este texto:
+   `ABEV take profit: precio 13.880,00, nivel 13.500,00`.
+2. El título de la pestaña empieza con la cantidad de alertas, por ejemplo `(2) `.
+3. Suena un tono con `AudioContext`, sin archivos. Si el navegador lo impide, no es un error.
+4. Si `Notification.permission` es `granted`, se envía **una** notificación por ronda, con todas las
+   líneas. El título es `Alertas · <slug>`, sin nombre del cliente. Una falla no interrumpe nada.
+
+**`activar-avisos`:** al hacer clic pide el permiso de notificaciones y habilita el sonido, porque los
+navegadores lo exigen. `avisos-estado` indica el resultado:
+
+| Situación | Texto contiene |
+|---|---|
+| Permiso concedido | `activas` |
+| Permiso negado | `bloqueadas` |
+| Sin soporte, o el pedido falla | `no disponibles` |
+| Todavía sin pedir | `sin activar` |
+
+En los últimos tres casos aclara que los avisos quedan en pantalla. Los niveles se leen de `niveles.json`
+al generar el archivo: cambiarlos requiere regenerarlo.
 
 ## Estados de cada precio
 
@@ -69,7 +113,7 @@ Un precio embebido al generar el archivo se muestra como **Último dato** hasta 
 lo confirme, salvo que su `estado` sea `sin_dato`.
 
 Arriba de todo se muestra la hora de la **última consulta**, nunca como hora del último
-operado. Si falló toda la ronda, o la última exitosa tiene más de 5 minutos, aparece un aviso
+operado. Si falló toda la ronda, o la última exitosa tiene más de 11 minutos, aparece un aviso
 visible. También aparece si el archivo se generó otro día: las posiciones pueden haber cambiado.
 
 ## Cálculos en pantalla

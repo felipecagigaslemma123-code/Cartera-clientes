@@ -376,8 +376,7 @@ La etapa 4 está implementada y revisada por Claude; sus resultados y límites e
 [REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). La etapa 5 está implementada y revisada por
 Claude; su detalle está en [REVISION_ETAPA5.md](docs/REVISION_ETAPA5.md).
 La etapa 6 está implementada y revisada por Claude: pasan **300 pruebas de etapas y
-373 adicionales, 673 en total**. Codex agregó 78 pruebas sin modificar ninguna existente; la revisión ajustó dos por la clase de compensaciones,
-ni los fixtures. El alcance, los criterios de borde y los controles pendientes están
+373 adicionales, 673 en total**. Codex agregó 78 pruebas sin modificar las existentes ni los fixtures; la revisión ajustó dos por la clase de compensaciones. El alcance, los criterios de borde y los controles pendientes están
 en [REVISION_ETAPA6.md](docs/REVISION_ETAPA6.md). No se hicieron commits ni se instalaron
 tareas programadas. Las decisiones abiertas figuran en el plan y el contrato.
 

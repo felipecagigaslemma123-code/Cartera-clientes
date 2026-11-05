@@ -58,9 +58,7 @@ Leé en este orden:
   `CARTERA_DATOS`. No busques ni abras nada fuera de esta carpeta.
 - Nunca escribas salidas dentro de esta carpeta salvo en carpetas temporales de
   prueba. Las salidas van a la ruta de datos.
-- Las credenciales, como el token de Telegram, se leen de variables de entorno o del
-  Llavero de macOS. Nunca se guardan en un archivo ni se muestran en logs.
-- Los avisos por Telegram identifican al cliente por su `slug`, sin nombre ni importes.
+- Los avisos del sistema identifican al cliente por su `slug`, sin nombre ni importes.
 
 ## Reglas de negocio que no se negocian
 

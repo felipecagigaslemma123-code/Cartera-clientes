@@ -171,8 +171,6 @@ a JSON. Reglas en `DOMINIO.md`.
 Notificador(canales)       # canales: lista de funciones (titulo, mensaje) -> None
   .enviar(eventos, slug) -> list[str]   # errores de los canales; no lanza excepción
 canal_macos(titulo, mensaje) -> None
-canal_telegram(titulo, mensaje) -> None
-credencial_telegram() -> Optional[tuple[str, str]]
 canales_disponibles() -> list
 ```
 

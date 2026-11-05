@@ -1,5 +1,8 @@
 # Alertas
 
+Este documento describe el comando `alertas`, que se corre a mano. Las alertas del uso diario, con el
+dashboard abierto, están en `DASHBOARD.md`.
+
 Las reglas de cada alerta están en `DOMINIO.md`. Este documento define cómo corre el comando
 y cómo avisa.
 
@@ -86,54 +89,15 @@ repitan avisos, pero no se pierden.
 
 ## Canales
 
-`canales_disponibles()` devuelve siempre `canal_macos` y, si hay credenciales, `canal_telegram`.
+`canales_disponibles()` devuelve `[canal_macos]`.
 
 ### macOS
 
 Usa `osascript` con `subprocess.run`, sin shell. El título y el mensaje se pasan como **argumentos**,
 nunca dentro del texto del script.
 
-### Telegram
-
-`POST https://api.telegram.org/bot<TOKEN>/sendMessage`, con `urllib`, en JSON, tiempo de espera de 10
-segundos, sin `parse_mode`. Un mensaje de más de 4.000 caracteres se recorta e indica que se recortó.
-Una respuesta sin `"ok": true` es una falla.
-
-**El token nunca aparece en logs, errores ni salidas.** Todo error del canal se reporta sin la URL y
-sin el texto original de la excepción.
-
-### Credenciales
-
-`credencial_telegram()` busca token y chat, en este orden:
-
-1. `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
-2. Llavero de macOS, con `security find-generic-password -s cartera-telegram-token -w` y
-   `-s cartera-telegram-chat -w`.
-
-Devuelve `(token, chat)` o `None` si falta alguno. Las tareas programadas no heredan las variables de
-la terminal, por eso existe el Llavero. No se guardan en ningún archivo.
-
-El `slug` viaja en cada aviso, así que no puede contener el nombre del cliente.
-
 ## Registro
 
 `alertas.log` se abre solo en modo agregar, con permisos de lectura únicamente para el usuario. Cada
-línea tiene hora, tipo, ticker y precio o el nombre del canal que falló. Nunca importes, nombres del
-cliente ni credenciales.
-
-## Tareas programadas
-
-En `ops/`, dos plantillas de `launchd`. **No las instales.**
-
-- `cartera.alertas.plist.template`: `alertas`, cada 5 minutos, con `StartInterval`.
-- `cartera.capturar.plist.template`: `capturar`, de lunes a viernes, a cada hora de 11:00 a 17:00, con
-  `StartCalendarInterval`. Alimenta los gráficos del dashboard.
-
-Usan los marcadores `{{PYTHON}}`, `{{PROYECTO}}`, `{{DATOS}}` y `{{CLIENTE}}`, definen `PYTHONPATH` y
-`CARTERA_DATOS`, y escriben su salida en una carpeta fuera de OneDrive. No incluyen credenciales.
-
-Agregá `ops/README.md` con los pasos de instalación manual y estas limitaciones:
-
-- Con la Mac apagada o suspendida no hay chequeos. El aviso de control diario permite notarlo.
-- macOS puede pedir permiso para que la tarea acceda a la carpeta de OneDrive.
-- Los feriados no están contemplados: la fuente puede seguir respondiendo el último precio.
+línea tiene hora, tipo, ticker y precio o el nombre del canal que falló. Nunca importes ni nombres del
+cliente.

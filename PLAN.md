@@ -99,13 +99,12 @@ actualización, los cálculos y la recuperación ante una caída de la fuente.
 ## Etapa 4: Alertas
 
 Comparar precios contra take profit y stop loss, avisar vencimientos y dejar
-constancia cuando no se pudo chequear. Pensado para una tarea programada.
+constancia cuando no se pudo chequear. La etapa 7 simplificó sus canales.
 
 - Módulos: `cartera.alertas`, `cartera.alertas_comando`, `cartera.notificar`.
 - Comando: `alertas`.
-- Canales: notificación de macOS y Telegram.
-- Plantillas de `launchd` en `ops/`, para alertas y captura de historial. **No las instales.**
-- Reglas de la corrida, los canales y las credenciales en `docs/ALERTAS.md`.
+- Canal: notificación de macOS.
+- Reglas de la corrida y el canal en `docs/ALERTAS.md`.
 
 **Listo cuando** pasa `tests/test_etapa4_*`.
 
@@ -150,6 +149,19 @@ día de la transferencia. Reglas en `docs/HISTORIAL.md`.
 - El dashboard suma una sección con este resultado.
 
 **Listo cuando** pasa `tests/test_etapa6_*`.
+
+## Etapa 7: Alertas con el dashboard abierto
+
+**Decisión de Felipe del 05/11/2026:** no usa Telegram ni quiere tareas programadas. Entra cada tanto,
+actualiza con el botón, y las alertas de niveles funcionan mientras tenga el dashboard abierto.
+
+- Sacar Telegram y sus credenciales de `cartera.notificar`, y borrar `ops/`. El comando `alertas` queda
+  para correrlo a mano, con el canal de macOS.
+- La página se actualiza al abrirse, con el botón y cada 5 minutos.
+- La página evalúa los niveles y avisa con un cartel, un sonido y, si el navegador lo permite, una
+  notificación del sistema. Reglas en `docs/DASHBOARD.md`.
+
+**Listo cuando** pasa `tests/test_etapa7_*` y Claude comprobó el aviso en el navegador.
 
 ---
 

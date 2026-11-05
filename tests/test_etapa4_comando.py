@@ -225,63 +225,6 @@ class Canales(unittest.TestCase):
 
         return Respuesta()
 
-    def test_telegram_envia_al_chat(self):
-        with patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": SECRETO, "TELEGRAM_CHAT_ID": "42"}):
-            with patch("cartera.notificar.urlopen", return_value=self.respuesta(b'{"ok": true}')) as abrir:
-                notificar.canal_telegram("t", "m")
-        solicitud = abrir.call_args[0][0]
-        self.assertIn("api.telegram.org", solicitud.full_url)
-        self.assertEqual(json.loads(solicitud.data)["chat_id"], "42")
-        self.assertNotIn("parse_mode", json.loads(solicitud.data))
-
-    def test_telegram_sin_ok_es_una_falla(self):
-        with patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": SECRETO, "TELEGRAM_CHAT_ID": "42"}):
-            with patch("cartera.notificar.urlopen", return_value=self.respuesta(b'{"ok": false}')):
-                with self.assertRaises(Exception):
-                    notificar.canal_telegram("t", "m")
-
-    def test_el_token_no_aparece_en_los_errores(self):
-        with patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": SECRETO, "TELEGRAM_CHAT_ID": "42"}):
-            with patch("cartera.notificar.urlopen", side_effect=OSError("fallo en https://api.telegram.org/bot" + SECRETO)):
-                errores = notificar.Notificador([notificar.canal_telegram]).enviar(
-                    [notificar_evento()], "demo")
-        self.assertEqual(len(errores), 1)
-        self.assertNotIn("TOKEN-SECRETO", errores[0])
-
-    def test_recorta_mensajes_largos(self):
-        with patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": SECRETO, "TELEGRAM_CHAT_ID": "42"}):
-            with patch("cartera.notificar.urlopen", return_value=self.respuesta(b'{"ok": true}')) as abrir:
-                notificar.canal_telegram("t", "x" * 9000)
-        self.assertLessEqual(len(json.loads(abrir.call_args[0][0].data)["text"]), 4096)
-
-    def test_credenciales_de_entorno(self):
-        with patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": SECRETO, "TELEGRAM_CHAT_ID": "42"}):
-            self.assertEqual(notificar.credencial_telegram(), (SECRETO, "42"))
-
-    def test_credenciales_del_llavero(self):
-        def security(argumentos, **opciones):
-            class Salida:
-                returncode = 0
-                stdout = "del-token\n" if "cartera-telegram-token" in argumentos else "del-chat\n"
-            return Salida()
-
-        with patch.dict("os.environ", {}, clear=True):
-            with patch("cartera.notificar.subprocess.run", side_effect=security):
-                self.assertEqual(notificar.credencial_telegram(), ("del-token", "del-chat"))
-
-    def test_sin_credenciales_solo_macos(self):
-        def security(argumentos, **opciones):
-            class Salida:
-                returncode = 44
-                stdout = ""
-            return Salida()
-
-        with patch.dict("os.environ", {}, clear=True):
-            with patch("cartera.notificar.subprocess.run", side_effect=security):
-                self.assertIsNone(notificar.credencial_telegram())
-                self.assertEqual(notificar.canales_disponibles(), [notificar.canal_macos])
-
-
 def notificar_evento():
     from cartera.alertas import Evento
     return Evento(tipo="stop_loss", ticker="AAA", precio=900.0, nivel=900.0, mensaje="AAA toco stop loss")
@@ -317,30 +260,6 @@ class Comando(Base):
             with patch("cartera.alertas_comando.ahora_argentina", return_value=ABIERTO):
                 codigo = self.correr_cli()
         self.assertNotEqual(codigo, 0)
-
-
-class Plantillas(unittest.TestCase):
-    def leer(self, nombre):
-        texto = (RAIZ / "ops" / nombre).read_text(encoding="utf-8")
-        for marcador in ("{{PYTHON}}", "{{PROYECTO}}", "{{DATOS}}", "{{CLIENTE}}"):
-            self.assertIn(marcador, texto, nombre)
-        self.assertNotIn("TELEGRAM_BOT_TOKEN", texto)
-        return plistlib.loads(texto.encode("utf-8"))
-
-    def test_alertas_cada_cinco_minutos(self):
-        plist = self.leer("cartera.alertas.plist.template")
-        self.assertEqual(plist["StartInterval"], 300)
-        self.assertIn("alertas", plist["ProgramArguments"])
-
-    def test_captura_en_horario_de_mercado(self):
-        plist = self.leer("cartera.capturar.plist.template")
-        horarios = plist["StartCalendarInterval"]
-        self.assertEqual(sorted({h["Hour"] for h in horarios}), list(range(11, 18)))
-        self.assertEqual(sorted({h["Weekday"] for h in horarios}), [1, 2, 3, 4, 5])
-        self.assertIn("capturar", plist["ProgramArguments"])
-
-    def test_hay_instrucciones(self):
-        self.assertTrue((RAIZ / "ops" / "README.md").exists())
 
 
 if __name__ == "__main__":
