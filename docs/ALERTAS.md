@@ -46,11 +46,28 @@ Una vez por día de mercado, en la primera corrida dentro del horario, se envía
 Con niveles inválidos **no se evalúa ninguno**, y se emite un único evento por día de tipo
 `sin_chequeo`, con `ticker` en `None`, que explica el problema. Los vencimientos se evalúan igual.
 
+`niveles.json` también es inválido si una especie tiene una clave distinta de `take_profit` y
+`stop_loss`: un nombre mal escrito no puede dejar una especie sin control sin que se note.
+
+## Vencimientos inválidos
+
+Si `instrumentos.json` no es un JSON válido o tiene una fecha inválida, **los niveles se evalúan
+igual** y se emite, dentro o fuera de horario, un único evento por día de tipo `sin_chequeo`, con
+`ticker` en `None`. Se conserva el estado anterior de vencimientos. Lo mismo vale si `niveles.json`
+o `instrumentos.json` no se pueden leer.
+
+## Mensajes
+
+Una línea por evento, con el texto de `mensaje`:
+
+- `ABEV take profit: precio 13.880, nivel 13.500.`
+- `DNC3O vence el 22/11/2026: faltan 18 días.`
+
 ## Estado
 
 ```json
 {"esquema_version": 1, "niveles": {}, "vencimientos": {},
- "control": "2026-11-04", "error_niveles": "2026-11-04"}
+ "control": "2026-11-04", "error_niveles": "2026-11-04", "error_instrumentos": null}
 ```
 
 `niveles` y `vencimientos` son los estados que devuelven `evaluar_niveles` y
@@ -86,6 +103,8 @@ sin el texto original de la excepción.
 
 Devuelve `(token, chat)` o `None` si falta alguno. Las tareas programadas no heredan las variables de
 la terminal, por eso existe el Llavero. No se guardan en ningún archivo.
+
+El `slug` viaja en cada aviso, así que no puede contener el nombre del cliente.
 
 ## Registro
 

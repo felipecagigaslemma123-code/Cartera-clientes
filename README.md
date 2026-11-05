@@ -5,9 +5,9 @@ desarrollo en [AGENTS.md](AGENTS.md) y etapas en [PLAN.md](PLAN.md).
 
 El objetivo aprobado es medir el resultado completo desde el día cero, incorporando
 movimientos y cobros. El desarrollo se entrega por etapas: Codex implementa, Claude
-revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios
-y el día cero, y el dashboard de la etapa 3. Las alertas y los movimientos corresponden
-a las etapas siguientes.
+revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios,
+el día cero, el dashboard y las alertas. Los movimientos corresponden a la etapa 5,
+que todavía no se inició.
 
 ## Preparar el entorno
 
@@ -173,14 +173,55 @@ esa inclusión y la construcción segura; su aplicación efectiva en un navegado
 sigue pendiente de la revisión visual de Claude, junto con el diseño en pantalla
 angosta y las consultas desde un archivo local. Ver [REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md).
 
+## Alertas y operación manual
+
+El comando operativo de la etapa 4 es:
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA alertas --cliente SLUG
+```
+
+Este comando puede enviar avisos reales por los canales configurados: no es una
+simulación. Durante esta entrega se comprobó exclusivamente con canales ficticios.
+
+Dentro del horario argentino de mercado, valida los niveles y consulta solo los
+paneles de las especies con algún take profit o stop loss. Usa el bid y, si falta,
+el último operado; las cotizaciones de caché no disparan niveles. El aviso se rearma
+al volver más de un 1 % dentro del nivel o al cambiar ese nivel. No se repite mientras
+sigue disparado. Siempre se evalúan los vencimientos, incluso fuera de horario.
+
+La primera corrida dentro del horario envía un control diario: indica cuántas
+especies tienen niveles o que no hay niveles definidos. Un archivo de niveles
+inválido produce un aviso único de falta de chequeo, sin impedir los vencimientos, y un
+`instrumentos.json` inválido hace lo mismo sin impedir los niveles.
+Los datos de precios faltantes también quedan identificados; no se presentan como
+un chequeo exitoso.
+
+Se agrupan todos los eventos de una corrida en un mensaje por canal. Si falla un
+canal, se intentan los demás. Si ninguno entrega, no se confirma el estado nuevo y
+la próxima corrida vuelve a intentar; el comando termina con error. Si alguno
+entrega, se confirma el estado y el fallo del otro queda en el registro.
+
+El estado se guarda de forma atómica. Un archivo ilegible se conserva como copia
+privada y se evalúa desde un estado vacío, aunque puedan repetirse avisos. El registro
+`alertas.log` solo agrega líneas, con permisos privados, sin nombres de clientes,
+importes de cartera ni credenciales. Un bloqueo por cliente evita corridas simultáneas;
+no se descubren canales en una corrida omitida o sin eventos nuevos.
+
+Las plantillas para alertas cada cinco minutos y captura de lunes a viernes de 11 a
+17 están en `ops/`. **No están instaladas ni activadas.** La guía de preparación,
+marcadores, instalación manual posterior y límites está en [ops/README.md](ops/README.md).
+No se crearon bots ni se utilizaron credenciales reales en la verificación.
+
 ## Verificación por etapa
 
-Para verificar las tres etapas y las comprobaciones adicionales:
+Para verificar las cuatro etapas y las comprobaciones adicionales:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa1*' -v
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa2*' -v
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa3*' -v
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa4*' -v
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_extra*' -v
 ```
 
@@ -192,12 +233,13 @@ PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -v
 
 Claude revisó las etapas anteriores; sus entregas históricas están en
 [REVISION_ETAPA1.md](docs/REVISION_ETAPA1.md) y [REVISION_ETAPA2.md](docs/REVISION_ETAPA2.md).
-La etapa 3 está implementada y queda pendiente de revisión de Claude. Pasan las 272
-pruebas acumuladas (28 de etapa 1, 36 de etapa 2, 30 de etapa 3 y 178 adicionales).
-Los resultados y lo que no pudo verificarse en el navegador se registran en
-[REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md). No se inició la etapa 4 ni se hicieron
-commits. Las decisiones abiertas de las etapas posteriores figuran en el plan y el
-contrato.
+La revisión del dashboard se documenta en [REVISION_ETAPA3.md](docs/REVISION_ETAPA3.md).
+La etapa 4 está implementada y revisada por Claude; falta comprobar los avisos reales. Pasan
+las 386 pruebas acumuladas: 28 de etapa 1, 36 de etapa 2, 30 de etapa 3, 56 de etapa 4 y 236
+adicionales.
+Los resultados y límites de la verificación de alertas están en
+[REVISION_ETAPA4.md](docs/REVISION_ETAPA4.md). No se inició la etapa 5 ni se hicieron
+commits. Las decisiones abiertas figuran en el plan y el contrato.
 
 Esta carpeta no contiene datos reales de clientes. Las salidas se guardan en la ruta
 de datos, separada del código; las demostraciones y pruebas usan datos ficticios.

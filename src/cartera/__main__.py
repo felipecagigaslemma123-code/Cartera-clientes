@@ -244,6 +244,8 @@ def main(argumentos=None):
     efectivo.add_argument("--forzar", action="store_true")
     dashboard = comandos.add_parser("dashboard", help="Generar el tablero local autocontenido.")
     dashboard.add_argument("--cliente", required=True, metavar="SLUG")
+    alertas = comandos.add_parser("alertas", help="Chequear niveles y vencimientos y enviar avisos.")
+    alertas.add_argument("--cliente", required=True, metavar="SLUG")
     opciones = parser.parse_args(argumentos)
     datos = opciones.datos if opciones.datos is not None else os.environ.get("CARTERA_DATOS")
     if not datos or not datos.strip():
@@ -257,6 +259,25 @@ def main(argumentos=None):
             _mostrar_actualizacion(actualizar_costos(datos, opciones.cliente, opciones.archivo))
         else:
             punto, contenido = cargar_cartera(datos, opciones.cliente)
+            if opciones.comando == "alertas":
+                from . import alertas_comando, notificar
+                carpeta = _ruta_cartera(datos, opciones.cliente).parent
+                def canales_alertas():
+                    yield from notificar.canales_disponibles()
+                entrega = alertas_comando.correr_alertas(
+                    carpeta, punto, opciones.cliente, consultar_json,
+                    canales_alertas(), alertas_comando.ahora_argentina())
+                if entrega.get("omitida"):
+                    return 0
+                print("Corrida de alertas: {} eventos nuevos; evaluación de niveles {}.".format(
+                    len(entrega["eventos"]), "realizada" if entrega["evaluo_niveles"] else "omitida"))
+                for aviso in entrega.get("avisos", []):
+                    print("ADVERTENCIA: " + aviso)
+                for error in entrega["errores"]:
+                    print(error, file=sys.stderr)
+                if not entrega["entregado"]:
+                    print("Los avisos no se entregaron; el estado nuevo no se guardó y se reintentará.", file=sys.stderr)
+                return 0 if entrega["entregado"] else 1
             if opciones.comando == "dashboard":
                 from .dashboard_archivos import crear_dashboard
                 carpeta = _ruta_cartera(datos, opciones.cliente).parent
