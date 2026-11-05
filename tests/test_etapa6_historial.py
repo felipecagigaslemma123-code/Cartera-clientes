@@ -130,6 +130,9 @@ class Realizado(unittest.TestCase):
         h = construir_historial([compra(D1, "AAA", 10, 1000.0)], ajustes=[ajuste(D2, "venta", "AAA", 3, 450.0)])
         self.assertAlmostEqual(h.realizados[0].resultado_ars, 150.0)
         self.assertAlmostEqual(h.lotes[0].cantidad, 7)
+        self.assertEqual(h.realizados[0].origen_costo, "mixto")
+        self.assertEqual(h.realizado_extracto, 0)
+        self.assertAlmostEqual(h.realizado_estimado, 150.0)
 
 
 class Ingresos(unittest.TestCase):

@@ -290,6 +290,9 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
                 cantidad = abs(fila["cantidad"])
                 importe = valor_ars(fila)
             costo, falta, origen = consumir(ticker, cantidad)
+            # Una venta por ajuste no sale de un extracto: su importe no es un dato observado.
+            if fila.get("_origen") == "estimado" and origen == "extracto":
+                origen = "mixto"
             resultado = None if costo is None or importe is None else _suma((importe, -costo))
             historial.realizados.append(RealizadoHistorico(ticker, fila["operado"], cantidad, falta,
                                                          importe, costo, resultado, origen, clase))

@@ -71,7 +71,8 @@ y al final ventas y cierres, en orden de `Numero`. Los lotes se consumen por FIF
 
 Sirve para lo que los extractos no muestran: una compra en dólares sin extracto, una venta posterior
 al último extracto y **la entrada de títulos desde otro broker**, que se carga como `compra` a su precio
-del día de la transferencia. Sus lotes tienen origen `estimado`. Lo ganado antes de esa fecha en el otro
+del día de la transferencia. Sus lotes tienen origen `estimado`, y una venta por ajuste sobre lotes de
+extracto tiene origen `mixto`, porque su importe no sale de un extracto. Lo ganado antes de esa fecha en el otro
 broker no se evalúa.
 
 ## Valor en pesos
