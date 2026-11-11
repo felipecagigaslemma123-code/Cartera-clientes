@@ -174,6 +174,25 @@ actualiza con el botón, y las alertas de niveles funcionan mientras tenga el da
 
 **Listo cuando** pasa `tests/test_etapa8_*` y Claude abrió en Excel un archivo bajado del dashboard con datos reales.
 
+## Etapa 9: Flujo de fondos por cliente
+
+**Pedido de Felipe del 07/11/2026:** que cada cliente vea qué va a cobrar por su renta fija, cuándo y en qué
+moneda, y cuánto gana a vencimiento con el precio al que compró, sin depender del precio de hoy.
+
+- Fuente: cierres diarios de IAMC (`docs/FUENTE_IAMC.md`), guardados en `<datos>/iamc/cierres/`.
+  **Decisión de Felipe del 11/11/2026:** el comando `dashboard` intenta guardar el cierre del día.
+- Habilitado: tasa fija (`fix`) y las letras ya habilitadas. CER, TAMAR, dólar linked y duales solo se
+  listan como pendientes.
+- Nuevo tipo de movimiento `amortizacion`: no cambia los nominales.
+- Módulos: `cartera.iamc`, `cartera.flujo_fondos`.
+- Comandos: `iamc`, `bonos`, `precio-bono`, `flujo --revisar`.
+- Sección **Flujo de fondos** del dashboard y hoja del mismo nombre en el Excel.
+
+Reglas en `docs/FLUJO_FONDOS.md`, `docs/DOMINIO.md` y `docs/CONTRATO.md`.
+
+**Listo cuando** pasa `tests/test_etapa9_*` y Claude comprobó en el navegador el flujo de una cartera de
+prueba con AL30 e YM34O contra la calculadora de IAMC.
+
 ---
 
 ## Fuera de alcance

@@ -150,6 +150,7 @@ las tenencias actuales salen de aplicar los movimientos sobre ella.
 | `compra` | obligatoria | obligatoria | baja | intercambio |
 | `venta` | obligatoria | obligatoria | sube | intercambio |
 | `renta` | obligatoria | no | sube | se desglosa |
+| `amortizacion` | obligatoria | no | sube | se desglosa |
 | `dividendo` | obligatoria | no | sube | se desglosa |
 | `deposito` | no | no | sube | aporte |
 | `retiro` | no | no | baja | retiro |
@@ -166,7 +167,9 @@ las tenencias actuales salen de aplicar los movimientos sobre ella.
   importe son los dólares y `tc` el cambio efectivo, de modo que `importe × tc` sean los pesos.
 - **Valor en pesos:** `importe`, o `importe × tc` en USD. Se usa para el costo de un lote y para
   aportes, retiros, rentas, dividendos, gastos y ventas.
-- **Vencimiento o amortización:** se carga como `venta`, con una nota. Cambios de ratio, canjes y
+- **Amortización parcial:** se carga como `amortizacion` (etapa 9). No cambia la cantidad ni los lotes:
+  los nominales se conservan y baja el valor residual. Ver `docs/FLUJO_FONDOS.md`.
+- **Vencimiento (pago final):** se carga como `venta` de todos los nominales, con una nota. Cambios de ratio, canjes y
   cambios de ticker están fuera de alcance: no los aproximes.
 
 ### Tenencias y lotes
@@ -178,6 +181,7 @@ las tenencias actuales salen de aplicar los movimientos sobre ella.
 - La primera compra de una especie que no está en la base necesita `tipo_activo`. Su unidad sale de
   la tabla de unidades y su nombre es el ticker. Si la especie ya existe, un `tipo_activo` distinto
   se rechaza.
+- `amortizacion` solo admite especies conocidas de tipo `bono`, `on` o `letra`.
 - `renta`, `dividendo` y `gasto` solo admiten especies conocidas: de la base o compradas antes.
 
 ### Resultado realizado

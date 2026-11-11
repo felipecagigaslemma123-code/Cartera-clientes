@@ -23,6 +23,7 @@ Leé en este orden:
 6. `docs/DASHBOARD.md`: reglas de la pantalla, para la etapa 3.
 7. `docs/ALERTAS.md`: corrida, avisos y tareas programadas, para la etapa 4.
 8. `docs/HISTORIAL.md`: extractos y resultado realizado, para la etapa 6.
+9. `docs/FLUJO_FONDOS.md` y `docs/FUENTE_IAMC.md`: flujo de fondos por cliente, para la etapa 9.
 
 ## Cómo trabajar
 

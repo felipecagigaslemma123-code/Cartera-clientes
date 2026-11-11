@@ -237,7 +237,8 @@ resultado_integral(posiciones_base, dia_cero, posiciones_actuales, movimientos, 
 - `cartera_actual`: devuelve un `PuntoPartida` con posiciones y lotes actuales, sin modificar `punto`.
 - `saldos_efectivo`: `efectivo` es un `dict` con `ARS` y `USD`. Devuelve `{"ARS": ..., "USD": ...}`, con
   `None` donde el saldo inicial es `None`. `hasta` limita a los movimientos de esa fecha o anteriores.
-- `Flujos`: `aportes`, `retiros`, `rentas`, `dividendos`, `gastos`, en pesos.
+- `Flujos`: `aportes`, `retiros`, `rentas`, `amortizaciones`, `dividendos`, `gastos`, en pesos.
+  `amortizaciones` se agrega en la etapa 9 y entra al resultado integral igual que `rentas`.
 - `Conciliacion`: `estado` (`"concilia"`, `"no_concilia"`, `"sin_control"`), `fecha`, `diferencias`
   (`dict` por moneda, solo con las comparadas).
 - `ResultadoIntegral`: `patrimonio_inicial`, `valuacion_final`, `efectivo_ars`, `efectivo_usd`,
@@ -269,6 +270,34 @@ resultado_integral(posiciones_base, dia_cero, posiciones_actuales, movimientos, 
   movimiento e informa la tenencia de la especie, si corresponde.
 - `estado` muestra las posiciones actuales, el patrimonio inicial, el efectivo calculado por moneda, los
   flujos y el realizado.
+
+## `cartera.flujo_fondos`
+
+Etapa 9. Reglas en `docs/FLUJO_FONDOS.md`.
+
+```python
+Pago(fecha: date, amortizacion: Decimal, renta: Decimal, origen: str)
+Cronograma(ticker, grupo, familia, moneda, plaza, habilitado, fecha_cierre, liquidacion, pagos)
+CronogramaCompra(pagos, completo, faltante_desde, faltante_hasta, advertencias)
+
+cronograma_iamc(cierre, ticker, grupo) -> Cronograma | None
+cronograma_compra(cierres, ticker, grupo, liquidacion, pagos_manuales=None) -> CronogramaCompra
+tir_compra(precio, liquidacion, pagos) -> Decimal | None
+```
+
+- `cierre`: el `dict` del JSON diario de IAMC. `cierres`: lista de esos `dict`, en cualquier orden.
+- `cronograma_iamc`: busca `ticker` y `grupo` en `calculadora_bonos.ins`. `None` si no está. `familia` es
+  `k`, `moneda` es `cur`, `plaza` es `fxr`; `habilitado` es verdadero solo para `k == "fix"`. `pagos`
+  sale de `f`, en orden de fecha, por 100 VN originales, con `origen = "iamc <fecha_cierre>"`; si no está
+  habilitado, `pagos` es `[]`. `fecha_cierre` y `liquidacion` son `date`.
+- `cronograma_compra`: pagos con fecha posterior a `liquidacion`, según la regla única del documento.
+  `pagos_manuales`: lista de `(fecha, amortizacion, renta)` o `None`; sus pagos tienen
+  `origen = "manual"`. `completo` es falso si quedan pagos sin cubrir; en ese caso `faltante_desde` y
+  `faltante_hasta` acotan el hueco. `advertencias`: `list[str]`.
+- `tir_compra`: tanto por uno, ACT/365, con los pagos de fecha posterior a `liquidacion`. `precio` sucio
+  por 100 VN en la moneda de los flujos. `None` si no hay pagos o no hay solución en `(-0,99; 10)`.
+- Los importes son `Decimal`, convertidos desde el texto del número (`Decimal(str(x))`), para que 0.42
+  sea exactamente `Decimal("0.42")`. Ninguna función modifica lo recibido.
 
 ## `cartera.historial`
 

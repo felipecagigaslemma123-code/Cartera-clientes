@@ -82,6 +82,12 @@ $CARTERA_DATOS/clientes/<slug>/
   estado_alertas.json  generado
   alertas.log          generado
   dashboard.html       generado
+  compras_letras.json  generado por precio-letra
+  compras_bonos.json   generado por precio-bono
+
+$CARTERA_DATOS/iamc/   compartida por todos los clientes; no contiene datos de ninguno
+  cierres/<fecha>.json generado por iamc; hay que conservarlos todos
+  cache/<día>/         respuestas del día y registro de intentos
 ```
 
 ### `cartera.json` — base importada (versión 1)
@@ -149,6 +155,16 @@ Solo especies con vencimiento:
 {"BOND1": {"vencimiento": "2027-10-31"}}
 ```
 
+Bloques opcionales por especie: `letra`, con los datos contractuales de una LECAP o BONCAP
+([LETRAS.md](LETRAS.md)), e `iamc`, que vincula un bono o una ON con su cronograma de pagos y admite
+`pagos_manuales` ([FLUJO_FONDOS.md](FLUJO_FONDOS.md)):
+
+```json
+{"BOND1": {"vencimiento": "2030-07-09",
+           "iamc": {"ticker": "AL30", "grupo": "tp",
+                    "pagos_manuales": {"fuente": "Prospecto", "pagos": [["2026-07-09", "8", "0.27"]]}}}}
+```
+
 ### `niveles.json`
 
 ```json
@@ -187,7 +203,7 @@ zona horaria.
 Columnas: `fecha,tipo,ticker,cantidad,importe,moneda,tc,tipo_activo,nota`.
 
 - `fecha`: `AAAA-MM-DD`, o `date` al pasarlo a `aplicar_movimientos`.
-- `tipo`: `compra`, `venta`, `renta`, `dividendo`, `deposito`, `retiro`, `gasto`, `compra_usd`, `venta_usd`.
+- `tipo`: `compra`, `venta`, `renta`, `amortizacion`, `dividendo`, `deposito`, `retiro`, `gasto`, `compra_usd`, `venta_usd`.
 - `ticker`: según `DOMINIO.md`; vacío si no aplica.
 - `cantidad`: siempre positiva; vacía o 0 si no aplica.
 - `importe`: siempre positivo y neto. El tipo define el sentido.
