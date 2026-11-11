@@ -1,0 +1,48 @@
+{
+  "https://www.iamc.com.ar/robots.txt": {
+    "iniciado_en": "2026-11-05T23:28:46.281108-03:00",
+    "estado": "recibido",
+    "origen": "Respuesta ya conservada durante el relevamiento; no se repitió la consulta."
+  },
+  "https://www.iamc.com.ar/informediario/": {
+    "iniciado_en": "2026-11-05T23:28:46.539223-03:00",
+    "estado": "recibido",
+    "origen": "Respuesta ya conservada durante el relevamiento; no se repitió la consulta."
+  },
+  "https://www.iamc.com.ar/informediario/d/ccau.json": {
+    "iniciado_en": "2026-11-05T23:33:14.799862-03:00",
+    "estado": "recibido",
+    "json_valido": false,
+    "origen": "Consulta única del recurso declarado; no se reintenta ese día."
+  },
+  "https://www.iamc.com.ar/informediario/d/acc.json": {
+    "iniciado_en": "2026-11-05T23:33:14.271227-03:00",
+    "estado": "recibido",
+    "json_valido": false,
+    "origen": "Consulta única del recurso declarado; no se reintenta ese día."
+  },
+  "https://www.iamc.com.ar/informediario/d/op.json": {
+    "iniciado_en": "2026-11-05T23:33:13.729327-03:00",
+    "estado": "recibido",
+    "json_valido": false,
+    "origen": "Consulta única del recurso declarado; no se reintenta ese día."
+  },
+  "https://www.iamc.com.ar/informediario/d/ced.json": {
+    "iniciado_en": "2026-11-05T23:33:14.123077-03:00",
+    "estado": "recibido",
+    "json_valido": false,
+    "origen": "Consulta única del recurso declarado; no se reintenta ese día."
+  },
+  "https://www.iamc.com.ar/informediario/d/ibi.json": {
+    "iniciado_en": "2026-11-05T23:33:14.426471-03:00",
+    "estado": "recibido",
+    "json_valido": false,
+    "origen": "Consulta única del recurso declarado; no se reintenta ese día."
+  },
+  "https://www.iamc.com.ar/informediario/d/ins.json": {
+    "iniciado_en": "2026-11-05T23:33:14.661336-03:00",
+    "estado": "recibido",
+    "json_valido": false,
+    "origen": "Consulta única del recurso declarado; no se reintenta ese día."
+  }
+}

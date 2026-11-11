@@ -1,0 +1,1538 @@
+{
+  "esquema_version": 1,
+  "naturaleza": "transcripción estática; no valida ni aprueba fórmulas",
+  "fuente": {
+    "url": "https://www.iamc.com.ar/informediario/",
+    "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+    "bytes": 2794705,
+    "tipo": "HTML público guardado, sin ejecutar sus scripts"
+  },
+  "formulas": [
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Precios y valuación",
+      "titulo": "Precio teórico",
+      "formula_html": "P(y) = Σ<sub>t=1..n</sub> CF<sub>t</sub> / (1+y)<sup>τ<sub>t</sub></sup>",
+      "formula_texto": "P(y) = Σ_{t=1..n} CF_{t} / (1+y)^{τ_{t}}",
+      "tiene_formula": true,
+      "fragmento_js": "'P(y) = Σ<sub>t=1..n</sub> CF<sub>t</sub> / (1+y)<sup>τ<sub>t</sub></sup>'",
+      "ubicacion": {
+        "linea_inicio": 9269,
+        "linea_fin": 9269
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Precios y valuación",
+      "titulo": "Precio sucio",
+      "formula_html": "Precio<sub>sucio</sub> = Precio<sub>cierre</sub>",
+      "formula_texto": "Precio_{sucio} = Precio_{cierre}",
+      "tiene_formula": true,
+      "fragmento_js": "'Precio<sub>sucio</sub> = Precio<sub>cierre</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9273,
+        "linea_fin": 9273
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Precios y valuación",
+      "titulo": "Precio limpio",
+      "formula_html": "Precio<sub>limpio</sub> = Precio<sub>sucio</sub> − Intereses<sub>corridos</sub>",
+      "formula_texto": "Precio_{limpio} = Precio_{sucio} − Intereses_{corridos}",
+      "tiene_formula": true,
+      "fragmento_js": "'Precio<sub>limpio</sub> = Precio<sub>sucio</sub> − Intereses<sub>corridos</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9277,
+        "linea_fin": 9277
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Precios y valuación",
+      "titulo": "Intereses corridos",
+      "formula_html": "IC = Cupón<sub>periodo</sub> × (τ<sub>dev</sub> / τ<sub>periodo</sub>)",
+      "formula_texto": "IC = Cupón_{periodo} × (τ_{dev} / τ_{periodo})",
+      "tiene_formula": true,
+      "fragmento_js": "'IC = Cupón<sub>periodo</sub> × (τ<sub>dev</sub> / τ<sub>periodo</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9281,
+        "linea_fin": 9281
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Precios y valuación",
+      "titulo": "Valor técnico",
+      "formula_html": "Valor<sub>técnico</sub> = Capital<sub>residual,aj</sub> + Intereses<sub>corridos,aj</sub>",
+      "formula_texto": "Valor_{técnico} = Capital_{residual,aj} + Intereses_{corridos,aj}",
+      "tiene_formula": true,
+      "fragmento_js": "'Valor<sub>técnico</sub> = Capital<sub>residual,aj</sub> + Intereses<sub>corridos,aj</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9285,
+        "linea_fin": 9285
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Precios y valuación",
+      "titulo": "Paridad",
+      "formula_html": "Paridad = (Precio<sub>sucio</sub> / Valor<sub>técnico</sub>) × 100",
+      "formula_texto": "Paridad = (Precio_{sucio} / Valor_{técnico}) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Paridad = (Precio<sub>sucio</sub> / Valor<sub>técnico</sub>) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9289,
+        "linea_fin": 9289
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Rendimientos",
+      "titulo": "TIR — Tasa Interna de Retorno",
+      "formula_html": "Precio<sub>sucio</sub> = Σ<sub>t=1..n</sub> CF<sub>t</sub> / (1+TIR)<sup>τ<sub>t</sub></sup>",
+      "formula_texto": "Precio_{sucio} = Σ_{t=1..n} CF_{t} / (1+TIR)^{τ_{t}}",
+      "tiene_formula": true,
+      "fragmento_js": "'Precio<sub>sucio</sub> = Σ<sub>t=1..n</sub> CF<sub>t</sub> / (1+TIR)<sup>τ<sub>t</sub></sup>'",
+      "ubicacion": {
+        "linea_inicio": 9295,
+        "linea_fin": 9295
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Rendimientos",
+      "titulo": "Current Yield",
+      "formula_html": "Current Yield = Cupón<sub>anual</sub> / Precio<sub>sucio</sub>",
+      "formula_texto": "Current Yield = Cupón_{anual} / Precio_{sucio}",
+      "tiene_formula": true,
+      "fragmento_js": "'Current Yield = Cupón<sub>anual</sub> / Precio<sub>sucio</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9299,
+        "linea_fin": 9299
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Rendimientos",
+      "titulo": "TNA",
+      "formula_html": "TNA = Rendimiento<sub>periodo</sub> × (360 / Días<sub>30/360</sub>)",
+      "formula_texto": "TNA = Rendimiento_{periodo} × (360 / Días_{30/360})",
+      "tiene_formula": true,
+      "fragmento_js": "'TNA = Rendimiento<sub>periodo</sub> × (360 / Días<sub>30/360</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9303,
+        "linea_fin": 9303
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Rendimientos",
+      "titulo": "TEA",
+      "formula_html": "TEA = (1 + Rendimiento<sub>periodo</sub>)<sup>1/τ</sup> − 1",
+      "formula_texto": "TEA = (1 + Rendimiento_{periodo})^{1/τ} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TEA = (1 + Rendimiento<sub>periodo</sub>)<sup>1/τ</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9307,
+        "linea_fin": 9307
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Rendimientos",
+      "titulo": "TEM",
+      "formula_html": "TEM = (1 + TEA)<sup>1/12</sup> − 1",
+      "formula_texto": "TEM = (1 + TEA)^{1/12} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TEM = (1 + TEA)<sup>1/12</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9311,
+        "linea_fin": 9311
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Rendimientos",
+      "titulo": "Convención de días",
+      "formula_html": "τ<sub>t</sub> = Días(Liquidación, Flujo<sub>t</sub>) / Base",
+      "formula_texto": "τ_{t} = Días(Liquidación, Flujo_{t}) / Base",
+      "tiene_formula": true,
+      "fragmento_js": "'τ<sub>t</sub> = Días(Liquidación, Flujo<sub>t</sub>) / Base'",
+      "ubicacion": {
+        "linea_inicio": 9315,
+        "linea_fin": 9315
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Duration, convexity y sensibilidad",
+      "titulo": "Duration Macaulay",
+      "formula_html": "D<sub>Mac</sub> = Σ τ<sub>t</sub> · PV(CF<sub>t</sub>) / Σ PV(CF<sub>t</sub>)",
+      "formula_texto": "D_{Mac} = Σ τ_{t} · PV(CF_{t}) / Σ PV(CF_{t})",
+      "tiene_formula": true,
+      "fragmento_js": "'D<sub>Mac</sub> = Σ τ<sub>t</sub> · PV(CF<sub>t</sub>) / Σ PV(CF<sub>t</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9321,
+        "linea_fin": 9321
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Duration, convexity y sensibilidad",
+      "titulo": "Duration Modificada",
+      "formula_html": "D<sub>Mod</sub> = D<sub>Mac</sub> / (1 + TIR)",
+      "formula_texto": "D_{Mod} = D_{Mac} / (1 + TIR)",
+      "tiene_formula": true,
+      "fragmento_js": "'D<sub>Mod</sub> = D<sub>Mac</sub> / (1 + TIR)'",
+      "ubicacion": {
+        "linea_inicio": 9325,
+        "linea_fin": 9325
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Duration, convexity y sensibilidad",
+      "titulo": "Duration Modificada en días",
+      "formula_html": "DM<sub>días</sub> = D<sub>Mod</sub> × Base",
+      "formula_texto": "DM_{días} = D_{Mod} × Base",
+      "tiene_formula": true,
+      "fragmento_js": "'DM<sub>días</sub> = D<sub>Mod</sub> × Base'",
+      "ubicacion": {
+        "linea_inicio": 9329,
+        "linea_fin": 9329
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Duration, convexity y sensibilidad",
+      "titulo": "Convexity",
+      "formula_html": "CX = Σ [ CF<sub>t</sub>·τ<sub>t</sub>(τ<sub>t</sub>+1) / (1+TIR)<sup>τ<sub>t</sub>+2</sup> ] / Precio<sub>sucio</sub>",
+      "formula_texto": "CX = Σ [ CF_{t}·τ_{t}(τ_{t}+1) / (1+TIR)^{τ_{t}+2} ] / Precio_{sucio}",
+      "tiene_formula": true,
+      "fragmento_js": "'CX = Σ [ CF<sub>t</sub>·τ<sub>t</sub>(τ<sub>t</sub>+1) / (1+TIR)<sup>τ<sub>t</sub>+2</sup> ] / Precio<sub>sucio</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9333,
+        "linea_fin": 9333
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Duration, convexity y sensibilidad",
+      "titulo": "Sensibilidad por Duration",
+      "formula_html": "ΔP ≈ −Precio<sub>sucio</sub> × D<sub>Mod</sub> × Δy",
+      "formula_texto": "ΔP ≈ −Precio_{sucio} × D_{Mod} × Δy",
+      "tiene_formula": true,
+      "fragmento_js": "'ΔP ≈ −Precio<sub>sucio</sub> × D<sub>Mod</sub> × Δy'",
+      "ubicacion": {
+        "linea_inicio": 9337,
+        "linea_fin": 9337
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Duration, convexity y sensibilidad",
+      "titulo": "Sensibilidad con Convexity",
+      "formula_html": "ΔP ≈ −P<sub>sucio</sub> D<sub>Mod</sub> Δy + ½ P<sub>sucio</sub> CX (Δy)²",
+      "formula_texto": "ΔP ≈ −P_{sucio} D_{Mod} Δy + ½ P_{sucio} CX (Δy)²",
+      "tiene_formula": true,
+      "fragmento_js": "'ΔP ≈ −P<sub>sucio</sub> D<sub>Mod</sub> Δy + ½ P<sub>sucio</sub> CX (Δy)²'",
+      "ubicacion": {
+        "linea_inicio": 9341,
+        "linea_fin": 9341
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Estructura y liquidez",
+      "titulo": "WAL — Weighted Average Life",
+      "formula_html": "WAL = Σ τ<sub>t</sub> · Amort<sub>t</sub> / Σ Amort<sub>t</sub>",
+      "formula_texto": "WAL = Σ τ_{t} · Amort_{t} / Σ Amort_{t}",
+      "tiene_formula": true,
+      "fragmento_js": "'WAL = Σ τ<sub>t</sub> · Amort<sub>t</sub> / Σ Amort<sub>t</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9347,
+        "linea_fin": 9347
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Estructura y liquidez",
+      "titulo": "ADTV — Average Daily Trading Value",
+      "formula_html": "ADTV<sub>n</sub> = (1/n) Σ<sub>i=0..n−1</sub> VolumenEfectivo<sub>t−i</sub>",
+      "formula_texto": "ADTV_{n} = (1/n) Σ_{i=0..n−1} VolumenEfectivo_{t−i}",
+      "tiene_formula": true,
+      "fragmento_js": "'ADTV<sub>n</sub> = (1/n) Σ<sub>i=0..n−1</sub> VolumenEfectivo<sub>t−i</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9351,
+        "linea_fin": 9351
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Curva del panel",
+      "titulo": "Ajuste cuadrático",
+      "formula_html": "y(x) = a + b·x + c·x<sup>2</sup>",
+      "formula_texto": "y(x) = a + b·x + c·x^{2}",
+      "tiene_formula": true,
+      "fragmento_js": "'y(x) = a + b·x + c·x<sup>2</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9357,
+        "linea_fin": 9357
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Curva del panel",
+      "titulo": "Spread contra la curva",
+      "formula_html": "Spread<sub>pb</sub> = ( TIR<sub>ref</sub> − y(x<sub>ref</sub>) ) × 100",
+      "formula_texto": "Spread_{pb} = ( TIR_{ref} − y(x_{ref}) ) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Spread<sub>pb</sub> = ( TIR<sub>ref</sub> − y(x<sub>ref</sub>) ) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9361,
+        "linea_fin": 9361
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Ajustes de capital",
+      "titulo": "Factor de ajuste CER",
+      "formula_html": "FA<sub>CER,t</sub> = CER<sub>t−ℓ</sub> / CER<sub>base</sub>",
+      "formula_texto": "FA_{CER,t} = CER_{t−ℓ} / CER_{base}",
+      "tiene_formula": true,
+      "fragmento_js": "'FA<sub>CER,t</sub> = CER<sub>t−ℓ</sub> / CER<sub>base</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9367,
+        "linea_fin": 9367
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Ajustes de capital",
+      "titulo": "Factor Dollar Linked",
+      "formula_html": "FA<sub>DL,t</sub> = A3500<sub>t−ℓ</sub> / A3500<sub>base</sub>",
+      "formula_texto": "FA_{DL,t} = A3500_{t−ℓ} / A3500_{base}",
+      "tiene_formula": true,
+      "fragmento_js": "'FA<sub>DL,t</sub> = A3500<sub>t−ℓ</sub> / A3500<sub>base</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9371,
+        "linea_fin": 9371
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Ajustes de capital",
+      "titulo": "Flujo técnico vs flujo ajustado",
+      "formula_html": "FlujoTotal<sub>t</sub> = (InterésCash<sub>t</sub> + AmortTec<sub>t</sub>) × FA<sub>t</sub>",
+      "formula_texto": "FlujoTotal_{t} = (InterésCash_{t} + AmortTec_{t}) × FA_{t}",
+      "tiene_formula": true,
+      "fragmento_js": "'FlujoTotal<sub>t</sub> = (InterésCash<sub>t</sub> + AmortTec<sub>t</sub>) × FA<sub>t</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9375,
+        "linea_fin": 9375
+      }
+    },
+    {
+      "seccion": "rf",
+      "nombre_seccion": "Renta Fija",
+      "grupo": "Ajustes de capital",
+      "titulo": "Capitalización de intereses",
+      "formula_html": "Cap<sub>t</sub> = InterésBruto<sub>t</sub> × p<sub>t</sub><sup>cap</sup>",
+      "formula_texto": "Cap_{t} = InterésBruto_{t} × p_{t}^{cap}",
+      "tiene_formula": true,
+      "fragmento_js": "'Cap<sub>t</sub> = InterésBruto<sub>t</sub> × p<sub>t</sub><sup>cap</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9379,
+        "linea_fin": 9379
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Modelo Black-Scholes",
+      "formula_html": "C = S e<sup>−qT</sup> N(d<sub>1</sub>) − K e<sup>−rT</sup> N(d<sub>2</sub>)<br>P = K e<sup>−rT</sup> N(−d<sub>2</sub>) − S e<sup>−qT</sup> N(−d<sub>1</sub>)<br>d<sub>1</sub> = [ ln(S/K) + (r − q + σ²/2)T ] / (σ√T),  d<sub>2</sub> = d<sub>1</sub> − σ√T",
+      "formula_texto": "C = S e^{−qT} N(d_{1}) − K e^{−rT} N(d_{2})\nP = K e^{−rT} N(−d_{2}) − S e^{−qT} N(−d_{1})\nd_{1} = [ ln(S/K) + (r − q + σ²/2)T ] / (σ√T),  d_{2} = d_{1} − σ√T",
+      "tiene_formula": true,
+      "fragmento_js": "'C = S e<sup>−qT</sup> N(d<sub>1</sub>) − K e<sup>−rT</sup> N(d<sub>2</sub>)<br>'+\r\n            'P = K e<sup>−rT</sup> N(−d<sub>2</sub>) − S e<sup>−qT</sup> N(−d<sub>1</sub>)<br>'+\r\n            'd<sub>1</sub> = [ ln(S/K) + (r − q + σ²/2)T ] / (σ√T),  d<sub>2</sub> = d<sub>1</sub> − σ√T'",
+      "ubicacion": {
+        "linea_inicio": 9393,
+        "linea_fin": 9395
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Dividend yield (q)",
+      "formula_html": "q = Dividendos esperados en la vida de la opción / S,  expresado como tasa continua anual",
+      "formula_texto": "q = Dividendos esperados en la vida de la opción / S,  expresado como tasa continua anual",
+      "tiene_formula": true,
+      "fragmento_js": "'q = Dividendos esperados en la vida de la opción / S,  expresado como tasa continua anual'",
+      "ubicacion": {
+        "linea_inicio": 9399,
+        "linea_fin": 9399
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Inputs del modelo",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9404,
+        "linea_fin": 9404
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Convenciones y alcance",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9407,
+        "linea_fin": 9407
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Precio subyacente sincronizado",
+      "formula_html": "t<sub>s</sub> = max { t : t ≤ t<sub>opción</sub> },  S = S(t<sub>s</sub>)",
+      "formula_texto": "t_{s} = max { t : t ≤ t_{opción} },  S = S(t_{s})",
+      "tiene_formula": true,
+      "fragmento_js": "'t<sub>s</sub> = max { t : t ≤ t<sub>opción</sub> },  S = S(t<sub>s</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9411,
+        "linea_fin": 9411
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Tasa libre de riesgo",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9415,
+        "linea_fin": 9415
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Conversión para Black-Scholes",
+      "formula_html": "r = ln(1 + TNA · T) / T,   T = Días al vencimiento / 365",
+      "formula_texto": "r = ln(1 + TNA · T) / T,   T = Días al vencimiento / 365",
+      "tiene_formula": true,
+      "fragmento_js": "'r = ln(1 + TNA · T) / T,   T = Días al vencimiento / 365'",
+      "ubicacion": {
+        "linea_inicio": 9419,
+        "linea_fin": 9419
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Modelo y sus inputs",
+      "titulo": "Días al vencimiento",
+      "formula_html": "Días = Fecha<sub>vencimiento</sub> − Fecha<sub>rueda</sub>,   T = Días/365",
+      "formula_texto": "Días = Fecha_{vencimiento} − Fecha_{rueda},   T = Días/365",
+      "tiene_formula": true,
+      "fragmento_js": "'Días = Fecha<sub>vencimiento</sub> − Fecha<sub>rueda</sub>,   T = Días/365'",
+      "ubicacion": {
+        "linea_inicio": 9423,
+        "linea_fin": 9423
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Volatilidad",
+      "titulo": "Volatilidad histórica anualizada",
+      "formula_html": "R<sub>t</sub> = ln( P<sub>t</sub> / P<sub>t−1</sub> )<br>σ<sub>anual</sub> = √{ [ T / (n−1) ] · Σ<sub>i=1..n</sub> [ ln( P<sub>i</sub> / P<sub>i−1</sub> ) − ( ln P<sub>n</sub> − ln P<sub>0</sub> ) / n ]² }",
+      "formula_texto": "R_{t} = ln( P_{t} / P_{t−1} )\nσ_{anual} = √{ [ T / (n−1) ] · Σ_{i=1..n} [ ln( P_{i} / P_{i−1} ) − ( ln P_{n} − ln P_{0} ) / n ]² }",
+      "tiene_formula": true,
+      "fragmento_js": "'R<sub>t</sub> = ln( P<sub>t</sub> / P<sub>t−1</sub> )<br>'+\r\n           'σ<sub>anual</sub> = √{ [ T / (n−1) ] · Σ<sub>i=1..n</sub> [ ln( P<sub>i</sub> / P<sub>i−1</sub> ) − ( ln P<sub>n</sub> − ln P<sub>0</sub> ) / n ]² }'",
+      "ubicacion": {
+        "linea_inicio": 9429,
+        "linea_fin": 9430
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Volatilidad",
+      "titulo": "Volatilidad implícita",
+      "formula_html": "σ<sub>IV</sub> :  BS(S, K, r, T, q, σ<sub>IV</sub>) = Prima<sub>último trade</sub>",
+      "formula_texto": "σ_{IV} :  BS(S, K, r, T, q, σ_{IV}) = Prima_{último trade}",
+      "tiene_formula": true,
+      "fragmento_js": "'σ<sub>IV</sub> :  BS(S, K, r, T, q, σ<sub>IV</sub>) = Prima<sub>último trade</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9438,
+        "linea_fin": 9438
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Griegas",
+      "titulo": "Delta",
+      "formula_html": "Δ<sub>C</sub> = N(d<sub>1</sub>),   Δ<sub>P</sub> = N(d<sub>1</sub>) − 1",
+      "formula_texto": "Δ_{C} = N(d_{1}),   Δ_{P} = N(d_{1}) − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'Δ<sub>C</sub> = N(d<sub>1</sub>),   Δ<sub>P</sub> = N(d<sub>1</sub>) − 1'",
+      "ubicacion": {
+        "linea_inicio": 9444,
+        "linea_fin": 9444
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Griegas",
+      "titulo": "Gamma",
+      "formula_html": "Γ = φ(d<sub>1</sub>) / (S σ √T)",
+      "formula_texto": "Γ = φ(d_{1}) / (S σ √T)",
+      "tiene_formula": true,
+      "fragmento_js": "'Γ = φ(d<sub>1</sub>) / (S σ √T)'",
+      "ubicacion": {
+        "linea_inicio": 9447,
+        "linea_fin": 9447
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Griegas",
+      "titulo": "Theta",
+      "formula_html": "Θ<sub>C</sub> = −S φ(d<sub>1</sub>) σ / (2√T) − r K e<sup>−rT</sup> N(d<sub>2</sub>)<br>Θ<sub>P</sub> = −S φ(d<sub>1</sub>) σ / (2√T) + r K e<sup>−rT</sup> N(−d<sub>2</sub>)",
+      "formula_texto": "Θ_{C} = −S φ(d_{1}) σ / (2√T) − r K e^{−rT} N(d_{2})\nΘ_{P} = −S φ(d_{1}) σ / (2√T) + r K e^{−rT} N(−d_{2})",
+      "tiene_formula": true,
+      "fragmento_js": "'Θ<sub>C</sub> = −S φ(d<sub>1</sub>) σ / (2√T) − r K e<sup>−rT</sup> N(d<sub>2</sub>)<br>'+\r\n            'Θ<sub>P</sub> = −S φ(d<sub>1</sub>) σ / (2√T) + r K e<sup>−rT</sup> N(−d<sub>2</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9451,
+        "linea_fin": 9452
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Griegas",
+      "titulo": "Vega",
+      "formula_html": "Vega = S φ(d<sub>1</sub>) √T × 0,01",
+      "formula_texto": "Vega = S φ(d_{1}) √T × 0,01",
+      "tiene_formula": true,
+      "fragmento_js": "'Vega = S φ(d<sub>1</sub>) √T × 0,01'",
+      "ubicacion": {
+        "linea_inicio": 9455,
+        "linea_fin": 9455
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Griegas",
+      "titulo": "Rho",
+      "formula_html": "ρ<sub>C</sub> = K T e<sup>−rT</sup> N(d<sub>2</sub>) × 0,01<br>ρ<sub>P</sub> = −K T e<sup>−rT</sup> N(−d<sub>2</sub>) × 0,01",
+      "formula_texto": "ρ_{C} = K T e^{−rT} N(d_{2}) × 0,01\nρ_{P} = −K T e^{−rT} N(−d_{2}) × 0,01",
+      "tiene_formula": true,
+      "fragmento_js": "'ρ<sub>C</sub> = K T e<sup>−rT</sup> N(d<sub>2</sub>) × 0,01<br>ρ<sub>P</sub> = −K T e<sup>−rT</sup> N(−d<sub>2</sub>) × 0,01'",
+      "ubicacion": {
+        "linea_inicio": 9458,
+        "linea_fin": 9458
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Valor y moneyness",
+      "titulo": "Distancia ITM/OTM y Moneyness",
+      "formula_html": "m<sub>C</sub> = S/K − 1,   m<sub>P</sub> = 1 − S/K,   |m| ≤ 1% ⇒ ATM",
+      "formula_texto": "m_{C} = S/K − 1,   m_{P} = 1 − S/K,   |m| ≤ 1% ⇒ ATM",
+      "tiene_formula": true,
+      "fragmento_js": "'m<sub>C</sub> = S/K − 1,   m<sub>P</sub> = 1 − S/K,   |m| ≤ 1% ⇒ ATM'",
+      "ubicacion": {
+        "linea_inicio": 9463,
+        "linea_fin": 9463
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Valor y moneyness",
+      "titulo": "Valor intrínseco",
+      "formula_html": "VI<sub>C</sub> = max(S − K, 0),   VI<sub>P</sub> = max(K − S, 0)",
+      "formula_texto": "VI_{C} = max(S − K, 0),   VI_{P} = max(K − S, 0)",
+      "tiene_formula": true,
+      "fragmento_js": "'VI<sub>C</sub> = max(S − K, 0),   VI<sub>P</sub> = max(K − S, 0)'",
+      "ubicacion": {
+        "linea_inicio": 9466,
+        "linea_fin": 9466
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Valor y moneyness",
+      "titulo": "Valor temporal",
+      "formula_html": "Valor Temporal = Prima − VI",
+      "formula_texto": "Valor Temporal = Prima − VI",
+      "tiene_formula": true,
+      "fragmento_js": "'Valor Temporal = Prima − VI'",
+      "ubicacion": {
+        "linea_inicio": 9469,
+        "linea_fin": 9469
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Valor y moneyness",
+      "titulo": "Precio teórico (columna del informe)",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9473,
+        "linea_fin": 9473
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Valor y moneyness",
+      "titulo": "Desvío vs. Teórico ARS",
+      "formula_html": "Desvío<sub>ARS</sub> = Prima<sub>último trade</sub> − Precio<sub>teórico</sub>",
+      "formula_texto": "Desvío_{ARS} = Prima_{último trade} − Precio_{teórico}",
+      "tiene_formula": true,
+      "fragmento_js": "'Desvío<sub>ARS</sub> = Prima<sub>último trade</sub> − Precio<sub>teórico</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9476,
+        "linea_fin": 9476
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Open Interest",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9481,
+        "linea_fin": 9481
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Variación Open Interest %",
+      "formula_html": "Var OI % = (OI<sub>t</sub> / OI<sub>t−1</sub> − 1) × 100",
+      "formula_texto": "Var OI % = (OI_{t} / OI_{t−1} − 1) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Var OI % = (OI<sub>t</sub> / OI<sub>t−1</sub> − 1) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9484,
+        "linea_fin": 9484
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Open Interest nocional",
+      "formula_html": "OI<sub>nocional</sub> = OI × Tamaño de lote × Precio del subyacente",
+      "formula_texto": "OI_{nocional} = OI × Tamaño de lote × Precio del subyacente",
+      "tiene_formula": true,
+      "fragmento_js": "'OI<sub>nocional</sub> = OI × Tamaño de lote × Precio del subyacente'",
+      "ubicacion": {
+        "linea_inicio": 9488,
+        "linea_fin": 9488
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Proporción Put / Call",
+      "formula_html": "Put/Call = ( Volumen efectivo PUT / Volumen efectivo CALL ) × 100",
+      "formula_texto": "Put/Call = ( Volumen efectivo PUT / Volumen efectivo CALL ) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Put/Call = ( Volumen efectivo PUT / Volumen efectivo CALL ) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9492,
+        "linea_fin": 9492
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Volumen efectivo ARS",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9499,
+        "linea_fin": 9499
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Promedio de volumen 20 ruedas",
+      "formula_html": "Prom20R = (1/20) Σ<sub>i=1..20</sub> Volumen<sub>t−i</sub>",
+      "formula_texto": "Prom20R = (1/20) Σ_{i=1..20} Volumen_{t−i}",
+      "tiene_formula": true,
+      "fragmento_js": "'Prom20R = (1/20) Σ<sub>i=1..20</sub> Volumen<sub>t−i</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9502,
+        "linea_fin": 9502
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Volumen vs. Promedio 20R",
+      "formula_html": "Vs20R = (Volumen<sub>t</sub> / Prom20R − 1) × 100",
+      "formula_texto": "Vs20R = (Volumen_{t} / Prom20R − 1) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Vs20R = (Volumen<sub>t</sub> / Prom20R − 1) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9505,
+        "linea_fin": 9505
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Variación Prima %",
+      "formula_html": "Var Prima % = (Prima<sub>t</sub> / Prima<sub>t−1</sub> − 1) × 100",
+      "formula_texto": "Var Prima % = (Prima_{t} / Prima_{t−1} − 1) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Var Prima % = (Prima<sub>t</sub> / Prima<sub>t−1</sub> − 1) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9508,
+        "linea_fin": 9508
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Hora último trade y cantidad de operaciones",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9512,
+        "linea_fin": 9512
+      }
+    },
+    {
+      "seccion": "op",
+      "nombre_seccion": "Opciones",
+      "grupo": "Posiciones abiertas y actividad",
+      "titulo": "Índice Caución BYMA",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9515,
+        "linea_fin": 9515
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Precios de la rueda",
+      "titulo": "Precio de cierre",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9531,
+        "linea_fin": 9531
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Precios de la rueda",
+      "titulo": "VWAP",
+      "formula_html": "VWAP = Σ (P<sub>i</sub> × Q<sub>i</sub>) / Σ Q<sub>i</sub>",
+      "formula_texto": "VWAP = Σ (P_{i} × Q_{i}) / Σ Q_{i}",
+      "tiene_formula": true,
+      "fragmento_js": "'VWAP = Σ (P<sub>i</sub> × Q<sub>i</sub>) / Σ Q<sub>i</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9536,
+        "linea_fin": 9536
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Precios de la rueda",
+      "titulo": "Apertura, máximo y mínimo",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9544,
+        "linea_fin": 9544
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Precios de la rueda",
+      "titulo": "Variación diaria",
+      "formula_html": "Var % = (P<sub>t</sub> / P<sub>t−1</sub> − 1) × 100",
+      "formula_texto": "Var % = (P_{t} / P_{t−1} − 1) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Var % = (P<sub>t</sub> / P<sub>t−1</sub> − 1) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9548,
+        "linea_fin": 9548
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Tamaño, liquidez y actividad",
+      "titulo": "Volumen efectivo",
+      "formula_html": "Volumen efectivo = Σ (P<sub>i</sub> × Q<sub>i</sub>)",
+      "formula_texto": "Volumen efectivo = Σ (P_{i} × Q_{i})",
+      "tiene_formula": true,
+      "fragmento_js": "'Volumen efectivo = Σ (P<sub>i</sub> × Q<sub>i</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9555,
+        "linea_fin": 9555
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Tamaño, liquidez y actividad",
+      "titulo": "Volumen nominal",
+      "formula_html": "Volumen nominal = Σ Q<sub>i</sub>",
+      "formula_texto": "Volumen nominal = Σ Q_{i}",
+      "tiene_formula": true,
+      "fragmento_js": "'Volumen nominal = Σ Q<sub>i</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9559,
+        "linea_fin": 9559
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Tamaño, liquidez y actividad",
+      "titulo": "ADTV 40 ruedas",
+      "formula_html": "ADTV = (1/40) Σ<sub>k=1..40</sub> Volumen efectivo<sub>t−k</sub>",
+      "formula_texto": "ADTV = (1/40) Σ_{k=1..40} Volumen efectivo_{t−k}",
+      "tiene_formula": true,
+      "fragmento_js": "'ADTV = (1/40) Σ<sub>k=1..40</sub> Volumen efectivo<sub>t−k</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9563,
+        "linea_fin": 9563
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Tamaño, liquidez y actividad",
+      "titulo": "Capitalización bursátil",
+      "formula_html": "Cap = Precio de cierre × Acciones en circulación",
+      "formula_texto": "Cap = Precio de cierre × Acciones en circulación",
+      "tiene_formula": true,
+      "fragmento_js": "'Cap = Precio de cierre × Acciones en circulación'",
+      "ubicacion": {
+        "linea_inicio": 9567,
+        "linea_fin": 9567
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Tamaño, liquidez y actividad",
+      "titulo": "Free float",
+      "formula_html": "Free float = Acciones disponibles / Acciones en circulación",
+      "formula_texto": "Free float = Acciones disponibles / Acciones en circulación",
+      "tiene_formula": true,
+      "fragmento_js": "'Free float = Acciones disponibles / Acciones en circulación'",
+      "ubicacion": {
+        "linea_inicio": 9571,
+        "linea_fin": 9571
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Tamaño, liquidez y actividad",
+      "titulo": "Ratio de rotación",
+      "formula_html": "Rotación = Volumen efectivo / Capitalización bursátil",
+      "formula_texto": "Rotación = Volumen efectivo / Capitalización bursátil",
+      "tiene_formula": true,
+      "fragmento_js": "'Rotación = Volumen efectivo / Capitalización bursátil'",
+      "ubicacion": {
+        "linea_inicio": 9576,
+        "linea_fin": 9576
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Volatilidad y beta",
+      "titulo": "Volatilidad histórica anualizada — 40 ruedas",
+      "formula_html": "R<sub>t</sub> = ln( P<sub>t</sub> / P<sub>t−1</sub> )<br>σ<sub>anual</sub> = √{ [ T / (n−1) ] · Σ<sub>i=1..n</sub> [ ln( P<sub>i</sub> / P<sub>i−1</sub> ) − ( ln P<sub>n</sub> − ln P<sub>0</sub> ) / n ]² }",
+      "formula_texto": "R_{t} = ln( P_{t} / P_{t−1} )\nσ_{anual} = √{ [ T / (n−1) ] · Σ_{i=1..n} [ ln( P_{i} / P_{i−1} ) − ( ln P_{n} − ln P_{0} ) / n ]² }",
+      "tiene_formula": true,
+      "fragmento_js": "'R<sub>t</sub> = ln( P<sub>t</sub> / P<sub>t−1</sub> )<br>'+\r\n           'σ<sub>anual</sub> = √{ [ T / (n−1) ] · Σ<sub>i=1..n</sub> [ ln( P<sub>i</sub> / P<sub>i−1</sub> ) − ( ln P<sub>n</sub> − ln P<sub>0</sub> ) / n ]² }'",
+      "ubicacion": {
+        "linea_inicio": 9583,
+        "linea_fin": 9584
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Volatilidad y beta",
+      "titulo": "Volatilidad mediana del panel",
+      "formula_html": "σ<sub>panel,t</sub> = mediana( σ<sub>i,t</sub> ) sobre las especies del panel",
+      "formula_texto": "σ_{panel,t} = mediana( σ_{i,t} ) sobre las especies del panel",
+      "tiene_formula": true,
+      "fragmento_js": "'σ<sub>panel,t</sub> = mediana( σ<sub>i,t</sub> ) sobre las especies del panel'",
+      "ubicacion": {
+        "linea_inicio": 9593,
+        "linea_fin": 9593
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Volatilidad y beta",
+      "titulo": "Beta — 252 ruedas",
+      "formula_html": "β<sub>i</sub> = Cov( R<sub>i</sub> , R<sub>M</sub> ) / Var( R<sub>M</sub> )",
+      "formula_texto": "β_{i} = Cov( R_{i} , R_{M} ) / Var( R_{M} )",
+      "tiene_formula": true,
+      "fragmento_js": "'β<sub>i</sub> = Cov( R<sub>i</sub> , R<sub>M</sub> ) / Var( R<sub>M</sub> )'",
+      "ubicacion": {
+        "linea_inicio": 9598,
+        "linea_fin": 9598
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "CEDEARs",
+      "titulo": "Ratio de conversión",
+      "formula_html": "Ratio = CEDEARs por acción del exterior",
+      "formula_texto": "Ratio = CEDEARs por acción del exterior",
+      "tiene_formula": true,
+      "fragmento_js": "'Ratio = CEDEARs por acción del exterior'",
+      "ubicacion": {
+        "linea_inicio": 9609,
+        "linea_fin": 9609
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "CEDEARs",
+      "titulo": "Precio implícito del subyacente",
+      "formula_html": "P<sub>implícito</sub> = P<sub>CEDEAR</sub> × Ratio / TC<sub>implícito</sub>",
+      "formula_texto": "P_{implícito} = P_{CEDEAR} × Ratio / TC_{implícito}",
+      "tiene_formula": true,
+      "fragmento_js": "'P<sub>implícito</sub> = P<sub>CEDEAR</sub> × Ratio / TC<sub>implícito</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9615,
+        "linea_fin": 9615
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "CEDEARs",
+      "titulo": "Tipo de cambio implícito",
+      "formula_html": "TC<sub>implícito</sub> = (P<sub>CEDEAR, ARS</sub> × Ratio) / P<sub>acción, USD</sub>",
+      "formula_texto": "TC_{implícito} = (P_{CEDEAR, ARS} × Ratio) / P_{acción, USD}",
+      "tiene_formula": true,
+      "fragmento_js": "'TC<sub>implícito</sub> = (P<sub>CEDEAR, ARS</sub> × Ratio) / P<sub>acción, USD</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9620,
+        "linea_fin": 9620
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "CEDEARs",
+      "titulo": "Premio o descuento",
+      "formula_html": "Premio % = (TC<sub>implícito</sub> / TC<sub>referencia</sub> − 1) × 100",
+      "formula_texto": "Premio % = (TC_{implícito} / TC_{referencia} − 1) × 100",
+      "tiene_formula": true,
+      "fragmento_js": "'Premio % = (TC<sub>implícito</sub> / TC<sub>referencia</sub> − 1) × 100'",
+      "ubicacion": {
+        "linea_inicio": 9625,
+        "linea_fin": 9625
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Eventos corporativos y ajustes",
+      "titulo": "Factor de ajuste",
+      "formula_html": "P<sub>ajustado</sub> = P<sub>previo</sub> × Factor",
+      "formula_texto": "P_{ajustado} = P_{previo} × Factor",
+      "tiene_formula": true,
+      "fragmento_js": "'P<sub>ajustado</sub> = P<sub>previo</sub> × Factor'",
+      "ubicacion": {
+        "linea_inicio": 9631,
+        "linea_fin": 9631
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Eventos corporativos y ajustes",
+      "titulo": "Dividendo en efectivo",
+      "formula_html": "Factor = (P<sub>previo</sub> − Dividendo) / P<sub>previo</sub>",
+      "formula_texto": "Factor = (P_{previo} − Dividendo) / P_{previo}",
+      "tiene_formula": true,
+      "fragmento_js": "'Factor = (P<sub>previo</sub> − Dividendo) / P<sub>previo</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9636,
+        "linea_fin": 9636
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Eventos corporativos y ajustes",
+      "titulo": "Split y dividendo en acciones",
+      "formula_html": "Factor = 1 / Relación de canje",
+      "formula_texto": "Factor = 1 / Relación de canje",
+      "tiene_formula": true,
+      "fragmento_js": "'Factor = 1 / Relación de canje'",
+      "ubicacion": {
+        "linea_inicio": 9640,
+        "linea_fin": 9640
+      }
+    },
+    {
+      "seccion": "rv",
+      "nombre_seccion": "Renta Variable",
+      "grupo": "Eventos corporativos y ajustes",
+      "titulo": "Suscripción de acciones",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9645,
+        "linea_fin": 9645
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Flujo de fondos",
+      "formula_html": "CF<sub>t</sub> = Amort<sub>t</sub> + Capital vivo<sub>t</sub> × Tasa<sub>t</sub> × τ<sub>periodo</sub>",
+      "formula_texto": "CF_{t} = Amort_{t} + Capital vivo_{t} × Tasa_{t} × τ_{periodo}",
+      "tiene_formula": true,
+      "fragmento_js": "'CF<sub>t</sub> = Amort<sub>t</sub> + Capital vivo<sub>t</sub> × Tasa<sub>t</sub> × τ<sub>periodo</sub>'",
+      "ubicacion": {
+        "linea_inicio": 9660,
+        "linea_fin": 9660
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "TIR desde el precio",
+      "formula_html": "P = Σ CF<sub>t</sub> / (1+TIR)<sup>d<sub>t</sub>/365</sup>",
+      "formula_texto": "P = Σ CF_{t} / (1+TIR)^{d_{t}/365}",
+      "tiene_formula": true,
+      "fragmento_js": "'P = Σ CF<sub>t</sub> / (1+TIR)<sup>d<sub>t</sub>/365</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9667,
+        "linea_fin": 9667
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Fecha de liquidación",
+      "formula_html": "P = Σ<sub>t &gt; X</sub> CF<sub>t</sub> / (1+TIR)<sup>(d<sub>t</sub> − d<sub>X</sub>)/365</sup>",
+      "formula_texto": "P = Σ_{t > X} CF_{t} / (1+TIR)^{(d_{t} − d_{X})/365}",
+      "tiene_formula": true,
+      "fragmento_js": "'P = Σ<sub>t &gt; X</sub> CF<sub>t</sub> / (1+TIR)<sup>(d<sub>t</sub> − d<sub>X</sub>)/365</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9672,
+        "linea_fin": 9672
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Base de días",
+      "formula_html": "τ<sub>Act/365</sub> = días corridos / 365 · τ<sub>30/360</sub> = días 30/360 / 360",
+      "formula_texto": "τ_{Act/365} = días corridos / 365 · τ_{30/360} = días 30/360 / 360",
+      "tiene_formula": true,
+      "fragmento_js": "'τ<sub>Act/365</sub> = días corridos / 365 · τ<sub>30/360</sub> = días 30/360 / 360'",
+      "ubicacion": {
+        "linea_inicio": 9681,
+        "linea_fin": 9681
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Calendario",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9687,
+        "linea_fin": 9687
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Precio desde la tasa",
+      "formula_html": "TIR = (1+TEM)<sup>12</sup> − 1 · TEM = TNA / 12",
+      "formula_texto": "TIR = (1+TEM)^{12} − 1 · TEM = TNA / 12",
+      "tiene_formula": true,
+      "fragmento_js": "'TIR = (1+TEM)<sup>12</sup> − 1 · TEM = TNA / 12'",
+      "ubicacion": {
+        "linea_inicio": 9692,
+        "linea_fin": 9692
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Duration, convexity y paridad",
+      "formula_html": "D<sub>Mod</sub> = D<sub>Mac</sub>/(1+TIR) · C = Σ τ(τ+1) CF (1+TIR)<sup>−(τ+2)</sup> / P",
+      "formula_texto": "D_{Mod} = D_{Mac}/(1+TIR) · C = Σ τ(τ+1) CF (1+TIR)^{−(τ+2)} / P",
+      "tiene_formula": true,
+      "fragmento_js": "'D<sub>Mod</sub> = D<sub>Mac</sub>/(1+TIR) · C = Σ τ(τ+1) CF (1+TIR)<sup>−(τ+2)</sup> / P'",
+      "ubicacion": {
+        "linea_inicio": 9696,
+        "linea_fin": 9696
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Moneda de compra y especie",
+      "formula_html": "P<sub>USD</sub> = P<sub>ARS</sub> / TC",
+      "formula_texto": "P_{USD} = P_{ARS} / TC",
+      "tiene_formula": true,
+      "fragmento_js": "'P<sub>USD</sub> = P<sub>ARS</sub> / TC'",
+      "ubicacion": {
+        "linea_inicio": 9700,
+        "linea_fin": 9700
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Comisión de compra",
+      "formula_html": "P<sub>pagado</sub> = P × (1 + c) · TIR<sub>neta</sub> : P<sub>pagado</sub> = Σ CF<sub>t</sub> / (1+TIR<sub>neta</sub>)<sup>d<sub>t</sub>/365</sup>",
+      "formula_texto": "P_{pagado} = P × (1 + c) · TIR_{neta} : P_{pagado} = Σ CF_{t} / (1+TIR_{neta})^{d_{t}/365}",
+      "tiene_formula": true,
+      "fragmento_js": "'P<sub>pagado</sub> = P × (1 + c) · TIR<sub>neta</sub> : P<sub>pagado</sub> = Σ CF<sub>t</sub> / (1+TIR<sub>neta</sub>)<sup>d<sub>t</sub>/365</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9708,
+        "linea_fin": 9708
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Comisión sobre los pagos",
+      "formula_html": "CF<sup>neto</sup><sub>t</sub> = Amort<sub>t</sub> × (1 − k·a) + Int<sub>t</sub> × (1 − k)",
+      "formula_texto": "CF^{neto}_{t} = Amort_{t} × (1 − k·a) + Int_{t} × (1 − k)",
+      "tiene_formula": true,
+      "fragmento_js": "'CF<sup>neto</sup><sub>t</sub> = Amort<sub>t</sub> × (1 − k·a) + Int<sub>t</sub> × (1 − k)'",
+      "ubicacion": {
+        "linea_inicio": 9715,
+        "linea_fin": 9715
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — flujos y valuación",
+      "titulo": "Diferencia contra el cierre",
+      "formula_html": "Δ TIR = TIR − TIR<sub>cierre</sub> · Δ Precio = P / P<sub>cierre</sub> − 1",
+      "formula_texto": "Δ TIR = TIR − TIR_{cierre} · Δ Precio = P / P_{cierre} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'Δ TIR = TIR − TIR<sub>cierre</sub> · Δ Precio = P / P<sub>cierre</sub> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9721,
+        "linea_fin": 9721
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — supuestos",
+      "titulo": "Cupones TAMAR y BADLAR",
+      "formula_html": "Tasa<sub>cupón</sub> = Índice<sub>futuro</sub> + Margen",
+      "formula_texto": "Tasa_{cupón} = Índice_{futuro} + Margen",
+      "tiene_formula": true,
+      "fragmento_js": "'Tasa<sub>cupón</sub> = Índice<sub>futuro</sub> + Margen'",
+      "ubicacion": {
+        "linea_inicio": 9727,
+        "linea_fin": 9727
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — supuestos",
+      "titulo": "Capitalizables TAMAR",
+      "formula_html": "TEM = (1 + TNA × 32/365)<sup>365/384</sup> − 1",
+      "formula_texto": "TEM = (1 + TNA × 32/365)^{365/384} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TEM = (1 + TNA × 32/365)<sup>365/384</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9733,
+        "linea_fin": 9733
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — supuestos",
+      "titulo": "Bonos CER",
+      "formula_html": "CF<sup>nominal</sup><sub>t</sub> = CF<sup>real</sup><sub>t</sub> × (1+π)<sup>d<sub>t</sub>/(365/12)</sup>",
+      "formula_texto": "CF^{nominal}_{t} = CF^{real}_{t} × (1+π)^{d_{t}/(365/12)}",
+      "tiene_formula": true,
+      "fragmento_js": "'CF<sup>nominal</sup><sub>t</sub> = CF<sup>real</sup><sub>t</sub> × (1+π)<sup>d<sub>t</sub>/(365/12)</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9739,
+        "linea_fin": 9739
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — supuestos",
+      "titulo": "Dollar linked",
+      "formula_html": "CF<sup>ARS</sup><sub>t</sub> = CF<sub>t</sub> × (1+δ)<sup>d<sub>t</sub>/(365/12)</sup>",
+      "formula_texto": "CF^{ARS}_{t} = CF_{t} × (1+δ)^{d_{t}/(365/12)}",
+      "tiene_formula": true,
+      "fragmento_js": "'CF<sup>ARS</sup><sub>t</sub> = CF<sub>t</sub> × (1+δ)<sup>d<sub>t</sub>/(365/12)</sup>'",
+      "ubicacion": {
+        "linea_inicio": 9745,
+        "linea_fin": 9745
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Bonos — supuestos",
+      "titulo": "Duales",
+      "formula_html": "M = máx(M<sub>pata 1</sub>, M<sub>pata 2</sub>)",
+      "formula_texto": "M = máx(M_{pata 1}, M_{pata 2})",
+      "tiene_formula": true,
+      "fragmento_js": "'M = máx(M<sub>pata 1</sub>, M<sub>pata 2</sub>)'",
+      "ubicacion": {
+        "linea_inicio": 9749,
+        "linea_fin": 9749
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Tabla general de títulos públicos",
+      "titulo": "Qué muestra",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9758,
+        "linea_fin": 9758
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Tabla general de títulos públicos",
+      "titulo": "Plazo",
+      "formula_html": "CI = rueda del cierre · 24 hs = día hábil siguiente",
+      "formula_texto": "CI = rueda del cierre · 24 hs = día hábil siguiente",
+      "tiene_formula": true,
+      "fragmento_js": "'CI = rueda del cierre · 24 hs = día hábil siguiente'",
+      "ubicacion": {
+        "linea_inicio": 9766,
+        "linea_fin": 9766
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Tabla general de títulos públicos",
+      "titulo": "TNA sobre plazo y equivalentes",
+      "formula_html": "TNA<sub>s/plazo</sub> = (CF/P − 1) × 365/d · TNA<sub>n</sub> = ((1+TIR)<sup>n/365</sup> − 1) × 365/n",
+      "formula_texto": "TNA_{s/plazo} = (CF/P − 1) × 365/d · TNA_{n} = ((1+TIR)^{n/365} − 1) × 365/n",
+      "tiene_formula": true,
+      "fragmento_js": "'TNA<sub>s/plazo</sub> = (CF/P − 1) × 365/d · TNA<sub>n</sub> = ((1+TIR)<sup>n/365</sup> − 1) × 365/n'",
+      "ubicacion": {
+        "linea_inicio": 9770,
+        "linea_fin": 9770
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Tabla general de títulos públicos",
+      "titulo": "Duales: pata",
+      "formula_html": "TIR<sub>pata</sub> = (M<sub>pata</sub>/P)<sup>365/d</sup> − 1",
+      "formula_texto": "TIR_{pata} = (M_{pata}/P)^{365/d} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TIR<sub>pata</sub> = (M<sub>pata</sub>/P)<sup>365/d</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9775,
+        "linea_fin": 9775
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Letras",
+      "titulo": "TEM",
+      "formula_html": "TEM = (P<sub>vto</sub> / costo)<sup>30/días</sup> − 1",
+      "formula_texto": "TEM = (P_{vto} / costo)^{30/días} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TEM = (P<sub>vto</sub> / costo)<sup>30/días</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9780,
+        "linea_fin": 9780
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Letras",
+      "titulo": "TEA y TNA",
+      "formula_html": "TEA = (1+TEM)<sup>12</sup> − 1 · TNA = TEM × 12",
+      "formula_texto": "TEA = (1+TEM)^{12} − 1 · TNA = TEM × 12",
+      "tiene_formula": true,
+      "fragmento_js": "'TEA = (1+TEM)<sup>12</sup> − 1 · TNA = TEM × 12'",
+      "ubicacion": {
+        "linea_inicio": 9785,
+        "linea_fin": 9785
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Letras",
+      "titulo": "Comisiones",
+      "formula_html": "costo = P<sub>neg</sub> × (1 + TNA<sub>com</sub> × días/365)",
+      "formula_texto": "costo = P_{neg} × (1 + TNA_{com} × días/365)",
+      "tiene_formula": true,
+      "fragmento_js": "'costo = P<sub>neg</sub> × (1 + TNA<sub>com</sub> × días/365)'",
+      "ubicacion": {
+        "linea_inicio": 9787,
+        "linea_fin": 9787
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Letras",
+      "titulo": "Precio desde la TEM",
+      "formula_html": "P<sub>neg</sub> = P<sub>vto</sub> / (1+TEM)<sup>días/30</sup> / (1 + TNA<sub>com</sub> × días/365)",
+      "formula_texto": "P_{neg} = P_{vto} / (1+TEM)^{días/30} / (1 + TNA_{com} × días/365)",
+      "tiene_formula": true,
+      "fragmento_js": "'P<sub>neg</sub> = P<sub>vto</sub> / (1+TEM)<sup>días/30</sup> / (1 + TNA<sub>com</sub> × días/365)'",
+      "ubicacion": {
+        "linea_inicio": 9790,
+        "linea_fin": 9790
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Letras",
+      "titulo": "TC breakeven",
+      "formula_html": "TC<sub>BE</sub> = TC<sub>neg</sub> × P<sub>vto</sub> / costo",
+      "formula_texto": "TC_{BE} = TC_{neg} × P_{vto} / costo",
+      "tiene_formula": true,
+      "fragmento_js": "'TC<sub>BE</sub> = TC<sub>neg</sub> × P<sub>vto</sub> / costo'",
+      "ubicacion": {
+        "linea_inicio": 9792,
+        "linea_fin": 9792
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Letras",
+      "titulo": "Por instrumento",
+      "formula_html": "",
+      "formula_texto": "",
+      "tiene_formula": false,
+      "fragmento_js": "''",
+      "ubicacion": {
+        "linea_inicio": 9794,
+        "linea_fin": 9794
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Interés",
+      "formula_html": "I = C × TNA × n / 365",
+      "formula_texto": "I = C × TNA × n / 365",
+      "tiene_formula": true,
+      "fragmento_js": "'I = C × TNA × n / 365'",
+      "ubicacion": {
+        "linea_inicio": 9800,
+        "linea_fin": 9800
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Comisión del agente",
+      "formula_html": "Com = máx(B<sub>c</sub> × TNA<sub>com</sub> × n / 365 ; mínimo)",
+      "formula_texto": "Com = máx(B_{c} × TNA_{com} × n / 365 ; mínimo)",
+      "tiene_formula": true,
+      "fragmento_js": "'Com = máx(B<sub>c</sub> × TNA<sub>com</sub> × n / 365 ; mínimo)'",
+      "ubicacion": {
+        "linea_inicio": 9804,
+        "linea_fin": 9804
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Derechos de mercado",
+      "formula_html": "D = B<sub>d</sub> × d × mín(n ; 90) / 90",
+      "formula_texto": "D = B_{d} × d × mín(n ; 90) / 90",
+      "tiene_formula": true,
+      "fragmento_js": "'D = B<sub>d</sub> × d × mín(n ; 90) / 90'",
+      "ubicacion": {
+        "linea_inicio": 9807,
+        "linea_fin": 9807
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Impuestos",
+      "formula_html": "G = Com + D + A + Of + IVA",
+      "formula_texto": "G = Com + D + A + Of + IVA",
+      "tiene_formula": true,
+      "fragmento_js": "'G = Com + D + A + Of + IVA'",
+      "ubicacion": {
+        "linea_inicio": 9811,
+        "linea_fin": 9811
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Tasa neta y costo financiero",
+      "formula_html": "TNA<sub>neta</sub> = (F<sub>1</sub> − F<sub>0</sub>) / F<sub>0</sub> × 365 / n · TEA = (F<sub>1</sub>/F<sub>0</sub>)<sup>365/n</sup> − 1",
+      "formula_texto": "TNA_{neta} = (F_{1} − F_{0}) / F_{0} × 365 / n · TEA = (F_{1}/F_{0})^{365/n} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TNA<sub>neta</sub> = (F<sub>1</sub> − F<sub>0</sub>) / F<sub>0</sub> × 365 / n · TEA = (F<sub>1</sub>/F<sub>0</sub>)<sup>365/n</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9814,
+        "linea_fin": 9814
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Garantía",
+      "formula_html": "VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)",
+      "formula_texto": "VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)",
+      "tiene_formula": true,
+      "fragmento_js": "'VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)'",
+      "ubicacion": {
+        "linea_inicio": 9818,
+        "linea_fin": 9818
+      }
+    }
+  ]
+}

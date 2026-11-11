@@ -1,0 +1,254 @@
+{
+  "esquema_version": 1,
+  "naturaleza": "Datos públicos de mercado; muestras de relevamiento sin integración a cartera",
+  "fecha_cierre": "2026-11-05",
+  "fecha_liquidacion": "2026-11-06",
+  "fuente_url": "https://www.iamc.com.ar/informediario/",
+  "archivos": [
+    {
+      "archivo": "2026-11-05/catalogo.json",
+      "bytes": 350733,
+      "sha256": "96070ce55662ed3795aa56865cb9e227aa542aa4dd0ab593ff1cb6ef074f18f1"
+    },
+    {
+      "archivo": "2026-11-05/caucion_metodologia.json",
+      "bytes": 8758,
+      "sha256": "426a4c4be45dbebfde8a39bbbaa6c9e7ebfcaa1abd602f8aeadfba4845d51a35"
+    },
+    {
+      "archivo": "2026-11-05/control_tir.json",
+      "bytes": 10825,
+      "sha256": "56f74f714f39b7310a66c398ad61346972c117daccf4a8c10c7238abdfc59285"
+    },
+    {
+      "archivo": "2026-11-05/diferido_acc.http.json",
+      "bytes": 1232,
+      "sha256": "e82889ffb3836b7bfa60bbcaa7188bf2768ae07ee9a8c3119b6f59ab2dbed51c"
+    },
+    {
+      "archivo": "2026-11-05/diferido_acc.respuesta",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ccau.http.json",
+      "bytes": 1240,
+      "sha256": "dd4430bb0ff20f8391748d2fa7784483de7ba07a7ad90502517ca4e9c4140c3f"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ccau.respuesta",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ced.http.json",
+      "bytes": 1232,
+      "sha256": "628254fe7bd18be33b4976bc49f6aa3253fbd74596b8184bc64e93488a0bd6ce"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ced.respuesta",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ibi.http.json",
+      "bytes": 1240,
+      "sha256": "fa483858e96a6d2532ac29102af39ac51009fa2e8c61c441f9139754426d32db"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ibi.respuesta",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ins.http.json",
+      "bytes": 1238,
+      "sha256": "409a907e23f4ce22fd178a4a82321db399716944d2c10b3397973d3a7470b4f2"
+    },
+    {
+      "archivo": "2026-11-05/diferido_ins.respuesta",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/diferido_op.http.json",
+      "bytes": 1244,
+      "sha256": "8651b93db793c419389c7d5cd18fec595000cc606026d3a8345f2bbf2140c020"
+    },
+    {
+      "archivo": "2026-11-05/diferido_op.respuesta",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/informediario.html",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/informediario.html.http.json",
+      "bytes": 1139,
+      "sha256": "05b7648997bbc9bbafb46a1f6793e30aabcda1a5d686d5866658cbae29944312"
+    },
+    {
+      "archivo": "2026-11-05/intentos.json",
+      "bytes": 1943,
+      "sha256": "015696a78003cf75d3fc1995bc1c9071114fabdc4a6829e411c9c52be70c53a2"
+    },
+    {
+      "archivo": "2026-11-05/macro.json",
+      "bytes": 1503,
+      "sha256": "27ff73f82eab7800702fda23cd1003f45174c8c7aa17c83a0f55260a1f49ddf2"
+    },
+    {
+      "archivo": "2026-11-05/mapa_fuente.json",
+      "bytes": 12114,
+      "sha256": "cd65fc5e37d4fdc0abe07b9e3378011e769f2e029cb9d417894af605689821e5"
+    },
+    {
+      "archivo": "2026-11-05/metodologias.json",
+      "bytes": 58386,
+      "sha256": "a5e2562b66c8ea9cfca2af6db3d64cc97ab27adf0f18aa12ae4e7adf0de075ed"
+    },
+    {
+      "archivo": "2026-11-05/metodologias_texto.txt",
+      "bytes": 14758,
+      "sha256": "7c292a73dc843b9714a208ad4e228536681a5e00e77d2a5f95bae4985bbfe292"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/bonos/AL30.json",
+      "bytes": 3885,
+      "sha256": "e590f57b9bfd22a443f5cb2bd8e39a0ad5e4332a228f91766320a8779c8e4353"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/bonos/TMVE8.json",
+      "bytes": 3053,
+      "sha256": "cf97231b7169d0de1157066759f274724bf9dc99b967270557d3a91d64844d22"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/bonos/TX26.ausente.json",
+      "bytes": 242,
+      "sha256": "ffe8064232fa37758b9231a5b3632ac2eb5850daa808afddce39fbeb7e8474a3"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/bonos/TZXS7.json",
+      "bytes": 2535,
+      "sha256": "e1a12cb3645851efcf69ec95b5ac6b4dc0c04070e412a61598aa27da4d51d8ba"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/bonos/YM34O.json",
+      "bytes": 4105,
+      "sha256": "349393c865cfa0b938a6ffba431914b486cfb6cedde70e9b76369bc27a6d16d3"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/calculadora_bonos.json",
+      "bytes": 309207,
+      "sha256": "6ac1a884851b4f711bc97f842fef5ec8deb9f1a06b9789cf9b48a48867c1fb77"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/calculadora_caucion_inicial.json",
+      "bytes": 698,
+      "sha256": "36fb9f0247cc55153c7d84dd84d8d07470d83321467edf42f000ec0bfcfd0e38"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/calculadora_letras.json",
+      "bytes": 19040,
+      "sha256": "7167c85017ade672024dbef50eb66791536c944699614fc2cd0390418e682ccd"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/estado_muestras.json",
+      "bytes": 2795,
+      "sha256": "3acb9bb8738090cd8a78c09c988a3212644d85268c8b17635831bd14c926fea9"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/flujos_fechados/AL30.json",
+      "bytes": 1653,
+      "sha256": "9e0594f7aa841dc66e9d1b61a1949ce55022ef629d5c1a99d1c3367c251f7c7e"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/flujos_fechados/TMVE8.json",
+      "bytes": 459,
+      "sha256": "314acde311ae551afc19f8e516d41391d44c28886c27269e8a13b404d51d1726"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/flujos_fechados/TZXS7.json",
+      "bytes": 448,
+      "sha256": "127e3354d589d5edbdb923c5a96b273276722fd8a3e57b0f367e191f5423eeaf"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/flujos_fechados/YM34O.json",
+      "bytes": 2901,
+      "sha256": "46e82d5a94956b9d192d814bb5106e90089acaabae95642913a8395fdaa3d863"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/informe_on.json",
+      "bytes": 1922625,
+      "sha256": "9bdba9b7f1c98edcf7a1d68b5f6b2cc803df7279e82e095716629e1a1288108d"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/informe_titulos_publicos.json",
+      "bytes": 905627,
+      "sha256": "aab552e43a007c95af59a9b6feff0d41ff7d3393332274dca484e22a6e9814ff"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/letras/S30N6.json",
+      "bytes": 2651,
+      "sha256": "483eeaeca48cf957de65724c3af2e16629328557107d62d7076c98323df7432e"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/letras/T30A7.json",
+      "bytes": 2646,
+      "sha256": "e32c4eff33988741ac6762f2d6472c9e47b5bc75e003bdcce57e1e8859f230a5"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/macro_payload_crudo.json",
+      "bytes": 1503,
+      "sha256": "27ff73f82eab7800702fda23cd1003f45174c8c7aa17c83a0f55260a1f49ddf2"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/mercado_dinero.json",
+      "bytes": 298017,
+      "sha256": "50c6611966341f2f210c0c0c79ce9f1d350e2c5d929340f883cb7201c15881c6"
+    },
+    {
+      "archivo": "2026-11-05/muestras_extractor/padron_inicial.json",
+      "bytes": 42,
+      "sha256": "c54fb43071cf9f1451d510056384d63ce882d2b9fab31b95afd9a52d4a82a3e8"
+    },
+    {
+      "archivo": "2026-11-05/padron.json",
+      "bytes": 187,
+      "sha256": "6d092be94904b7cbbc337b59a9652393cf15cd24c8d90d8a4921bd14d30615b5"
+    },
+    {
+      "archivo": "2026-11-05/red_observada.json",
+      "bytes": 12775,
+      "sha256": "e8434e069e148c4169e76242497a47bddd378847414e8a84dfd0375c36a65859"
+    },
+    {
+      "archivo": "2026-11-05/robots.txt",
+      "bytes": 2794705,
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo": "2026-11-05/robots.txt.http.json",
+      "bytes": 1125,
+      "sha256": "e93364b7772d077326e51005c3e2b0b7837efa18e16707b0900a3e4f4e09197b"
+    },
+    {
+      "archivo": "cierres/2026-11-05.json",
+      "bytes": 4581690,
+      "sha256": "735a8dc39d907bd1bdaca40a8103435abdfa713d04b388b22cff90eea5db4e02"
+    }
+  ],
+  "datos_faltantes": [
+    "TX26 no está en calculadora/informe/catálogo del cierre",
+    "Los seis diferidos responden HTML, no JSON; padrón y garantías incompletos"
+  ],
+  "pruebas": {
+    "iamc_nuevas": 44,
+    "etapas": 338,
+    "extras": 484,
+    "total": 822
+  }
+}

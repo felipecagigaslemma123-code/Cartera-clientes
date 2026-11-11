@@ -1,0 +1,25 @@
+{
+  "url_solicitada": "https://www.iamc.com.ar/informediario/d/op.json",
+  "consultado_en": "2026-11-05T23:33:13.729327-03:00",
+  "intento_reservado": true,
+  "url_final": "https://www.iamc.com.ar/informediario/d/op.json",
+  "estado_http": 200,
+  "headers": {
+    "Date": "Fri, 06 Nov 2026 02:33:13 GMT",
+    "Content-Type": "text/html; charset=utf-8",
+    "Transfer-Encoding": "chunked",
+    "Connection": "close",
+    "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "public, max-age=0, must-revalidate",
+    "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=n%2FfT6%2Fc6aQ0%2BquQaW%2FutEwgSIHe%2F2vVCVMAxyZxmu4qmcConqxxy4IcgobKe74uzV%2F899orMEYt0qkdbPyZkSkUdR1pgvX%2BUSJMEY1NfD9628rwWO6RoQDKW%2FMhGmwxHChNZogrHH3QDoaaEStc%3D\"}]}",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "x-content-type-options": "nosniff",
+    "Server": "cloudflare",
+    "CF-RAY": "a560b135f8f40ec7-EZE",
+    "alt-svc": "h3=\":443\"; ma=86400"
+  },
+  "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+  "json_valido": false,
+  "igual_html_inicial": true
+}

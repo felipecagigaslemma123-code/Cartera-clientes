@@ -1,0 +1,80 @@
+{
+  "fecha_cierre": "2026-11-05",
+  "origen": "https://www.iamc.com.ar/informediario/",
+  "muestras": [
+    {
+      "ticker": "AL30",
+      "seccion": "bonos",
+      "archivo": "bonos/AL30.json",
+      "disponible": true
+    },
+    {
+      "ticker": "TX26",
+      "seccion": "bonos",
+      "archivo": "bonos/TX26.ausente.json",
+      "disponible": false
+    },
+    {
+      "ticker": "TZXS7",
+      "seccion": "bonos",
+      "archivo": "bonos/TZXS7.json",
+      "disponible": true
+    },
+    {
+      "ticker": "TMVE8",
+      "seccion": "bonos",
+      "archivo": "bonos/TMVE8.json",
+      "disponible": true
+    },
+    {
+      "ticker": "YM34O",
+      "seccion": "bonos",
+      "archivo": "bonos/YM34O.json",
+      "disponible": true
+    },
+    {
+      "ticker": "S30N6",
+      "seccion": "letras",
+      "archivo": "letras/S30N6.json",
+      "disponible": true
+    },
+    {
+      "ticker": "T30A7",
+      "seccion": "letras",
+      "archivo": "letras/T30A7.json",
+      "disponible": true
+    }
+  ],
+  "fuente": {
+    "fuente_url": "https://www.iamc.com.ar/informediario/",
+    "html_sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+    "payload_sha256": "9d8a7b28bb352fa60ce78463a812f4cbd01a4fc7171b3d663defb891b0a021de",
+    "adquisicion": {
+      "modo": "archivo_local",
+      "html_origen": "/Users/felipecagigaslemma/Library/CloudStorage/OneDrive-Personal/Trabajo/Cartera clientes/codex/fixtures/iamc/2026-11-05/informediario.html",
+      "consulta_red": false,
+      "http_guardado": {
+        "url_solicitada": "https://www.iamc.com.ar/informediario/",
+        "url_final": "https://www.iamc.com.ar/informediario/",
+        "estado_http": 200,
+        "consultado_en": "2026-11-05T23:28:46.539223-03:00",
+        "headers": {
+          "Date": "Fri, 06 Nov 2026 02:28:46 GMT",
+          "Content-Type": "text/html; charset=utf-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "close",
+          "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=0, must-revalidate",
+          "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=kn10LgzdfLhzw%2BaIwPf8%2B85plpsnhmTIZUWFYnyNsWV0%2FR%2BYNqkYPXBCMe0rAsQO8zcP%2BEEgwYqNklyu9B2u0aD8xIImKMNKMXg9TNQZlA9B74HkQB56bBlJ69OmgOLLrFChcUiiJXZ%2BP9S3beY%3D\"}]}",
+          "referrer-policy": "strict-origin-when-cross-origin",
+          "x-content-type-options": "nosniff",
+          "Server": "cloudflare",
+          "CF-RAY": "a560aaaf1c610ec2-EZE",
+          "alt-svc": "h3=\":443\"; ma=86400"
+        },
+        "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+      }
+    }
+  }
+}

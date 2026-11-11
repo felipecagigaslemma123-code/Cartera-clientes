@@ -1,0 +1,446 @@
+Fórmulas IAMC — transcripción estática, sin ejecución ni aprobación
+URL: https://www.iamc.com.ar/informediario/
+SHA-256: 8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4
+Los subíndices se representan con _{...} y los exponentes con ^{...}.
+
+Renta Fija / Precios y valuación / Precio teórico
+Líneas 9269-9269
+P(y) = Σ_{t=1..n} CF_{t} / (1+y)^{τ_{t}}
+
+Renta Fija / Precios y valuación / Precio sucio
+Líneas 9273-9273
+Precio_{sucio} = Precio_{cierre}
+
+Renta Fija / Precios y valuación / Precio limpio
+Líneas 9277-9277
+Precio_{limpio} = Precio_{sucio} − Intereses_{corridos}
+
+Renta Fija / Precios y valuación / Intereses corridos
+Líneas 9281-9281
+IC = Cupón_{periodo} × (τ_{dev} / τ_{periodo})
+
+Renta Fija / Precios y valuación / Valor técnico
+Líneas 9285-9285
+Valor_{técnico} = Capital_{residual,aj} + Intereses_{corridos,aj}
+
+Renta Fija / Precios y valuación / Paridad
+Líneas 9289-9289
+Paridad = (Precio_{sucio} / Valor_{técnico}) × 100
+
+Renta Fija / Rendimientos / TIR — Tasa Interna de Retorno
+Líneas 9295-9295
+Precio_{sucio} = Σ_{t=1..n} CF_{t} / (1+TIR)^{τ_{t}}
+
+Renta Fija / Rendimientos / Current Yield
+Líneas 9299-9299
+Current Yield = Cupón_{anual} / Precio_{sucio}
+
+Renta Fija / Rendimientos / TNA
+Líneas 9303-9303
+TNA = Rendimiento_{periodo} × (360 / Días_{30/360})
+
+Renta Fija / Rendimientos / TEA
+Líneas 9307-9307
+TEA = (1 + Rendimiento_{periodo})^{1/τ} − 1
+
+Renta Fija / Rendimientos / TEM
+Líneas 9311-9311
+TEM = (1 + TEA)^{1/12} − 1
+
+Renta Fija / Rendimientos / Convención de días
+Líneas 9315-9315
+τ_{t} = Días(Liquidación, Flujo_{t}) / Base
+
+Renta Fija / Duration, convexity y sensibilidad / Duration Macaulay
+Líneas 9321-9321
+D_{Mac} = Σ τ_{t} · PV(CF_{t}) / Σ PV(CF_{t})
+
+Renta Fija / Duration, convexity y sensibilidad / Duration Modificada
+Líneas 9325-9325
+D_{Mod} = D_{Mac} / (1 + TIR)
+
+Renta Fija / Duration, convexity y sensibilidad / Duration Modificada en días
+Líneas 9329-9329
+DM_{días} = D_{Mod} × Base
+
+Renta Fija / Duration, convexity y sensibilidad / Convexity
+Líneas 9333-9333
+CX = Σ [ CF_{t}·τ_{t}(τ_{t}+1) / (1+TIR)^{τ_{t}+2} ] / Precio_{sucio}
+
+Renta Fija / Duration, convexity y sensibilidad / Sensibilidad por Duration
+Líneas 9337-9337
+ΔP ≈ −Precio_{sucio} × D_{Mod} × Δy
+
+Renta Fija / Duration, convexity y sensibilidad / Sensibilidad con Convexity
+Líneas 9341-9341
+ΔP ≈ −P_{sucio} D_{Mod} Δy + ½ P_{sucio} CX (Δy)²
+
+Renta Fija / Estructura y liquidez / WAL — Weighted Average Life
+Líneas 9347-9347
+WAL = Σ τ_{t} · Amort_{t} / Σ Amort_{t}
+
+Renta Fija / Estructura y liquidez / ADTV — Average Daily Trading Value
+Líneas 9351-9351
+ADTV_{n} = (1/n) Σ_{i=0..n−1} VolumenEfectivo_{t−i}
+
+Renta Fija / Curva del panel / Ajuste cuadrático
+Líneas 9357-9357
+y(x) = a + b·x + c·x^{2}
+
+Renta Fija / Curva del panel / Spread contra la curva
+Líneas 9361-9361
+Spread_{pb} = ( TIR_{ref} − y(x_{ref}) ) × 100
+
+Renta Fija / Ajustes de capital / Factor de ajuste CER
+Líneas 9367-9367
+FA_{CER,t} = CER_{t−ℓ} / CER_{base}
+
+Renta Fija / Ajustes de capital / Factor Dollar Linked
+Líneas 9371-9371
+FA_{DL,t} = A3500_{t−ℓ} / A3500_{base}
+
+Renta Fija / Ajustes de capital / Flujo técnico vs flujo ajustado
+Líneas 9375-9375
+FlujoTotal_{t} = (InterésCash_{t} + AmortTec_{t}) × FA_{t}
+
+Renta Fija / Ajustes de capital / Capitalización de intereses
+Líneas 9379-9379
+Cap_{t} = InterésBruto_{t} × p_{t}^{cap}
+
+Opciones / Modelo y sus inputs / Modelo Black-Scholes
+Líneas 9393-9395
+C = S e^{−qT} N(d_{1}) − K e^{−rT} N(d_{2})
+P = K e^{−rT} N(−d_{2}) − S e^{−qT} N(−d_{1})
+d_{1} = [ ln(S/K) + (r − q + σ²/2)T ] / (σ√T),  d_{2} = d_{1} − σ√T
+
+Opciones / Modelo y sus inputs / Dividend yield (q)
+Líneas 9399-9399
+q = Dividendos esperados en la vida de la opción / S,  expresado como tasa continua anual
+
+Opciones / Modelo y sus inputs / Inputs del modelo
+Líneas 9404-9404
+[Sin fórmula publicada en el campo f]
+
+Opciones / Modelo y sus inputs / Convenciones y alcance
+Líneas 9407-9407
+[Sin fórmula publicada en el campo f]
+
+Opciones / Modelo y sus inputs / Precio subyacente sincronizado
+Líneas 9411-9411
+t_{s} = max { t : t ≤ t_{opción} },  S = S(t_{s})
+
+Opciones / Modelo y sus inputs / Tasa libre de riesgo
+Líneas 9415-9415
+[Sin fórmula publicada en el campo f]
+
+Opciones / Modelo y sus inputs / Conversión para Black-Scholes
+Líneas 9419-9419
+r = ln(1 + TNA · T) / T,   T = Días al vencimiento / 365
+
+Opciones / Modelo y sus inputs / Días al vencimiento
+Líneas 9423-9423
+Días = Fecha_{vencimiento} − Fecha_{rueda},   T = Días/365
+
+Opciones / Volatilidad / Volatilidad histórica anualizada
+Líneas 9429-9430
+R_{t} = ln( P_{t} / P_{t−1} )
+σ_{anual} = √{ [ T / (n−1) ] · Σ_{i=1..n} [ ln( P_{i} / P_{i−1} ) − ( ln P_{n} − ln P_{0} ) / n ]² }
+
+Opciones / Volatilidad / Volatilidad implícita
+Líneas 9438-9438
+σ_{IV} :  BS(S, K, r, T, q, σ_{IV}) = Prima_{último trade}
+
+Opciones / Griegas / Delta
+Líneas 9444-9444
+Δ_{C} = N(d_{1}),   Δ_{P} = N(d_{1}) − 1
+
+Opciones / Griegas / Gamma
+Líneas 9447-9447
+Γ = φ(d_{1}) / (S σ √T)
+
+Opciones / Griegas / Theta
+Líneas 9451-9452
+Θ_{C} = −S φ(d_{1}) σ / (2√T) − r K e^{−rT} N(d_{2})
+Θ_{P} = −S φ(d_{1}) σ / (2√T) + r K e^{−rT} N(−d_{2})
+
+Opciones / Griegas / Vega
+Líneas 9455-9455
+Vega = S φ(d_{1}) √T × 0,01
+
+Opciones / Griegas / Rho
+Líneas 9458-9458
+ρ_{C} = K T e^{−rT} N(d_{2}) × 0,01
+ρ_{P} = −K T e^{−rT} N(−d_{2}) × 0,01
+
+Opciones / Valor y moneyness / Distancia ITM/OTM y Moneyness
+Líneas 9463-9463
+m_{C} = S/K − 1,   m_{P} = 1 − S/K,   |m| ≤ 1% ⇒ ATM
+
+Opciones / Valor y moneyness / Valor intrínseco
+Líneas 9466-9466
+VI_{C} = max(S − K, 0),   VI_{P} = max(K − S, 0)
+
+Opciones / Valor y moneyness / Valor temporal
+Líneas 9469-9469
+Valor Temporal = Prima − VI
+
+Opciones / Valor y moneyness / Precio teórico (columna del informe)
+Líneas 9473-9473
+[Sin fórmula publicada en el campo f]
+
+Opciones / Valor y moneyness / Desvío vs. Teórico ARS
+Líneas 9476-9476
+Desvío_{ARS} = Prima_{último trade} − Precio_{teórico}
+
+Opciones / Posiciones abiertas y actividad / Open Interest
+Líneas 9481-9481
+[Sin fórmula publicada en el campo f]
+
+Opciones / Posiciones abiertas y actividad / Variación Open Interest %
+Líneas 9484-9484
+Var OI % = (OI_{t} / OI_{t−1} − 1) × 100
+
+Opciones / Posiciones abiertas y actividad / Open Interest nocional
+Líneas 9488-9488
+OI_{nocional} = OI × Tamaño de lote × Precio del subyacente
+
+Opciones / Posiciones abiertas y actividad / Proporción Put / Call
+Líneas 9492-9492
+Put/Call = ( Volumen efectivo PUT / Volumen efectivo CALL ) × 100
+
+Opciones / Posiciones abiertas y actividad / Volumen efectivo ARS
+Líneas 9499-9499
+[Sin fórmula publicada en el campo f]
+
+Opciones / Posiciones abiertas y actividad / Promedio de volumen 20 ruedas
+Líneas 9502-9502
+Prom20R = (1/20) Σ_{i=1..20} Volumen_{t−i}
+
+Opciones / Posiciones abiertas y actividad / Volumen vs. Promedio 20R
+Líneas 9505-9505
+Vs20R = (Volumen_{t} / Prom20R − 1) × 100
+
+Opciones / Posiciones abiertas y actividad / Variación Prima %
+Líneas 9508-9508
+Var Prima % = (Prima_{t} / Prima_{t−1} − 1) × 100
+
+Opciones / Posiciones abiertas y actividad / Hora último trade y cantidad de operaciones
+Líneas 9512-9512
+[Sin fórmula publicada en el campo f]
+
+Opciones / Posiciones abiertas y actividad / Índice Caución BYMA
+Líneas 9515-9515
+[Sin fórmula publicada en el campo f]
+
+Renta Variable / Precios de la rueda / Precio de cierre
+Líneas 9531-9531
+[Sin fórmula publicada en el campo f]
+
+Renta Variable / Precios de la rueda / VWAP
+Líneas 9536-9536
+VWAP = Σ (P_{i} × Q_{i}) / Σ Q_{i}
+
+Renta Variable / Precios de la rueda / Apertura, máximo y mínimo
+Líneas 9544-9544
+[Sin fórmula publicada en el campo f]
+
+Renta Variable / Precios de la rueda / Variación diaria
+Líneas 9548-9548
+Var % = (P_{t} / P_{t−1} − 1) × 100
+
+Renta Variable / Tamaño, liquidez y actividad / Volumen efectivo
+Líneas 9555-9555
+Volumen efectivo = Σ (P_{i} × Q_{i})
+
+Renta Variable / Tamaño, liquidez y actividad / Volumen nominal
+Líneas 9559-9559
+Volumen nominal = Σ Q_{i}
+
+Renta Variable / Tamaño, liquidez y actividad / ADTV 40 ruedas
+Líneas 9563-9563
+ADTV = (1/40) Σ_{k=1..40} Volumen efectivo_{t−k}
+
+Renta Variable / Tamaño, liquidez y actividad / Capitalización bursátil
+Líneas 9567-9567
+Cap = Precio de cierre × Acciones en circulación
+
+Renta Variable / Tamaño, liquidez y actividad / Free float
+Líneas 9571-9571
+Free float = Acciones disponibles / Acciones en circulación
+
+Renta Variable / Tamaño, liquidez y actividad / Ratio de rotación
+Líneas 9576-9576
+Rotación = Volumen efectivo / Capitalización bursátil
+
+Renta Variable / Volatilidad y beta / Volatilidad histórica anualizada — 40 ruedas
+Líneas 9583-9584
+R_{t} = ln( P_{t} / P_{t−1} )
+σ_{anual} = √{ [ T / (n−1) ] · Σ_{i=1..n} [ ln( P_{i} / P_{i−1} ) − ( ln P_{n} − ln P_{0} ) / n ]² }
+
+Renta Variable / Volatilidad y beta / Volatilidad mediana del panel
+Líneas 9593-9593
+σ_{panel,t} = mediana( σ_{i,t} ) sobre las especies del panel
+
+Renta Variable / Volatilidad y beta / Beta — 252 ruedas
+Líneas 9598-9598
+β_{i} = Cov( R_{i} , R_{M} ) / Var( R_{M} )
+
+Renta Variable / CEDEARs / Ratio de conversión
+Líneas 9609-9609
+Ratio = CEDEARs por acción del exterior
+
+Renta Variable / CEDEARs / Precio implícito del subyacente
+Líneas 9615-9615
+P_{implícito} = P_{CEDEAR} × Ratio / TC_{implícito}
+
+Renta Variable / CEDEARs / Tipo de cambio implícito
+Líneas 9620-9620
+TC_{implícito} = (P_{CEDEAR, ARS} × Ratio) / P_{acción, USD}
+
+Renta Variable / CEDEARs / Premio o descuento
+Líneas 9625-9625
+Premio % = (TC_{implícito} / TC_{referencia} − 1) × 100
+
+Renta Variable / Eventos corporativos y ajustes / Factor de ajuste
+Líneas 9631-9631
+P_{ajustado} = P_{previo} × Factor
+
+Renta Variable / Eventos corporativos y ajustes / Dividendo en efectivo
+Líneas 9636-9636
+Factor = (P_{previo} − Dividendo) / P_{previo}
+
+Renta Variable / Eventos corporativos y ajustes / Split y dividendo en acciones
+Líneas 9640-9640
+Factor = 1 / Relación de canje
+
+Renta Variable / Eventos corporativos y ajustes / Suscripción de acciones
+Líneas 9645-9645
+[Sin fórmula publicada en el campo f]
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Flujo de fondos
+Líneas 9660-9660
+CF_{t} = Amort_{t} + Capital vivo_{t} × Tasa_{t} × τ_{periodo}
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / TIR desde el precio
+Líneas 9667-9667
+P = Σ CF_{t} / (1+TIR)^{d_{t}/365}
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Fecha de liquidación
+Líneas 9672-9672
+P = Σ_{t > X} CF_{t} / (1+TIR)^{(d_{t} − d_{X})/365}
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Base de días
+Líneas 9681-9681
+τ_{Act/365} = días corridos / 365 · τ_{30/360} = días 30/360 / 360
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Calendario
+Líneas 9687-9687
+[Sin fórmula publicada en el campo f]
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Precio desde la tasa
+Líneas 9692-9692
+TIR = (1+TEM)^{12} − 1 · TEM = TNA / 12
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Duration, convexity y paridad
+Líneas 9696-9696
+D_{Mod} = D_{Mac}/(1+TIR) · C = Σ τ(τ+1) CF (1+TIR)^{−(τ+2)} / P
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Moneda de compra y especie
+Líneas 9700-9700
+P_{USD} = P_{ARS} / TC
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Comisión de compra
+Líneas 9708-9708
+P_{pagado} = P × (1 + c) · TIR_{neta} : P_{pagado} = Σ CF_{t} / (1+TIR_{neta})^{d_{t}/365}
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Comisión sobre los pagos
+Líneas 9715-9715
+CF^{neto}_{t} = Amort_{t} × (1 − k·a) + Int_{t} × (1 − k)
+
+Calculadoras / Calculadora de Bonos — flujos y valuación / Diferencia contra el cierre
+Líneas 9721-9721
+Δ TIR = TIR − TIR_{cierre} · Δ Precio = P / P_{cierre} − 1
+
+Calculadoras / Calculadora de Bonos — supuestos / Cupones TAMAR y BADLAR
+Líneas 9727-9727
+Tasa_{cupón} = Índice_{futuro} + Margen
+
+Calculadoras / Calculadora de Bonos — supuestos / Capitalizables TAMAR
+Líneas 9733-9733
+TEM = (1 + TNA × 32/365)^{365/384} − 1
+
+Calculadoras / Calculadora de Bonos — supuestos / Bonos CER
+Líneas 9739-9739
+CF^{nominal}_{t} = CF^{real}_{t} × (1+π)^{d_{t}/(365/12)}
+
+Calculadoras / Calculadora de Bonos — supuestos / Dollar linked
+Líneas 9745-9745
+CF^{ARS}_{t} = CF_{t} × (1+δ)^{d_{t}/(365/12)}
+
+Calculadoras / Calculadora de Bonos — supuestos / Duales
+Líneas 9749-9749
+M = máx(M_{pata 1}, M_{pata 2})
+
+Calculadoras / Tabla general de títulos públicos / Qué muestra
+Líneas 9758-9758
+[Sin fórmula publicada en el campo f]
+
+Calculadoras / Tabla general de títulos públicos / Plazo
+Líneas 9766-9766
+CI = rueda del cierre · 24 hs = día hábil siguiente
+
+Calculadoras / Tabla general de títulos públicos / TNA sobre plazo y equivalentes
+Líneas 9770-9770
+TNA_{s/plazo} = (CF/P − 1) × 365/d · TNA_{n} = ((1+TIR)^{n/365} − 1) × 365/n
+
+Calculadoras / Tabla general de títulos públicos / Duales: pata
+Líneas 9775-9775
+TIR_{pata} = (M_{pata}/P)^{365/d} − 1
+
+Calculadoras / Calculadora de Letras / TEM
+Líneas 9780-9780
+TEM = (P_{vto} / costo)^{30/días} − 1
+
+Calculadoras / Calculadora de Letras / TEA y TNA
+Líneas 9785-9785
+TEA = (1+TEM)^{12} − 1 · TNA = TEM × 12
+
+Calculadoras / Calculadora de Letras / Comisiones
+Líneas 9787-9787
+costo = P_{neg} × (1 + TNA_{com} × días/365)
+
+Calculadoras / Calculadora de Letras / Precio desde la TEM
+Líneas 9790-9790
+P_{neg} = P_{vto} / (1+TEM)^{días/30} / (1 + TNA_{com} × días/365)
+
+Calculadoras / Calculadora de Letras / TC breakeven
+Líneas 9792-9792
+TC_{BE} = TC_{neg} × P_{vto} / costo
+
+Calculadoras / Calculadora de Letras / Por instrumento
+Líneas 9794-9794
+[Sin fórmula publicada en el campo f]
+
+Calculadoras / Calculadora de Caución / Interés
+Líneas 9800-9800
+I = C × TNA × n / 365
+
+Calculadoras / Calculadora de Caución / Comisión del agente
+Líneas 9804-9804
+Com = máx(B_{c} × TNA_{com} × n / 365 ; mínimo)
+
+Calculadoras / Calculadora de Caución / Derechos de mercado
+Líneas 9807-9807
+D = B_{d} × d × mín(n ; 90) / 90
+
+Calculadoras / Calculadora de Caución / Impuestos
+Líneas 9811-9811
+G = Com + D + A + Of + IVA
+
+Calculadoras / Calculadora de Caución / Tasa neta y costo financiero
+Líneas 9814-9814
+TNA_{neta} = (F_{1} − F_{0}) / F_{0} × 365 / n · TEA = (F_{1}/F_{0})^{365/n} − 1
+
+Calculadoras / Calculadora de Caución / Garantía
+Líneas 9818-9818
+VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)

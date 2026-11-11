@@ -1,0 +1,166 @@
+{
+  "calculadora": {
+    "tk": "TMVE8",
+    "g": "tp",
+    "seg": "dua",
+    "k": "capv",
+    "cur": "DL",
+    "fxc": 1490.8431,
+    "fxr": "A3500_BASE_DL",
+    "px": 98.26654461492292,
+    "pxa": 146500.0,
+    "liq": "2026-11-06",
+    "f": [
+      [
+        451,
+        142.660065,
+        0.0,
+        0.0
+      ]
+    ],
+    "c": {
+      "n": 18.0,
+      "me": 3.2,
+      "regla": "MAX",
+      "patas": [
+        {
+          "k": "TAMAR",
+          "mv": 142.660065,
+          "tem": 0.01993467,
+          "m": 0.0
+        },
+        {
+          "k": "DL",
+          "mv": 103.659292,
+          "tem": 0.00199862,
+          "m": 0.0
+        }
+      ]
+    },
+    "cal": 0.0
+  },
+  "informe": {
+    "tk": "TMVE8",
+    "seg": "dua",
+    "em": "TESORO NACIONAL",
+    "de": "Duales",
+    "ti": "BONO",
+    "sec": "Estado Nacional",
+    "ley": "ARG",
+    "me": "USD",
+    "mp": "ARS",
+    "isin": "AR0821229090",
+    "mto": 3467039659.0,
+    "fe": "2026-07-31",
+    "fv": "2028-01-31",
+    "est": "Dual",
+    "idx": null,
+    "aj": "No",
+    "mg": null,
+    "fc": "Vencimiento",
+    "pc": null,
+    "cup": 0.019935,
+    "cy": 0.0,
+    "ct": "TEM",
+    "ai": 0.0,
+    "vr": 100.0,
+    "cuo": 1.0,
+    "fam": "Vencimiento",
+    "pam": "2028-01-31",
+    "pxa": 146500.0,
+    "px": 98.2665,
+    "par": 98.267,
+    "vt": 100.0,
+    "ytm": 35.2151,
+    "dm": 0.9138,
+    "cx": 1.5109,
+    "wal": 1.236,
+    "adtv": 43580063978.245,
+    "vol": 51279817529.7,
+    "vn": 34917417.0,
+    "plz": 451.0,
+    "tna": 0.305521,
+    "tea": 0.352151,
+    "tem": 0.02546,
+    "fx": 1490.84,
+    "fxr": "A3500_BASE_DL",
+    "lec": 1,
+    "mv": 142.6601,
+    "rp": 0.45176638,
+    "tl": null,
+    "ttl": null,
+    "dml": 333.54,
+    "p1": "TAMAR",
+    "p2": "DL",
+    "pg": "TAMAR",
+    "mv1": 142.6601,
+    "mv2": 103.6593,
+    "tem1": 0.02546,
+    "tem2": 0.00361,
+    "tea1": 0.352151,
+    "tea2": 0.044187,
+    "dmd1": 333.54,
+    "dmd2": 431.92,
+    "temd": 0.02546,
+    "tnad": 0.305521,
+    "tead": 0.352151,
+    "dmdd": 333.54,
+    "mvd": 142.6601,
+    "pxd": -0.293,
+    "dytm": 40.8,
+    "amo": [
+      [
+        "2028-01-31",
+        100.0
+      ]
+    ],
+    "ren": [
+      [
+        "2028-01-31",
+        42.660065
+      ]
+    ],
+    "adtvu": 28133720,
+    "adtvp": [
+      28090534,
+      43187,
+      0
+    ],
+    "adtve": [
+      "TMVE8",
+      "TVE8D",
+      "TVE8C"
+    ],
+    "fxi": {
+      "mep": 1593.26,
+      "ccl": 1592.39,
+      "fm": "2026-11-05",
+      "fc": "2026-11-05",
+      "canje": -0.055,
+      "po": 146500.0,
+      "pd": 91.95,
+      "pc": 92.0
+    }
+  },
+  "catalogo": {
+    "tk": "TMVE8",
+    "n": "TESORO NACIONAL — Duales",
+    "t": "Bono",
+    "g": "tp",
+    "i": "AR0821229090",
+    "c": "9424",
+    "s": "Estado Nacional",
+    "x": "USD · Dual · Vto. 2028-01-31 · Ley Arg.",
+    "d": "2026-11-05",
+    "sg": "dua",
+    "ed": "TVE8D",
+    "ec": "TVE8C",
+    "md": "USD",
+    "mp": "ARS"
+  },
+  "origenes": {
+    "calculadora": "payload.calc.ins[79]",
+    "informe": "payload.tp.rows[81]",
+    "catalogo": "payload.cat[683]"
+  }
+}

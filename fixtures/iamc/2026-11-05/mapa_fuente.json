@@ -1,0 +1,379 @@
+{
+  "esquema_version": 1,
+  "tipo": "metadatos y hallazgos derivados de inspección offline; no datos crudos del proveedor",
+  "extraido_en": "2026-11-05T23:32:56.503690-03:00",
+  "procedencia": {
+    "archivo_html": "informediario.html",
+    "url_solicitada": "https://www.iamc.com.ar/informediario/",
+    "url_final": "https://www.iamc.com.ar/informediario/",
+    "consultado_en": "2026-11-05T23:28:46.539223-03:00",
+    "sha256_html": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+    "selector_json": "script#payload[type=\"application/json\"]"
+  },
+  "archivos_crudos": {
+    "macro.json": {
+      "ruta_payload": "macro",
+      "transformaciones": "solo formato JSON, sin cálculo, completar datos ni cambiar claves"
+    },
+    "padron.json": {
+      "rutas_payload": [
+        "ins",
+        "__dif.ins",
+        "resumen.ins"
+      ],
+      "transformaciones": "contenedor de tres subárboles observados, sin descargar ni rellenar rows"
+    },
+    "catalogo.json": {
+      "ruta_payload": "cat",
+      "transformaciones": "solo formato JSON, sin cálculo, completar datos ni cambiar claves"
+    }
+  },
+  "macro": {
+    "registros": 6,
+    "ultima_fecha_de_alguna_serie": "2026-11-05",
+    "fuente_declarada": "Insumos.xlsx",
+    "proveedor_por_serie_declarado": false,
+    "url_upstream_por_serie_declarada": false,
+    "notas": [
+      "La fuente específica declarada es Insumos.xlsx, sin enlace de descarga en este HTML.",
+      "BYMA es la fuente general indicada por la página; n y g son nombre visible y grupo, no proveedor ni URL upstream.",
+      "Cada serie conserva f y fp. No reemplazar f por macro.max ni por la fecha del informe.",
+      "n_obs es el conteo que declara el insumo; el HTML no incluye por ello toda la serie macro histórica.",
+      "dv se interpreta según dlt: pct para variación porcentual, pp para puntos porcentuales, pb para puntos básicos."
+    ],
+    "series": [
+      {
+        "clave": "mep",
+        "nombre": "Índice Dólar BYMA",
+        "fecha": "2026-11-05",
+        "fecha_previa": "2026-11-04",
+        "valor": 1571.18,
+        "unidad": "",
+        "tipo_delta": "pct",
+        "rezagada_frente_cierre": false
+      },
+      {
+        "clave": "ccl",
+        "nombre": "Índice Dólar CCL",
+        "fecha": "2026-11-05",
+        "fecha_previa": "2026-11-04",
+        "valor": 1666.27,
+        "unidad": "",
+        "tipo_delta": "pct",
+        "rezagada_frente_cierre": false
+      },
+      {
+        "clave": "a3500",
+        "nombre": "Dólar A3500",
+        "fecha": "2026-11-05",
+        "fecha_previa": "2026-11-04",
+        "valor": 1545.4,
+        "unidad": "",
+        "tipo_delta": "pct",
+        "rezagada_frente_cierre": false
+      },
+      {
+        "clave": "tamar",
+        "nombre": "TAMAR",
+        "fecha": "2026-11-04",
+        "fecha_previa": "2026-11-03",
+        "valor": 23.56,
+        "unidad": "% TNA",
+        "tipo_delta": "pp",
+        "rezagada_frente_cierre": true
+      },
+      {
+        "clave": "cer",
+        "nombre": "CER",
+        "fecha": "2026-11-05",
+        "fecha_previa": "2026-11-04",
+        "valor": 865.4229,
+        "unidad": "",
+        "tipo_delta": "pct",
+        "rezagada_frente_cierre": false
+      },
+      {
+        "clave": "embi",
+        "nombre": "Riesgo país · EMBI+",
+        "fecha": "2026-11-04",
+        "fecha_previa": "2026-11-03",
+        "valor": 852.0,
+        "unidad": "pb",
+        "tipo_delta": "pb",
+        "rezagada_frente_cierre": true
+      }
+    ]
+  },
+  "padron": {
+    "ruta_payload": "ins",
+    "fecha_declarada": "2026-11-05",
+    "filas_embebidas": 0,
+    "filas_anunciadas": 6445,
+    "estado": "diferido_consultado_sin_json",
+    "ruta_relativa_observada": "d/ins.json",
+    "respuesta_de_datos_obtenida": false,
+    "notas": [
+      "rows vacío es un marcador de carga diferida; no es prueba de que el padrón esté vacío.",
+      "El catálogo cat cubre instrumentos de informes, no todo el universo listado del padrón.",
+      "c (código CVSA/Caja de Valores) y eid (identificador interno BYMA) no son intercambiables.",
+      "Moneda y rueda deben salir de campos del padrón; no se deducen del sufijo del ticker."
+    ],
+    "url_verificada_http": true,
+    "resultado_http": "HTTP 200 text/html con cuerpo idéntico al HTML inicial; no se obtuvo JSON del padrón",
+    "url_resuelta_verificada": "https://www.iamc.com.ar/informediario/d/ins.json"
+  },
+  "catalogo": {
+    "filas": 835,
+    "por_grupo": {
+      "acc": 71,
+      "ced": 399,
+      "tp": 110,
+      "on": 255
+    },
+    "diccionario_campos": {
+      "tk": "símbolo madre",
+      "n": "nombre/descripción",
+      "t": "tipo de instrumento",
+      "g": "grupo acc/ced/on/tp",
+      "i": "ISIN del cierre",
+      "c": "código de Caja de Valores",
+      "s": "sector o emisor según grupo",
+      "x": "texto resumen visible",
+      "d": "fecha de referencia",
+      "ed": "alias de especie dólar MEP",
+      "ec": "alias de especie dólar cable",
+      "mn": "moneda de negociación, cuando está",
+      "eid": "identificador interno de BYMA",
+      "sg": "segmento renta fija",
+      "md": "moneda de denominación",
+      "mp": "moneda/modalidad de pago",
+      "ds": "descripción editorial de renta variable opcional",
+      "i2": "ISIN del padrón cuando difiere del cierre; no observado en esta captura"
+    },
+    "notas": [
+      "No tratar alias D/C como nuevos instrumentos económicos al agregar tenencias.",
+      "Campos opcionales ausentes se conservan ausentes; no completarlos por nombre ni sufijo."
+    ]
+  },
+  "cargas_diferidas": [
+    {
+      "clave": "op",
+      "ruta_relativa_observada": "d/op.json",
+      "url_resuelta_sin_verificar": "https://www.iamc.com.ar/informediario/d/op.json",
+      "respuesta_de_datos_obtenida": false
+    },
+    {
+      "clave": "ced",
+      "ruta_relativa_observada": "d/ced.json",
+      "url_resuelta_sin_verificar": "https://www.iamc.com.ar/informediario/d/ced.json",
+      "respuesta_de_datos_obtenida": false
+    },
+    {
+      "clave": "acc",
+      "ruta_relativa_observada": "d/acc.json",
+      "url_resuelta_sin_verificar": "https://www.iamc.com.ar/informediario/d/acc.json",
+      "respuesta_de_datos_obtenida": false
+    },
+    {
+      "clave": "ibi",
+      "ruta_relativa_observada": "d/ibi.json",
+      "url_resuelta_sin_verificar": "https://www.iamc.com.ar/informediario/d/ibi.json",
+      "respuesta_de_datos_obtenida": false
+    },
+    {
+      "clave": "ins",
+      "ruta_relativa_observada": "d/ins.json",
+      "url_resuelta_sin_verificar": "https://www.iamc.com.ar/informediario/d/ins.json",
+      "respuesta_de_datos_obtenida": false
+    },
+    {
+      "clave": "ccau",
+      "ruta_relativa_observada": "d/ccau.json",
+      "url_resuelta_sin_verificar": "https://www.iamc.com.ar/informediario/d/ccau.json",
+      "respuesta_de_datos_obtenida": false
+    }
+  ],
+  "completitud": {
+    "renta_fija": {
+      "on_embebidas": 255,
+      "tp_embebidas": 110,
+      "total": 365
+    },
+    "acc": {
+      "filas_embebidas": 10,
+      "filas_anunciadas": 71,
+      "estado": "vista_previa_con_datos_diferidos"
+    },
+    "ced": {
+      "filas_embebidas": 10,
+      "filas_anunciadas": 399,
+      "estado": "vista_previa_con_datos_diferidos"
+    },
+    "op": {
+      "filas_embebidas": 0,
+      "filas_anunciadas": 1196,
+      "estado": "diferido_no_descargado"
+    }
+  },
+  "historicos": {
+    "on": {
+      "ruta_payload": "on.histi",
+      "ruedas": 21,
+      "desde": "2026-10-07",
+      "hasta": "2026-11-05",
+      "indicadores_nativos": {
+        "TIR": 244
+      },
+      "tickers_por_campo": {
+        "v": 244,
+        "u": 244,
+        "par": 244,
+        "cy": 244,
+        "px": 244,
+        "vol": 222
+      },
+      "especies_dolar": {
+        "D": {
+          "v": 216,
+          "par": 216,
+          "cy": 216,
+          "px": 216
+        },
+        "C": {
+          "v": 158,
+          "par": 158,
+          "cy": 158,
+          "px": 158
+        }
+      },
+      "unidades": {
+        "v": "porcentaje; tipo TIR/TEM declarado por ticker en u",
+        "par": "porcentaje",
+        "cy": "porcentaje",
+        "px": "precio en moneda de pago; no asumir misma moneda que cotización ARS",
+        "vol": "conservar claves crudas por especie; no sumarlas sin identificar unidad"
+      },
+      "notas": [
+        "Las fechas del eje y las series son datos observados del snapshot; no se extienden ni rellenan huecos.",
+        "TEA/TNA/TEM alternativas se derivan en JavaScript; no son campos nuevos recibidos."
+      ]
+    },
+    "tp": {
+      "ruta_payload": "tp.histi",
+      "ruedas": 21,
+      "desde": "2026-10-07",
+      "hasta": "2026-11-05",
+      "indicadores_nativos": {
+        "TIR": 87,
+        "TEM": 20
+      },
+      "tickers_por_campo": {
+        "v": 107,
+        "u": 107,
+        "par": 107,
+        "cy": 107,
+        "px": 107,
+        "vol": 100
+      },
+      "especies_dolar": {
+        "D": {
+          "v": 87,
+          "par": 89,
+          "cy": 87,
+          "px": 89
+        },
+        "C": {
+          "v": 60,
+          "par": 61,
+          "cy": 60,
+          "px": 61
+        }
+      },
+      "unidades": {
+        "v": "porcentaje; tipo TIR/TEM declarado por ticker en u",
+        "par": "porcentaje",
+        "cy": "porcentaje",
+        "px": "precio en moneda de pago; no asumir misma moneda que cotización ARS",
+        "vol": "conservar claves crudas por especie; no sumarlas sin identificar unidad"
+      },
+      "notas": [
+        "Las fechas del eje y las series son datos observados del snapshot; no se extienden ni rellenan huecos.",
+        "TEA/TNA/TEM alternativas se derivan en JavaScript; no son campos nuevos recibidos."
+      ]
+    }
+  },
+  "otros_historicos_embebidos": {
+    "mer": {
+      "ruta_payload": "mer",
+      "fechas": 750,
+      "desde": "2023-10-11",
+      "hasta": "2026-11-05",
+      "campos_eje_comun": [
+        "f",
+        "ars",
+        "usd",
+        "fx"
+      ],
+      "notas": [
+        "Los conteos n y estadísticas st abarcan ventanas mayores que las 750 fechas graficadas. No reconstruir fechas faltantes ni confundir el tipo de cambio de este índice con toda la historia de macro."
+      ]
+    },
+    "caucion_indice": {
+      "ruta_payload": "din.cau",
+      "fechas": 674,
+      "desde": "2024-01-30",
+      "hasta": "2026-11-05",
+      "campos": [
+        "f",
+        "o",
+        "l",
+        "h",
+        "c"
+      ]
+    },
+    "simultaneas": {
+      "ruta_payload": "din.sim",
+      "fechas": 259,
+      "desde": "2025-10-17",
+      "hasta": "2026-11-05",
+      "campos": [
+        "f",
+        "vol",
+        "vw"
+      ]
+    },
+    "volumen_mensual": {
+      "ruta_payload": "vol",
+      "desde": "2024-08",
+      "hasta": "2026-09",
+      "periodos": 26,
+      "series": 17,
+      "notas": [
+        "Las unidades se declaran millones de pesos corrientes y fuente reportes mensuales de BYMA; no son flujos contractuales de bonos."
+      ]
+    },
+    "dividendos": {
+      "ruta_payload": "div",
+      "generado": "2026-09-25",
+      "filas": 420,
+      "desde": "2018-04-12",
+      "hasta": "2026-09-25",
+      "notas": [
+        "Es historia de pagos, no un cronograma futuro garantizado."
+      ]
+    }
+  },
+  "terminos_y_acceso": {
+    "politica_robots_verificable": false,
+    "motivo_robots": "robots.txt devolvió HTTP 200 text/html, con el mismo SHA-256 que informediario.html; respuesta catch-all, no robots normativo.",
+    "licencia_abierta_explicita_en_html": false,
+    "url_api_publica_documentada_en_html": false,
+    "terminos_especificos_de_redistribucion_en_html": false,
+    "notas": [
+      "El contenido público accesible no demuestra permiso para redistribuir ni una API estable.",
+      "Se observan avisos de carácter informativo y de no recomendación, y consentimiento previo para Google Analytics 4.",
+      "No se envió formulario, consentimiento, correo ni datos personales.",
+      "Root consultó una vez las seis URLs d/*.json declaradas: todas devolvieron el mismo HTML, no JSON. Ver red_observada.json y las respuestas crudas conservadas."
+    ]
+  }
+}

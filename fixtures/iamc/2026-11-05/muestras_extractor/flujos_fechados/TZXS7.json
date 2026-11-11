@@ -1,0 +1,18 @@
+{
+  "naturaleza": "Derivado de la fila cruda sin ajustar fechas ni índices; no es respuesta HTTP individual",
+  "origen": "payload.calc.ins.f",
+  "precio": 113.4,
+  "unidad_flujos": "ARS",
+  "moneda_pago": "ARS",
+  "liquidacion": "2026-11-06",
+  "flujos": [
+    {
+      "fecha": "2027-09-30",
+      "dias_corridos": 328,
+      "amortizacion": 118.747965,
+      "renta": 0.0,
+      "total": 118.747965,
+      "base_variable_cruda": 0.0
+    }
+  ]
+}

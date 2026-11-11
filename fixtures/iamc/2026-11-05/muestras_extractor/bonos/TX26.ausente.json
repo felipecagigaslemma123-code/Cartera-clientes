@@ -1,0 +1,9 @@
+{
+  "ticker": "TX26",
+  "fecha_cierre": "2026-11-05",
+  "disponible": false,
+  "motivo": "No está en la sección del payload de este cierre; no se sustituyó por otro título.",
+  "calculadora": null,
+  "informe": null,
+  "catalogo": null
+}

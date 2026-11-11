@@ -1,0 +1,147 @@
+{
+  "calculadora": {
+    "tk": "T30A7",
+    "g": "tp",
+    "seg": "lec",
+    "k": "cap",
+    "cur": "ARS",
+    "fxc": 1,
+    "fxr": "ARS",
+    "px": 139.2,
+    "pxa": 139.2,
+    "liq": "2026-11-06",
+    "f": [
+      [
+        175,
+        157.341021,
+        0.0,
+        0.0
+      ]
+    ],
+    "cal": 0.0
+  },
+  "informe": {
+    "tk": "T30A7",
+    "seg": "lec",
+    "em": "TESORO NACIONAL",
+    "de": "Capitalizables",
+    "ti": "BONO",
+    "sec": "Estado Nacional",
+    "ley": "ARG",
+    "me": "ARS",
+    "mp": "ARS",
+    "isin": "AR0224546884",
+    "mto": 346145424844.0,
+    "fe": "2025-10-31",
+    "fv": "2027-04-30",
+    "est": "Tasa Fija",
+    "idx": null,
+    "aj": "No",
+    "mg": null,
+    "fc": "Vencimiento",
+    "pc": null,
+    "cup": 0.0255,
+    "cy": 0.0,
+    "ct": "TEM",
+    "ai": 0.0,
+    "vr": 100.0,
+    "cuo": 1.0,
+    "fam": "Vencimiento",
+    "pam": "2027-04-30",
+    "pxa": 139.2,
+    "px": 139.2,
+    "par": 139.2,
+    "vt": 100.0,
+    "ytm": 29.1117,
+    "dm": 0.3713,
+    "cx": 0.4255,
+    "wal": 0.479,
+    "adtv": 33193093608.683502,
+    "vol": 46145058890.53,
+    "vn": 33131329164.0,
+    "plz": 175.0,
+    "tna": 0.258248,
+    "tea": 0.291117,
+    "tem": 0.021521,
+    "fx": null,
+    "fxr": "ARS",
+    "lec": 1,
+    "mv": 157.341,
+    "rp": 0.13032343,
+    "tl": 0.0255,
+    "ttl": "TEM",
+    "dml": 135.54,
+    "p1": null,
+    "p2": null,
+    "pg": null,
+    "mv1": null,
+    "mv2": null,
+    "tem1": null,
+    "tem2": null,
+    "tea1": null,
+    "tea2": null,
+    "dmd1": null,
+    "dmd2": null,
+    "temd": null,
+    "tnad": null,
+    "tead": null,
+    "dmdd": null,
+    "mvd": null,
+    "pxd": 0.144,
+    "dytm": -19.8,
+    "amo": [
+      [
+        "2027-04-30",
+        100.0
+      ]
+    ],
+    "ren": [
+      [
+        "2027-04-30",
+        57.341021
+      ]
+    ],
+    "adtvu": 21394390,
+    "adtvp": [
+      21391668,
+      2722,
+      0
+    ],
+    "adtve": [
+      "T30A7",
+      "TA7D",
+      "TA7C"
+    ],
+    "fxi": {
+      "mep": 1581.82,
+      "ccl": 1618.6,
+      "fm": "2026-11-05",
+      "fc": "2026-11-05",
+      "canje": 2.325,
+      "po": 139.2,
+      "pd": 0.088,
+      "pc": 0.086
+    }
+  },
+  "catalogo": {
+    "tk": "T30A7",
+    "n": "TESORO NACIONAL — Capitalizables",
+    "t": "Bono",
+    "g": "tp",
+    "i": "AR0224546884",
+    "c": "9356",
+    "s": "Estado Nacional",
+    "x": "ARS · Capitalizable · Vto. 2027-04-30 · Ley Arg.",
+    "d": "2026-11-05",
+    "sg": "lec",
+    "ed": "TA7D",
+    "ec": "TA7C",
+    "md": "ARS",
+    "mp": "ARS"
+  },
+  "origenes": {
+    "calculadora": "payload.calc.ins[70]",
+    "informe": "payload.tp.rows[71]",
+    "catalogo": "payload.cat[646]"
+  }
+}

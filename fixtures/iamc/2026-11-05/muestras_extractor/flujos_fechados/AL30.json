@@ -1,0 +1,74 @@
+{
+  "naturaleza": "Derivado de la fila cruda sin ajustar fechas ni índices; no es respuesta HTTP individual",
+  "origen": "payload.calc.ins.f",
+  "precio": 51.61725582046614,
+  "unidad_flujos": "USD",
+  "moneda_pago": "USD",
+  "liquidacion": "2026-11-06",
+  "flujos": [
+    {
+      "fecha": "2027-01-09",
+      "dias_corridos": 64,
+      "amortizacion": 8.0,
+      "renta": 0.24,
+      "total": 8.24,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2027-07-09",
+      "dias_corridos": 245,
+      "amortizacion": 8.0,
+      "renta": 0.21,
+      "total": 8.21,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2028-01-09",
+      "dias_corridos": 429,
+      "amortizacion": 8.0,
+      "renta": 0.42,
+      "total": 8.42,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2028-07-09",
+      "dias_corridos": 611,
+      "amortizacion": 8.0,
+      "renta": 0.35,
+      "total": 8.35,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2029-01-09",
+      "dias_corridos": 795,
+      "amortizacion": 8.0,
+      "renta": 0.28,
+      "total": 8.28,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2029-07-09",
+      "dias_corridos": 976,
+      "amortizacion": 8.0,
+      "renta": 0.21,
+      "total": 8.21,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2030-01-09",
+      "dias_corridos": 1160,
+      "amortizacion": 8.0,
+      "renta": 0.14,
+      "total": 8.14,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2030-07-09",
+      "dias_corridos": 1341,
+      "amortizacion": 8.0,
+      "renta": 0.07,
+      "total": 8.07,
+      "base_variable_cruda": 0.0
+    }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "esquema_version": 1,
+  "uso": "Control experimental, no aprobado para producción",
+  "criterio": "Diferencia absoluta mayor a 1 pb; 1 pb = 0,01 puntos porcentuales",
+  "calibracion": "No se utiliza la TIR publicada ni el campo cal para resolver la TIR",
+  "resultados": [
+    {
+      "ticker": "AL30",
+      "estado": "coincide",
+      "convencion": "ACT/365",
+      "comisiones": 0,
+      "fuente_calculadora": "https://www.iamc.com.ar/informediario/#cbon",
+      "fuente_informe": "https://www.iamc.com.ar/informediario/#rf",
+      "precio": 51.61725582046614,
+      "precio_unidad": "por 100 VN; unidad de flujo de calc.cur",
+      "unidad_flujos": "USD",
+      "moneda_pago": "USD",
+      "fx_referencia": "MEP",
+      "fx_valor": 1571.18,
+      "liquidacion": "2026-11-06",
+      "fecha_cierre": "2026-11-05",
+      "tir_publicada_pct": 14.3033,
+      "tir_recalculada_pct": 14.303281951076958,
+      "diferencia_pb": -0.0018048923042246479,
+      "supera_1_pb": false,
+      "residuo_precio": 7.105427357601002e-15,
+      "flujos_calculadora": [
+        {
+          "fecha": "2027-01-09",
+          "dias_corridos": 64,
+          "amortizacion": 8.0,
+          "renta": 0.24,
+          "total": 8.24,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2027-07-09",
+          "dias_corridos": 245,
+          "amortizacion": 8.0,
+          "renta": 0.21,
+          "total": 8.21,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2028-01-09",
+          "dias_corridos": 429,
+          "amortizacion": 8.0,
+          "renta": 0.42,
+          "total": 8.42,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2028-07-09",
+          "dias_corridos": 611,
+          "amortizacion": 8.0,
+          "renta": 0.35,
+          "total": 8.35,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2029-01-09",
+          "dias_corridos": 795,
+          "amortizacion": 8.0,
+          "renta": 0.28,
+          "total": 8.28,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2029-07-09",
+          "dias_corridos": 976,
+          "amortizacion": 8.0,
+          "renta": 0.21,
+          "total": 8.21,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2030-01-09",
+          "dias_corridos": 1160,
+          "amortizacion": 8.0,
+          "renta": 0.14,
+          "total": 8.14,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2030-07-09",
+          "dias_corridos": 1341,
+          "amortizacion": 8.0,
+          "renta": 0.07,
+          "total": 8.07,
+          "base_variable_cruda": 0.0
+        }
+      ],
+      "tipo_calculadora": "fix",
+      "segmento": "sob",
+      "campo_cal_observado_no_utilizado": -0.0,
+      "control_cruzado_flujo_informe": {
+        "tir_recalculada_pct": 13.48232280212942,
+        "diferencia_pb": -82.09771978705788,
+        "supera_1_pb": true,
+        "residuo_precio": 7.105427357601002e-15,
+        "flujos_coinciden": false,
+        "fuente": "payload.tp/on.rows.amo + ren; precio full precision calc.ins.px"
+      }
+    },
+    {
+      "ticker": "TX26",
+      "estado": "sin_dato",
+      "convencion": "ACT/365",
+      "comisiones": 0,
+      "fuente_calculadora": "https://www.iamc.com.ar/informediario/#cbon",
+      "fuente_informe": "https://www.iamc.com.ar/informediario/#rf",
+      "motivo": "No hay una única fila del instrumento en calculadora e informe del cierre. No se sustituye por otro ticker."
+    },
+    {
+      "ticker": "TZXS7",
+      "estado": "coincide",
+      "convencion": "ACT/365",
+      "comisiones": 0,
+      "fuente_calculadora": "https://www.iamc.com.ar/informediario/#cbon",
+      "fuente_informe": "https://www.iamc.com.ar/informediario/#rf",
+      "precio": 113.4,
+      "precio_unidad": "por 100 VN; unidad de flujo de calc.cur",
+      "unidad_flujos": "ARS",
+      "moneda_pago": "ARS",
+      "fx_referencia": "ARS",
+      "fx_valor": 1,
+      "liquidacion": "2026-11-06",
+      "fecha_cierre": "2026-11-05",
+      "tir_publicada_pct": 5.2618,
+      "tir_recalculada_pct": 5.26177737799383,
+      "diferencia_pb": -0.0022622006169703557,
+      "supera_1_pb": false,
+      "residuo_precio": 1.4210854715202004e-14,
+      "flujos_calculadora": [
+        {
+          "fecha": "2027-09-30",
+          "dias_corridos": 328,
+          "amortizacion": 118.747965,
+          "renta": 0.0,
+          "total": 118.747965,
+          "base_variable_cruda": 0.0
+        }
+      ],
+      "tipo_calculadora": "cer",
+      "segmento": "cer",
+      "campo_cal_observado_no_utilizado": 0.0,
+      "control_cruzado_flujo_informe": {
+        "tir_recalculada_pct": 5.26177737799383,
+        "diferencia_pb": -0.0022622006169703557,
+        "supera_1_pb": false,
+        "residuo_precio": 1.4210854715202004e-14,
+        "flujos_coinciden": true,
+        "fuente": "payload.tp/on.rows.amo + ren; precio full precision calc.ins.px"
+      }
+    },
+    {
+      "ticker": "TMVE8",
+      "estado": "coincide",
+      "convencion": "ACT/365",
+      "comisiones": 0,
+      "fuente_calculadora": "https://www.iamc.com.ar/informediario/#cbon",
+      "fuente_informe": "https://www.iamc.com.ar/informediario/#rf",
+      "precio": 98.26654461492292,
+      "precio_unidad": "por 100 VN; unidad de flujo de calc.cur",
+      "unidad_flujos": "DL",
+      "moneda_pago": "ARS",
+      "fx_referencia": "A3500_BASE_DL",
+      "fx_valor": 1490.8431,
+      "liquidacion": "2026-11-06",
+      "fecha_cierre": "2026-11-05",
+      "tir_publicada_pct": 35.2151,
+      "tir_recalculada_pct": 35.21506204209736,
+      "diferencia_pb": -0.0037957902643270813,
+      "supera_1_pb": false,
+      "residuo_precio": 0.0,
+      "flujos_calculadora": [
+        {
+          "fecha": "2028-01-31",
+          "dias_corridos": 451,
+          "amortizacion": 142.660065,
+          "renta": 0.0,
+          "total": 142.660065,
+          "base_variable_cruda": 0.0
+        }
+      ],
+      "tipo_calculadora": "capv",
+      "segmento": "dua",
+      "campo_cal_observado_no_utilizado": 0.0,
+      "control_cruzado_flujo_informe": {
+        "tir_recalculada_pct": 35.21506204209736,
+        "diferencia_pb": -0.0037957902643270813,
+        "supera_1_pb": false,
+        "residuo_precio": 0.0,
+        "flujos_coinciden": true,
+        "fuente": "payload.tp/on.rows.amo + ren; precio full precision calc.ins.px"
+      }
+    },
+    {
+      "ticker": "YM34O",
+      "estado": "coincide",
+      "convencion": "ACT/365",
+      "comisiones": 0,
+      "fuente_calculadora": "https://www.iamc.com.ar/informediario/#cbon",
+      "fuente_informe": "https://www.iamc.com.ar/informediario/#rf",
+      "precio": 101.49015465680831,
+      "precio_unidad": "por 100 VN; unidad de flujo de calc.cur",
+      "unidad_flujos": "USD",
+      "moneda_pago": "CCL",
+      "fx_referencia": "CCL",
+      "fx_valor": 1666.27,
+      "liquidacion": "2026-11-06",
+      "fecha_cierre": "2026-11-05",
+      "tir_publicada_pct": 8.6296,
+      "tir_recalculada_pct": 8.629581631991263,
+      "diferencia_pb": -0.0018368008737612573,
+      "supera_1_pb": false,
+      "residuo_precio": 0.0,
+      "flujos_calculadora": [
+        {
+          "fecha": "2027-01-17",
+          "dias_corridos": 72,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2027-07-17",
+          "dias_corridos": 253,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2028-01-17",
+          "dias_corridos": 437,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2028-07-17",
+          "dias_corridos": 619,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2029-01-17",
+          "dias_corridos": 803,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2029-07-17",
+          "dias_corridos": 984,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2030-01-17",
+          "dias_corridos": 1168,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2030-07-17",
+          "dias_corridos": 1349,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2031-01-17",
+          "dias_corridos": 1533,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2031-07-17",
+          "dias_corridos": 1714,
+          "amortizacion": 0.0,
+          "renta": 4.125,
+          "total": 4.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2032-01-17",
+          "dias_corridos": 1898,
+          "amortizacion": 30.0,
+          "renta": 4.125,
+          "total": 34.125,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2032-07-17",
+          "dias_corridos": 2080,
+          "amortizacion": 0.0,
+          "renta": 2.8875,
+          "total": 2.8875,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2033-01-17",
+          "dias_corridos": 2264,
+          "amortizacion": 30.0,
+          "renta": 2.8875,
+          "total": 32.8875,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2033-07-17",
+          "dias_corridos": 2445,
+          "amortizacion": 0.0,
+          "renta": 1.65,
+          "total": 1.65,
+          "base_variable_cruda": 0.0
+        },
+        {
+          "fecha": "2034-01-17",
+          "dias_corridos": 2629,
+          "amortizacion": 40.0,
+          "renta": 1.65,
+          "total": 41.65,
+          "base_variable_cruda": 0.0
+        }
+      ],
+      "tipo_calculadora": "fix",
+      "segmento": "hd",
+      "campo_cal_observado_no_utilizado": -0.0,
+      "control_cruzado_flujo_informe": {
+        "tir_recalculada_pct": 8.629581631991263,
+        "diferencia_pb": -0.0018368008737612573,
+        "supera_1_pb": false,
+        "residuo_precio": 0.0,
+        "flujos_coinciden": true,
+        "fuente": "payload.tp/on.rows.amo + ren; precio full precision calc.ins.px"
+      }
+    }
+  ],
+  "sha256_html": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+}

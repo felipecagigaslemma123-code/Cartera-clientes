@@ -1,0 +1,263 @@
+{
+  "esquema_version": 1,
+  "naturaleza": "Registro de peticiones HTTP de prueba y lectura estática del ruteo; no es un HAR del navegador",
+  "politica": "Una adquisición por URL y día argentino; HTML inicial y auxiliares distintos, sin reintentos",
+  "navegador": {
+    "verificado_antes_del_encargo_ampliado": [
+      "Portada con último cierre 05-Nov-2026",
+      "Calculadora de Letras #clet y sus campos",
+      "Rechazo de medición: No, gracias"
+    ],
+    "limitacion": "La pestaña temporal se cerró al interrumpirse el turno. No se recargó el cierre ni se afirmó haber capturado la red de cada sección en DevTools."
+  },
+  "recursos": [
+    {
+      "archivo_metadatos": "diferido_acc.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/d/acc.json",
+      "consultado_en": "2026-11-05T23:33:14.271227-03:00",
+      "intento_reservado": true,
+      "url_final": "https://www.iamc.com.ar/informediario/d/acc.json",
+      "estado_http": 200,
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:33:14 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=Xnnl76CLyAhdz2cX5JGhsWcChBsovlQoUrJMLsoJ5spz7BnlZXxMprYhCiN0m6Zfs14NUe8orlcfI6SpCbolx13b%2BfiolaqpJ8ydak5uvViO146kNxAeVPAddnru22KuJ6urx3ANgjkY5WHInpk%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560b1386899c7a9-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+      "json_valido": false,
+      "igual_html_inicial": true
+    },
+    {
+      "archivo_metadatos": "diferido_ccau.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/d/ccau.json",
+      "consultado_en": "2026-11-05T23:33:14.799862-03:00",
+      "intento_reservado": true,
+      "url_final": "https://www.iamc.com.ar/informediario/d/ccau.json",
+      "estado_http": 200,
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:33:14 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=XLXW9XiEG06M45DG41%2F2amhcINiMhCFkfbJBUALwGb1Qee8P3FyWOMxekeyRg%2BQrQbB4HOvLB7kX7Itkfoxkx%2BlToV87MPVa5asw9WqPILZBc%2FZffC5uMpunXjMNPsOhgcUPiCBN6Cc7kxADeDk%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560b13bbbcd0ec3-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+      "json_valido": false,
+      "igual_html_inicial": true
+    },
+    {
+      "archivo_metadatos": "diferido_ced.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/d/ced.json",
+      "consultado_en": "2026-11-05T23:33:14.123077-03:00",
+      "intento_reservado": true,
+      "url_final": "https://www.iamc.com.ar/informediario/d/ced.json",
+      "estado_http": 200,
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:33:14 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=pbdRAwhLjJRj3KnWCltd2VJmBgHqMINEctHXscKAqJzhesB3jSGn7jZhDwry6ZjImD3JEqR2%2F6Iv3AGawjtrWz5QQyONWQGXoRpyr3p9zT7pCfyFVPNWgP2PEObu9ailRyDTsworNXSiYLQtJOQ%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560b1378eba0ec2-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+      "json_valido": false,
+      "igual_html_inicial": true
+    },
+    {
+      "archivo_metadatos": "diferido_ibi.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/d/ibi.json",
+      "consultado_en": "2026-11-05T23:33:14.426471-03:00",
+      "intento_reservado": true,
+      "url_final": "https://www.iamc.com.ar/informediario/d/ibi.json",
+      "estado_http": 200,
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:33:14 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=OUVW5nxaxip%2BhQiJkgNxzPlh3VAeENeSB%2FywYd602NoW67TCBznSUANKZns3AY%2F3D%2FjoZZUIjjCLYGbNV2pYi4hBui6gP0Ikhj7Z7eLmA7hJJO93kKNT%2FmJGeX5HGMOrbhD84CMtFLl6QXJx35M%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560b1396a470ebf-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+      "json_valido": false,
+      "igual_html_inicial": true
+    },
+    {
+      "archivo_metadatos": "diferido_ins.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/d/ins.json",
+      "consultado_en": "2026-11-05T23:33:14.661336-03:00",
+      "intento_reservado": true,
+      "url_final": "https://www.iamc.com.ar/informediario/d/ins.json",
+      "estado_http": 200,
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:33:14 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=vQ%2FNU3%2B24QTxLz5f7lK%2FDuQHpdgQ8bCDX4PpKub1zp1pfFfKU2smkKGTLHTwyKVWoxk9PCQwaocQes9ERhlOfPsR8LSQKbBXp7EkGFoILW1S9AIUyNhiTSHeviukD%2BJhCHwUVFlkhsvr3Ol01fQ%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560b13aec7a0ec1-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+      "json_valido": false,
+      "igual_html_inicial": true
+    },
+    {
+      "archivo_metadatos": "diferido_op.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/d/op.json",
+      "consultado_en": "2026-11-05T23:33:13.729327-03:00",
+      "intento_reservado": true,
+      "url_final": "https://www.iamc.com.ar/informediario/d/op.json",
+      "estado_http": 200,
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:33:13 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=n%2FfT6%2Fc6aQ0%2BquQaW%2FutEwgSIHe%2F2vVCVMAxyZxmu4qmcConqxxy4IcgobKe74uzV%2F899orMEYt0qkdbPyZkSkUdR1pgvX%2BUSJMEY1NfD9628rwWO6RoQDKW%2FMhGmwxHChNZogrHH3QDoaaEStc%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560b135f8f40ec7-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+      "json_valido": false,
+      "igual_html_inicial": true
+    },
+    {
+      "archivo_metadatos": "informediario.html.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/informediario/",
+      "url_final": "https://www.iamc.com.ar/informediario/",
+      "estado_http": 200,
+      "consultado_en": "2026-11-05T23:28:46.539223-03:00",
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:28:46 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=kn10LgzdfLhzw%2BaIwPf8%2B85plpsnhmTIZUWFYnyNsWV0%2FR%2BYNqkYPXBCMe0rAsQO8zcP%2BEEgwYqNklyu9B2u0aD8xIImKMNKMXg9TNQZlA9B74HkQB56bBlJ69OmgOLLrFChcUiiJXZ%2BP9S3beY%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560aaaf1c610ec2-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    },
+    {
+      "archivo_metadatos": "robots.txt.http.json",
+      "url_solicitada": "https://www.iamc.com.ar/robots.txt",
+      "url_final": "https://www.iamc.com.ar/robots.txt",
+      "estado_http": 200,
+      "consultado_en": "2026-11-05T23:28:46.281108-03:00",
+      "headers": {
+        "Date": "Fri, 06 Nov 2026 02:28:46 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "close",
+        "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=yUL0Yw50%2BON6P4xMNw038gXprkNQlkPdnGAQ6%2BmF%2BDEXtWwyrH1pRj3PhUJAs8mTcOTmdelYc3ISh3EHWwvqQhm4m5w1PwmPe9aUsmpoZDemSN8ht9ajYMVR9Gh81sUbTlcFfm7CUaW02JQBEyg%3D\"}]}",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "Server": "cloudflare",
+        "CF-RAY": "a560aaada87d0ebf-EZE",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4"
+    }
+  ],
+  "ruteo_fuente": {
+    "rf": {
+      "datos": "payload.tp + payload.on + payload.din",
+      "peticion_diferida_declarada": null
+    },
+    "cbon": {
+      "datos": "payload.calc + payload.tp/on.rows",
+      "peticion_diferida_declarada": null
+    },
+    "clet": {
+      "datos": "payload.tp.rows[seg=lec] + payload.calc.ins",
+      "peticion_diferida_declarada": null
+    },
+    "ccau": {
+      "datos": "payload.ccau + payload.din.cauc",
+      "peticion_diferida_declarada": "d/ccau.json"
+    },
+    "met": {
+      "datos": "constante MET en JavaScript del HTML",
+      "peticion_diferida_declarada": null
+    },
+    "macro": {
+      "datos": "payload.macro",
+      "peticion_diferida_declarada": null
+    },
+    "ins": {
+      "datos": "payload.ins",
+      "peticion_diferida_declarada": "d/ins.json"
+    },
+    "acc": {
+      "datos": "payload.acc",
+      "peticion_diferida_declarada": "d/acc.json"
+    },
+    "ced": {
+      "datos": "payload.ced",
+      "peticion_diferida_declarada": "d/ced.json"
+    },
+    "op": {
+      "datos": "payload.op",
+      "peticion_diferida_declarada": "d/op.json"
+    },
+    "ibi": {
+      "datos": "payload.ibi",
+      "peticion_diferida_declarada": "d/ibi.json"
+    }
+  }
+}

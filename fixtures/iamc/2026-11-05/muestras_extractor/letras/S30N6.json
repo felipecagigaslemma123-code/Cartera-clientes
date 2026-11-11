@@ -1,0 +1,147 @@
+{
+  "calculadora": {
+    "tk": "S30N6",
+    "g": "tp",
+    "seg": "lec",
+    "k": "cap",
+    "cur": "ARS",
+    "fxc": 1,
+    "fxr": "ARS",
+    "px": 128.29,
+    "pxa": 128.29,
+    "liq": "2026-11-06",
+    "f": [
+      [
+        24,
+        129.888227,
+        0.0,
+        0.0
+      ]
+    ],
+    "cal": 0.0
+  },
+  "informe": {
+    "tk": "S30N6",
+    "seg": "lec",
+    "em": "TESORO NACIONAL",
+    "de": "Capitalizables",
+    "ti": "LETRA",
+    "sec": "Estado Nacional",
+    "ley": "ARG",
+    "me": "ARS",
+    "mp": "ARS",
+    "isin": "AR0451031345",
+    "mto": 3780310600647.0,
+    "fe": "2025-12-15",
+    "fv": "2026-11-30",
+    "est": "Tasa Fija",
+    "idx": null,
+    "aj": "No",
+    "mg": null,
+    "fc": "Vencimiento",
+    "pc": null,
+    "cup": 0.023,
+    "cy": 0.0,
+    "ct": "TEM",
+    "ai": 0.0,
+    "vr": 100.0,
+    "cuo": 1.0,
+    "fam": "Vencimiento",
+    "pam": "2026-11-30",
+    "pxa": 128.29,
+    "px": 128.29,
+    "par": 128.29,
+    "vt": 100.0,
+    "ytm": 20.7188,
+    "dm": 0.0545,
+    "cx": 0.0481,
+    "wal": 0.066,
+    "adtv": 85532568970.22946,
+    "vol": 52315265426.9,
+    "vn": 40771846919.0,
+    "plz": 24.0,
+    "tna": 0.189779,
+    "tea": 0.207188,
+    "tem": 0.015815,
+    "fx": null,
+    "fxr": "ARS",
+    "lec": 1,
+    "mv": 129.8882,
+    "rp": 0.01245792,
+    "tl": 0.023,
+    "ttl": "TEM",
+    "dml": 19.88,
+    "p1": null,
+    "p2": null,
+    "pg": null,
+    "mv1": null,
+    "mv2": null,
+    "tem1": null,
+    "tem2": null,
+    "tea1": null,
+    "tea2": null,
+    "dmd1": null,
+    "dmd2": null,
+    "temd": null,
+    "tnad": null,
+    "tead": null,
+    "dmdd": null,
+    "mvd": null,
+    "pxd": 0.344,
+    "dytm": -525.7,
+    "amo": [
+      [
+        "2026-11-30",
+        100.0
+      ]
+    ],
+    "ren": [
+      [
+        "2026-11-30",
+        29.888227
+      ]
+    ],
+    "adtvu": 54971675,
+    "adtvp": [
+      54963005,
+      8653,
+      17
+    ],
+    "adtve": [
+      "S30N6",
+      "SN6D",
+      "SN6C"
+    ],
+    "fxi": {
+      "mep": 1583.83,
+      "ccl": 1666.1,
+      "fm": "2026-11-05",
+      "fc": "2026-11-05",
+      "canje": 5.194,
+      "po": 128.29,
+      "pd": 0.081,
+      "pc": 0.077
+    }
+  },
+  "catalogo": {
+    "tk": "S30N6",
+    "n": "TESORO NACIONAL — Capitalizables",
+    "t": "Letra",
+    "g": "tp",
+    "i": "AR0451031345",
+    "c": "9368",
+    "s": "Estado Nacional",
+    "x": "ARS · Capitalizable · Vto. 2026-11-30 · Ley Arg.",
+    "d": "2026-11-05",
+    "sg": "lec",
+    "ed": "SN6D",
+    "ec": "SN6C",
+    "md": "ARS",
+    "mp": "ARS"
+  },
+  "origenes": {
+    "calculadora": "payload.calc.ins[65]",
+    "informe": "payload.tp.rows[66]",
+    "catalogo": "payload.cat[587]"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "naturaleza": "Derivado de la fila cruda sin ajustar fechas ni índices; no es respuesta HTTP individual",
+  "origen": "payload.calc.ins.f",
+  "precio": 101.49015465680831,
+  "unidad_flujos": "USD",
+  "moneda_pago": "CCL",
+  "liquidacion": "2026-11-06",
+  "flujos": [
+    {
+      "fecha": "2027-01-17",
+      "dias_corridos": 72,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2027-07-17",
+      "dias_corridos": 253,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2028-01-17",
+      "dias_corridos": 437,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2028-07-17",
+      "dias_corridos": 619,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2029-01-17",
+      "dias_corridos": 803,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2029-07-17",
+      "dias_corridos": 984,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2030-01-17",
+      "dias_corridos": 1168,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2030-07-17",
+      "dias_corridos": 1349,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2031-01-17",
+      "dias_corridos": 1533,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2031-07-17",
+      "dias_corridos": 1714,
+      "amortizacion": 0.0,
+      "renta": 4.125,
+      "total": 4.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2032-01-17",
+      "dias_corridos": 1898,
+      "amortizacion": 30.0,
+      "renta": 4.125,
+      "total": 34.125,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2032-07-17",
+      "dias_corridos": 2080,
+      "amortizacion": 0.0,
+      "renta": 2.8875,
+      "total": 2.8875,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2033-01-17",
+      "dias_corridos": 2264,
+      "amortizacion": 30.0,
+      "renta": 2.8875,
+      "total": 32.8875,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2033-07-17",
+      "dias_corridos": 2445,
+      "amortizacion": 0.0,
+      "renta": 1.65,
+      "total": 1.65,
+      "base_variable_cruda": 0.0
+    },
+    {
+      "fecha": "2034-01-17",
+      "dias_corridos": 2629,
+      "amortizacion": 40.0,
+      "renta": 1.65,
+      "total": 41.65,
+      "base_variable_cruda": 0.0
+    }
+  ]
+}

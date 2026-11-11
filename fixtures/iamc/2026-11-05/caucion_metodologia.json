@@ -1,0 +1,271 @@
+{
+  "esquema_version": 1,
+  "fuente": {
+    "url": "https://www.iamc.com.ar/informediario/",
+    "sha256": "8edd0a23cf9e6d03108c4e97da409ed0c4c40b6186e0767e6d59445fd99137e4",
+    "bytes": 2794705,
+    "tipo": "HTML público guardado, sin ejecutar sus scripts"
+  },
+  "disponible": true,
+  "naturaleza": "evidencia estática; sin cálculos ni validación de convenciones",
+  "parametros_iniciales": {
+    "lado": "col",
+    "liq": "",
+    "pl": "1",
+    "vto": "",
+    "monto": "",
+    "tna": "",
+    "tnaMan": false,
+    "com": "",
+    "commin": "",
+    "der": "0,045",
+    "adm": "",
+    "admMan": false,
+    "otros": "",
+    "iva": "21",
+    "ivaInt": "0",
+    "ivaCom": "si",
+    "ivaDer": "no",
+    "baseCom": "ini",
+    "baseDer": "vto",
+    "mom": "vto",
+    "exig": "vto",
+    "car": []
+  },
+  "ubicacion_parametros": {
+    "linea_inicio": 12493,
+    "linea_fin": 12496
+  },
+  "constantes": {
+    "CC_BASE": {
+      "valor": 365,
+      "ubicacion": {
+        "linea_inicio": 12435,
+        "linea_fin": 12435
+      }
+    },
+    "CC_BASE_DER": {
+      "valor": 90,
+      "ubicacion": {
+        "linea_inicio": 12435,
+        "linea_fin": 12435
+      }
+    },
+    "CC_TOPE_DER": {
+      "valor": 90,
+      "ubicacion": {
+        "linea_inicio": 12435,
+        "linea_fin": 12435
+      }
+    }
+  },
+  "formulas_metodologia": [
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Interés",
+      "formula_html": "I = C × TNA × n / 365",
+      "formula_texto": "I = C × TNA × n / 365",
+      "tiene_formula": true,
+      "fragmento_js": "'I = C × TNA × n / 365'",
+      "ubicacion": {
+        "linea_inicio": 9800,
+        "linea_fin": 9800
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Comisión del agente",
+      "formula_html": "Com = máx(B<sub>c</sub> × TNA<sub>com</sub> × n / 365 ; mínimo)",
+      "formula_texto": "Com = máx(B_{c} × TNA_{com} × n / 365 ; mínimo)",
+      "tiene_formula": true,
+      "fragmento_js": "'Com = máx(B<sub>c</sub> × TNA<sub>com</sub> × n / 365 ; mínimo)'",
+      "ubicacion": {
+        "linea_inicio": 9804,
+        "linea_fin": 9804
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Derechos de mercado",
+      "formula_html": "D = B<sub>d</sub> × d × mín(n ; 90) / 90",
+      "formula_texto": "D = B_{d} × d × mín(n ; 90) / 90",
+      "tiene_formula": true,
+      "fragmento_js": "'D = B<sub>d</sub> × d × mín(n ; 90) / 90'",
+      "ubicacion": {
+        "linea_inicio": 9807,
+        "linea_fin": 9807
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Impuestos",
+      "formula_html": "G = Com + D + A + Of + IVA",
+      "formula_texto": "G = Com + D + A + Of + IVA",
+      "tiene_formula": true,
+      "fragmento_js": "'G = Com + D + A + Of + IVA'",
+      "ubicacion": {
+        "linea_inicio": 9811,
+        "linea_fin": 9811
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Tasa neta y costo financiero",
+      "formula_html": "TNA<sub>neta</sub> = (F<sub>1</sub> − F<sub>0</sub>) / F<sub>0</sub> × 365 / n · TEA = (F<sub>1</sub>/F<sub>0</sub>)<sup>365/n</sup> − 1",
+      "formula_texto": "TNA_{neta} = (F_{1} − F_{0}) / F_{0} × 365 / n · TEA = (F_{1}/F_{0})^{365/n} − 1",
+      "tiene_formula": true,
+      "fragmento_js": "'TNA<sub>neta</sub> = (F<sub>1</sub> − F<sub>0</sub>) / F<sub>0</sub> × 365 / n · TEA = (F<sub>1</sub>/F<sub>0</sub>)<sup>365/n</sup> − 1'",
+      "ubicacion": {
+        "linea_inicio": 9814,
+        "linea_fin": 9814
+      }
+    },
+    {
+      "seccion": "calc",
+      "nombre_seccion": "Calculadoras",
+      "grupo": "Calculadora de Caución",
+      "titulo": "Garantía",
+      "formula_html": "VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)",
+      "formula_texto": "VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)",
+      "tiene_formula": true,
+      "fragmento_js": "'VA = Σ Q × P / L × TC × aforo · Cobertura = VA / (C + I)'",
+      "ubicacion": {
+        "linea_inicio": 9818,
+        "linea_fin": 9818
+      }
+    }
+  ],
+  "expresiones_codigo": [
+    {
+      "linea": 12433,
+      "codigo": "const CC_ON = CC_CURVA.find(c=>c.p===1) || CC_CURVA[0] || null;"
+    },
+    {
+      "linea": 12502,
+      "codigo": "return c ? {v:c.v, p:nh, exacto:true} : (CC_ON ? {v:CC_ON.v, p:CC_ON.p, exacto:false} : null);"
+    },
+    {
+      "linea": 12537,
+      "codigo": "const n=p.n, I=p.monto*p.tna*n/CC_BASE, Mv=p.monto+I;"
+    },
+    {
+      "linea": 12538,
+      "codigo": "const bc=p.baseComVto?Mv:p.monto, comB=bc*p.com*n/CC_BASE, com=Math.max(comB,p.commin);"
+    },
+    {
+      "linea": 12539,
+      "codigo": "const bd=p.baseDerVto?Mv:p.monto, nd=Math.min(n,CC_TOPE_DER);"
+    },
+    {
+      "linea": 12540,
+      "codigo": "const der=bd*p.der*nd/CC_BASE_DER, adm=bd*p.adm*nd/CC_BASE_DER;"
+    },
+    {
+      "linea": 12541,
+      "codigo": "const iva1=p.ivaCom?(com+p.otros)*p.iva:0, iva2=p.ivaDer?(der+adm)*p.iva:0, iva3=I*p.ivaInt;"
+    },
+    {
+      "linea": 12542,
+      "codigo": "const G=com+der+adm+p.otros+iva1+iva2+iva3;"
+    },
+    {
+      "linea": 12545,
+      "codigo": "r.f0=p.monto+(p.alInicio?G:0); r.f1=Mv-(p.alInicio?0:G); r.neto=r.f1-r.f0;"
+    },
+    {
+      "linea": 12547,
+      "codigo": "r.f0=p.monto-(p.alInicio?G:0); r.f1=Mv+(p.alInicio?0:G); r.neto=r.f1-r.f0;"
+    },
+    {
+      "linea": 12548,
+      "codigo": "r.exig=p.exigVto?Mv:p.monto;"
+    },
+    {
+      "linea": 12551,
+      "codigo": "r.ok = r.f0>0 && r.f1>0 && G<p.monto;"
+    },
+    {
+      "linea": 12553,
+      "codigo": "r.per=r.neto/r.f0; r.tnaN=r.per*CC_BASE/n;"
+    },
+    {
+      "linea": 12554,
+      "codigo": "r.teaN=Math.pow(r.f1/r.f0,CC_BASE/n)-1; r.temN=Math.pow(r.f1/r.f0,30/n)-1;"
+    },
+    {
+      "linea": 12555,
+      "codigo": "r.teaB=Math.pow(1+p.tna*n/CC_BASE,CC_BASE/n)-1;"
+    },
+    {
+      "linea": 12579,
+      "codigo": "else if(q>0){ vm=q*px/d[4]*tc; origen=man?'Precio cargado':'Cierre '+fd(CCAU.fecha); }"
+    },
+    {
+      "linea": 12581,
+      "codigo": "return {d, vm, va:vm*d[3], origen};"
+    },
+    {
+      "linea": 12767,
+      "codigo": "const g=totG(), exig = bien ? r.exig : null, cob = bien && exig>0 ? g.va/exig : null;"
+    },
+    {
+      "linea": 12772,
+      "codigo": "const maxT = bien ? (p.exigVto ? g.va/(1+p.tna*p.n/CC_BASE) : g.va) : null;"
+    },
+    {
+      "linea": 12791,
+      "codigo": "if(!SC.admMan) SC.adm = l==='tom' ? '0,045' : '';"
+    },
+    {
+      "linea": 12804,
+      "codigo": "if(CC_ON) SC.tna = fnum(CC_ON.v,2).replace(/\\./g,'');"
+    },
+    {
+      "linea": 12868,
+      "codigo": "const c=CC_CURVA.find(z=>z.p===k);"
+    },
+    {
+      "linea": 12869,
+      "codigo": "if(c){ SC.tna=fnum(c.v,2).replace(/\\./g,''); const el=$c('cc_tna'); if(el) el.value=SC.tna; }"
+    }
+  ],
+  "mapeo_editorial_de_campos": {
+    "lado": "col: colocadora; tom: tomadora",
+    "liq": "fecha de liquidación",
+    "pl": "plazo en días corridos",
+    "vto": "vencimiento",
+    "monto": "capital en ARS",
+    "tna": "TNA pactada, entrada en porcentaje",
+    "com": "comisión del agente, TNA en porcentaje",
+    "commin": "mínimo de comisión en ARS",
+    "der": "porcentaje de derechos de mercado",
+    "adm": "porcentaje de administración de garantía",
+    "otros": "otros gastos fijos en ARS",
+    "iva": "porcentaje de IVA",
+    "ivaInt": "porcentaje de IVA sobre interés",
+    "ivaCom": "aplicar IVA sobre comisión y gastos fijos",
+    "ivaDer": "aplicar IVA sobre derechos y administración",
+    "baseCom": "base de comisión: capital o monto final",
+    "baseDer": "base de derechos y administración: capital o monto final",
+    "mom": "cobro de gastos: inicial o final",
+    "exig": "garantía: capital o capital más interés",
+    "car": "filas de garantías; lista diferida en la versión publicada"
+  },
+  "advertencias_del_relevamiento": [
+    "Se copian expresiones de la fuente, no una aprobación del modelo ni de su vigencia tributaria.",
+    "La TNA pactada debe corresponder al plazo de la operación; el fallback CC_ON puede ser el primer plazo disponible.",
+    "Los días hábiles seleccionan la referencia de mercado; el interés se calcula con días corridos.",
+    "TEM de caución usa 30/n; TEA usa 365/n. No sustituir por conversión mensual a 12 meses.",
+    "La lista de garantías puede estar diferida; no se solicitó ni se completó con supuestos."
+  ]
+}
