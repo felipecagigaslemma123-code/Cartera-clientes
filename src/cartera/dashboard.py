@@ -4,7 +4,7 @@ import html
 import json
 import math
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_EVEN, localcontext
 from zoneinfo import ZoneInfo
 
 from .dia_cero import patrimonio_inicial
@@ -328,6 +328,9 @@ def _datos_integral(integral):
                           "USD": _numero(_campo(integral, "efectivo_usd"))}
     datos.update({campo: _numero(_campo(flujos, campo)) for campo in
                   ("aportes", "retiros", "rentas", "dividendos", "gastos")})
+    amortizaciones = _numero(_campo(flujos, "amortizaciones"))
+    if amortizaciones:
+        datos["amortizaciones"] = amortizaciones
     datos["faltantes"] = list(_campo(integral, "faltantes", []))
     datos["faltantes_fijos"] = list(_campo(integral, "faltantes_fijos", []))
     # También aceptar implementaciones que solo tengan los campos públicos mínimos.
@@ -341,10 +344,17 @@ def _datos_integral(integral):
 
 
 def _datos_realizados(realizados):
-    return [{"ticker": str(_campo(venta, "ticker")), "fecha": _fecha(_campo(venta, "fecha")),
-             "cantidad": _numero(_campo(venta, "cantidad")), "importe": _numero(_campo(venta, "importe")),
-             "costo": _numero(_campo(venta, "costo")), "resultado": _numero(_campo(venta, "resultado")),
-             "origen_costo": str(_campo(venta, "origen_costo"))} for venta in realizados or []]
+    filas = []
+    for venta in realizados or []:
+        fila = {"ticker": str(_campo(venta, "ticker")), "fecha": _fecha(_campo(venta, "fecha")),
+                "cantidad": _numero(_campo(venta, "cantidad")), "importe": _numero(_campo(venta, "importe")),
+                "costo": _numero(_campo(venta, "costo")), "resultado": _numero(_campo(venta, "resultado")),
+                "origen_costo": str(_campo(venta, "origen_costo"))}
+        amortizaciones = _numero(_campo(venta, "amortizaciones"))
+        if amortizaciones is not None:
+            fila["amortizaciones"] = amortizaciones
+        filas.append(fila)
+    return filas
 
 
 def _datos_conciliacion(conciliacion):
@@ -365,6 +375,8 @@ def _resultado_completo(integral):
               ("aportes", "Aportes", "aportes"), ("retiros", "Retiros", "retiros"),
               ("rentas", "Rentas", "rentas"), ("dividendos", "Dividendos", "dividendos"),
               ("gastos", "Gastos", "gastos"), ("total", "Resultado completo ARS", "total")]
+    if "amortizaciones" in integral:
+        campos.insert(-1, ("amortizaciones", "Amortizaciones", "amortizaciones"))
     valores = ''.join('<dt>{}</dt><dd id="integral-{}"{}>{}</dd>'.format(
         titulo, identificador, ' class="dato-destacado"' if identificador == 'total' else '',
         _importe(integral[campo])) for identificador, titulo, campo in campos)
@@ -374,19 +386,25 @@ def _resultado_completo(integral):
             '<p id="integral-estado" class="muted">Usa los últimos datos guardados hasta confirmar precios en vivo.</p>'
             '<p class="muted">Patrimonio final menos patrimonio inicial y aportes, más retiros. '
             'Las rentas, los dividendos y los gastos ya están incluidos en el efectivo calculado. '
+            + ('El efectivo también incluye las amortizaciones. ' if "amortizaciones" in integral else '') +
             'El resultado realizado también está incluido; no se suma nuevamente.</p></section>')
 
 
 def _resultado_realizado(realizados):
     filas = []
+    con_amortizaciones = any(venta.get("amortizaciones") is not None for venta in realizados)
     for venta in realizados:
         celdas = [venta["ticker"], _dia(venta["fecha"]), _cantidad(venta["cantidad"]),
                   _importe(venta["importe"]), "falta estimar" if venta["costo"] is None else _importe(venta["costo"]),
                   _origen(venta["origen_costo"]), "falta estimar" if venta["resultado"] is None else _importe(venta["resultado"])]
+        if con_amortizaciones:
+            celdas.append(_importe(venta["amortizaciones"]) if "amortizaciones" in venta else "—")
         filas.append('<tr>' + ''.join('<td>{}</td>'.format(_texto(celda)) for celda in celdas) + '</tr>')
     conocidas = [venta for venta in realizados if venta["resultado"] is not None]
     total = _sumar(venta["resultado"] for venta in conocidas) if conocidas else 0.0
     encabezados = ["Ticker", "Fecha", "Cantidad", "Importe ARS", "Costo ARS", "Origen del costo", "Realizado ARS"]
+    if con_amortizaciones:
+        encabezados.append("Amortizaciones registradas ARS")
     tabla = ('<div class="contenedor-tabla"><table><thead><tr>' +
              ''.join('<th scope="col">' + _texto(titulo) + '</th>' for titulo in encabezados) +
              '</tr></thead><tbody>' + ''.join(filas) + '</tbody></table></div>') if filas else '<p>Sin ventas registradas.</p>'
@@ -530,9 +548,271 @@ _ESTILOS = """
 """
 
 
+
+def _decimal_letra(valor, porcentaje=False, minimos=0, decimales=None):
+    """Presenta decimales exactos sin convertir importes o tasas a float."""
+    if valor is None or isinstance(valor, bool):
+        return "sin dato"
+    try:
+        numero = Decimal(str(valor))
+    except (ValueError, ArithmeticError):
+        return "sin dato"
+    if not numero.is_finite():
+        return "sin dato"
+    if porcentaje:
+        signo, digitos, exponente = numero.as_tuple()
+        numero = Decimal((signo, digitos, exponente + 2))
+    if decimales is not None:
+        with localcontext() as contexto:
+            contexto.prec = max(len(numero.as_tuple().digits), numero.adjusted() + 1) + decimales + 2
+            numero = numero.quantize(Decimal(1).scaleb(-decimales), rounding=ROUND_HALF_EVEN)
+    texto = format(numero, ",f")
+    entero, separador, fraccion = texto.partition(".")
+    fraccion = fraccion.rstrip("0").ljust(minimos, "0")
+    texto = entero.replace(",", ".") + ("," + fraccion if fraccion else "")
+    return texto + (" %" if porcentaje else "")
+
+
+def _dia_letra(valor):
+    try:
+        return _dia(valor)
+    except (TypeError, ValueError):
+        return "sin dato"
+
+
+def _dias_letra(vencimiento, hoy):
+    try:
+        dias = (date.fromisoformat(vencimiento) - hoy).days
+    except (TypeError, ValueError):
+        return "sin dato; falta vencimiento"
+    if dias < 0:
+        return "Vencida hace {}; cobro sin confirmar".format(_dias(-dias))
+    return "0 días · vence hoy" if dias == 0 else _dias(dias)
+
+
+def _panel_letras(letras, hoy):
+    """Vista de cobros contractuales previstos, separada del resultado y efectivo."""
+    if letras is None:
+        return ""
+    posiciones = letras.get("posiciones") or []
+    avisos = list(letras.get("avisos") or [])
+    filas = []
+    for indice, posicion in enumerate(posiciones):
+        ticker = str(posicion.get("ticker") or "sin ticker")
+        pendiente = str(posicion.get("familia") or "").upper() == "LELINK"
+        avisos.extend(posicion.get("avisos") or [])
+        if pendiente:
+            avisos.append("{}: Cálculo dólar linked pendiente de validación del Toolkit".format(ticker))
+        if _dia_letra(posicion.get("vencimiento")) == "sin dato":
+            avisos.append("{}: falta vencimiento.".format(ticker))
+        pago = _decimal_letra(None if pendiente else posicion.get("pago_vencimiento"), minimos=2, decimales=2)
+        moneda_pago = posicion.get("moneda_pago")
+        if pago == "sin dato" or moneda_pago not in ("ARS", "USD"):
+            pago = "sin dato"
+            if not pendiente:
+                avisos.append("{}: faltan datos para el pago al vencimiento; revisá los avisos de la letra.".format(ticker))
+        else:
+            pago += " " + moneda_pago
+        compras = []
+        for lote in posicion.get("lotes") or []:
+            precio = _decimal_letra(lote.get("precio"), minimos=2)
+            moneda = lote.get("moneda")
+            base = _decimal_letra(lote.get("base_precio", "100"))
+            if precio == "sin dato" or moneda not in ("ARS", "USD"):
+                precio = "sin dato"
+                avisos.append("{}: falta precio o moneda de compra en {}.".format(ticker, lote.get("referencia") or "un lote"))
+            else:
+                precio += " {} por {} VN".format(moneda, base)
+                if base == "sin dato":
+                    avisos.append("{}: falta la base nominal del precio de compra.".format(ticker))
+            rendimiento = _decimal_letra(None if pendiente else lote.get("rendimiento"), porcentaje=True, minimos=2, decimales=2)
+            valores = [_dia_letra(lote.get("fecha_compra")), _dia_letra(lote.get("fecha_liquidacion")),
+                       _decimal_letra(lote.get("cantidad_restante")), precio, rendimiento]
+            if "sin dato" in valores[:2]:
+                avisos.append("{}: falta fecha de compra o liquidación en {}.".format(ticker, lote.get("referencia") or "un lote"))
+            compras.append("<tr>" + "".join("<td>" + _texto(valor) + "</td>" for valor in valores) + "</tr>")
+        if compras:
+            detalle = ('<details><summary>Ver compras (' + str(len(compras)) + ')</summary>'
+                       '<div class="contenedor-tabla" tabindex="0" aria-label="Compras de ' + _texto(ticker) + '"><table>'
+                       '<thead><tr><th scope="col">Compra</th><th scope="col">Liquidación</th><th scope="col">Remanente VN</th>'
+                       '<th scope="col">Precio de compra</th><th scope="col">Rendimiento al vencimiento de la compra</th></tr></thead>'
+                       '<tbody>' + "".join(compras) + '</tbody></table></div></details>')
+        else:
+            detalle = '<p>Sin detalle de compras; faltan datos para mostrar los precios de compra.</p>'
+        valores = [ticker, _decimal_letra(posicion.get("cantidad")), _dia_letra(posicion.get("vencimiento"))]
+        filas.append("<tr>" + "".join("<td>" + _texto(valor) + "</td>" for valor in valores) +
+                     '<td id="letras-dias-' + str(indice) + '">' + _texto(_dias_letra(posicion.get("vencimiento"), hoy)) +
+                     '</td><td>' + _texto(pago) + '</td><td>' + detalle + '</td></tr>')
+    avisos = list(dict.fromkeys(str(aviso) for aviso in avisos))
+    lista = ('<ul id="letras-avisos" class="aviso">' + "".join("<li>" + _texto(aviso) + "</li>" for aviso in avisos) + '</ul>') if avisos else ""
+    tabla = ('<div class="contenedor-tabla" tabindex="0" aria-label="Tenencia de letras"><table>'
+             '<thead><tr><th scope="col">Ticker</th><th scope="col">Cantidad VN</th><th scope="col">Vencimiento</th>'
+             '<th scope="col">Días corridos restantes</th><th scope="col">Pago al vencimiento</th><th scope="col">Compras</th></tr></thead>'
+             '<tbody id="letras-body">' + "".join(filas) + '</tbody></table></div>') if filas else '<p>No hay tenencias de letras vigentes.</p>'
+    return ('<section id="letras-panel" aria-labelledby="letras-titulo"><h2 id="letras-titulo">Tenencia de letras</h2>'
+            '<p class="muted">Pago contractual previsto para la cantidad vigente. Se muestra aparte y no se suma al efectivo ni al resultado. '
+            'El rendimiento corresponde al precio de cada compra; no usa la cotización actual.</p>'
+            '<p id="letras-estado">Días corridos al ' + _texto(hoy.strftime("%d/%m/%Y")) + ', hora de Argentina.</p>' + lista + tabla + '</section>')
+
+
+def _numero_flujo(valor, estilo=2):
+    """Comparte el redondeo de pantalla con las celdas numéricas de Excel."""
+    es_cantidad = estilo == 3
+    texto = _decimal_letra(valor, porcentaje=estilo == 4,
+                           minimos=0 if es_cantidad else 2, decimales=None if es_cantidad else 2)
+    if texto == "sin dato":
+        return texto, texto
+    numero = Decimal(texto.replace(".", "").replace(",", ".").replace(" %", ""))
+    if estilo == 4:
+        numero = numero.scaleb(-2)
+    # Excel admite quince dígitos significativos. Los demás se conservan como texto.
+    digitos = len("".join(str(digito) for digito in numero.as_tuple().digits).rstrip("0"))
+    decimales_excel = numero.as_tuple().exponent >= -15 or not es_cantidad
+    if digitos <= 15 and -307 <= numero.adjusted() <= 307 and decimales_excel:
+        return texto, {"tipo": "numero", "valor": float(numero), "estilo": estilo}
+    return texto, texto
+
+
+def _fecha_flujo(valor):
+    texto = _dia_letra(valor)
+    return texto, {"tipo": "fecha", "valor": valor} if texto != "sin dato" else texto
+
+
+def _panel_flujo(flujo):
+    """Genera las tablas de pantalla y las filas de la hoja con los mismos datos."""
+    if flujo is None:
+        return "", []
+    excel = [["Flujo de fondos"]]
+
+    def par(celda):
+        return celda if isinstance(celda, tuple) else (celda, celda)
+
+    def tabla(titulo, encabezados, filas):
+        excel.extend([[titulo], encabezados])
+        vista = []
+        for fila in filas:
+            celdas = [par(celda) for celda in fila]
+            vista.append([texto for texto, _ in celdas])
+            excel.append([valor for _, valor in celdas])
+        excel.append([])
+        return _tabla_historial(encabezados, vista)
+
+    def nota(texto, clase="muted"):
+        excel.append([texto])
+        return '<p class="' + clase + '">' + _texto(texto) + '</p>'
+
+    def fecha_cobro(pago):
+        fecha = pago.get("fecha_cobro")
+        if not fecha:
+            return "—"
+        dia = _dia_letra(fecha)
+        return "Se cobra el lunes " + dia[:5] if dia != "sin dato" else dia
+
+    fecha_cierre = _dia_letra(flujo.get("fecha_cierre"))
+    fuente = "Cierre IAMC · " + fecha_cierre
+    if flujo.get("antiguedad") is not None:
+        fuente += " · " + _dias(flujo["antiguedad"]) + " de antigüedad"
+    calculo = _dia_letra(flujo.get("fecha_calculo"))
+    if calculo != "sin dato":
+        fuente += " · calculado al " + calculo
+    desde = _dia_letra(flujo.get("control_desde"))
+    control = ("El control de cobros empieza en el día cero (" + desde + "): un pago anterior solo figura si está en los extractos. "
+               if desde != "sin dato" else
+               "Sin día cero no hay control de cobros: un pago pasado solo figura si está en los extractos. ")
+    partes = ['<section id="flujo-fondos" aria-labelledby="flujo-titulo"><h2 id="flujo-titulo">Flujo de fondos</h2>',
+              nota(fuente + "."),
+              nota("Proyección para nominales conservados hasta el vencimiento, sujeta a los pagos del emisor. "
+                   "El resultado a vencimiento es nominal. TIR e importes se presentan sin gastos ni comisiones. "
+                   "La fecha de cobro puede correrse por un feriado."),
+              nota(control + "Revisa movimientos hasta diez días corridos después del pago. "
+                   "Una diferencia puede deberse a retenciones, gastos o movimientos pendientes de cargar.")]
+    for aviso in flujo.get("avisos", []):
+        partes.append(nota(aviso, "aviso"))
+
+    calendario = []
+    monedas = ("ARS", "USD MEP", "USD cable")
+    for mes in flujo.get("calendario", []):
+        for clave, estado in (("deberia_haberse_cobrado", "Debería haberse cobrado"),
+                              ("proyectado", "Proyectado")):
+            importes = mes.get(clave, {})
+            if importes:
+                calendario.append([mes["mes"], estado, *[_numero_flujo(importes[moneda]) if moneda in importes else "—"
+                                                         for moneda in monedas]])
+    partes.append('<h3>Calendario consolidado</h3>')
+    if calendario:
+        partes.append(tabla("Calendario consolidado", ["Mes", "Estado", *monedas], calendario))
+    else:
+        partes.append(nota("Sin pagos para mostrar en el calendario."))
+
+    pendientes = []
+    for posicion in flujo.get("posiciones", []):
+        ticker = posicion["ticker"]
+        if posicion.get("motivo"):
+            pendientes.append([ticker, posicion["motivo"]])
+            continue
+        moneda = posicion.get("moneda_etiqueta") or posicion.get("moneda") or "sin dato"
+        unidad = " " + moneda if moneda != "sin dato" else ""
+        proximo = posicion.get("proximo_pago") or {}
+        partes.append('<article class="tarjeta"><h3>' + _texto(ticker) + '</h3>')
+        partes.append(tabla(ticker, ["VN vigentes", "Moneda de cobro", "Próximo pago", "Cobro estimado",
+                                    "Importe próximo pago", "Total proyectado", "Pagos restantes"], [[
+            _numero_flujo(posicion.get("cantidad"), 3), moneda, _fecha_flujo(proximo.get("fecha")),
+            fecha_cobro(proximo), _numero_flujo(proximo.get("total")),
+            _numero_flujo(posicion.get("total_proyectado")), _numero_flujo(posicion.get("pagos_restantes"), 3),
+        ]]))
+        cobros = []
+        for pago in posicion.get("pagos", []):
+            cobro = pago.get("cobro")
+            if cobro is not None:
+                cobros.append([_fecha_flujo(pago.get("fecha")), cobro.get("estado", "sin dato"),
+                               _numero_flujo(cobro.get("teorico")), _numero_flujo(cobro.get("registrado")),
+                               _numero_flujo(cobro.get("diferencia")), cobro.get("origen") or "—",
+                               "Sí" if cobro.get("convertido") else "—"])
+        if cobros:
+            partes.append('<h4>Control de cobros</h4>')
+            partes.append(tabla(ticker + " · Control de cobros",
+                                ["Fecha contractual", "Estado", "Teórico" + unidad, "Registrado" + unidad,
+                                 "Diferencia" + unidad, "Origen del registro", "Conversión aplicada"], cobros))
+
+        for compra in posicion.get("compras", []):
+            titulo = "Compra " + compra["referencia"]
+            partes.append('<details><summary>' + _texto(titulo) + '</summary>')
+            fila = [_fecha_flujo(compra.get("fecha_compra")), _fecha_flujo(compra.get("liquidacion")),
+                    _numero_flujo(compra.get("nominales"), 3), _numero_flujo(compra.get("precio")),
+                    compra.get("moneda_precio") or "sin dato"]
+            encabezados = ["Fecha de compra", "Liquidación", "VN remanentes",
+                           "Precio sucio pagado por 100 VN", "Moneda del precio"]
+            if compra.get("tc") is not None:
+                encabezados += ["Tipo de cambio ARS/USD", "Precio en moneda de cobro por 100 VN"]
+                fila += [_numero_flujo(compra["tc"], 3), _numero_flujo(compra.get("precio_flujo"))]
+            encabezados += ["Inversión" + unidad, "Total a cobrar" + unidad,
+                            "Resultado a vencimiento" + unidad, "TIR de compra"]
+            fila += [_numero_flujo(compra.get(campo)) for campo in ("inversion", "total_a_cobrar", "resultado_vto")]
+            fila.append(_numero_flujo(compra.get("tir"), 4))
+            partes.append(tabla(ticker + " · " + titulo, encabezados, [fila]))
+            if compra.get("motivo"):
+                partes.append(nota(compra["motivo"], "aviso"))
+            pagos = [[_fecha_flujo(pago.get("fecha")), fecha_cobro(pago), _numero_flujo(pago.get("renta")),
+                      _numero_flujo(pago.get("amortizacion")), _numero_flujo(pago.get("total")),
+                      pago["estado"], pago["origen"]] for pago in compra.get("pagos", [])]
+            if pagos:
+                partes.append('<h4>Pagos de la compra</h4>')
+                partes.append(tabla(ticker + " · " + titulo + " · Pagos",
+                                    ["Fecha contractual", "Cobro estimado", "Renta" + unidad,
+                                     "Amortización" + unidad, "Total" + unidad, "Estado", "Origen"], pagos))
+            partes.append('</details>')
+        partes.append('</article>')
+    if pendientes:
+        partes.append('<h3>Especies pendientes</h3>')
+        partes.append(tabla("Especies pendientes", ["Ticker", "Motivo"], pendientes))
+    partes.append('</section>')
+    return "".join(partes), excel
+
+
 def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrumentos,
                  efectivo, historial, generado_en, posiciones=None, dia_cero=None, mep=None,
-                 posiciones_base=None, integral=None, realizados=None, conciliacion=None, historial_realizado=None):
+                 posiciones_base=None, integral=None, realizados=None, conciliacion=None, historial_realizado=None,
+                 letras=None, flujo_fondos=None):
     """Genera una vista completa incluso si el navegador no logra consultar la fuente."""
     generado = _instante(generado_en)
     resultados = list(resultados)
@@ -560,6 +840,13 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
              "integral": integral_datos, "realizados": realizados_datos, "conciliacion": conciliacion_datos}
     if historial_datos is not None:
         datos["historial"] = historial_datos
+    if letras is not None:
+        datos["letras"] = letras
+    flujo_datos = _valor_historial(flujo_fondos)
+    panel_flujo, filas_flujo = _panel_flujo(flujo_datos)
+    if flujo_datos is not None:
+        datos["flujo_fondos"] = flujo_datos
+        datos["flujo_fondos_excel"] = filas_flujo
     serializado = json.dumps(datos, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     avisos_html = ('<section id="avisos-lectura" class="aviso"><h2>Estado de los archivos</h2><ul>' +
                    "".join("<li>" + _texto(aviso) + "</li>" for aviso in avisos_datos) + "</ul></section>") if avisos_datos else ""
@@ -621,7 +908,7 @@ def generar_html(cliente, resultados, resumen, cotizaciones, niveles, instrument
         '<p id="aviso-datos" class="aviso" role="status" aria-live="polite">' + _texto(estado) + '</p>'
         '<p id="aviso-dia-distinto" class="aviso"' + ('' if otro_dia else ' hidden') + '>' + _texto(aviso_dia) + '</p>'
         '<p id="aviso-parcial" class="aviso"' + ('' if faltantes else ' hidden') + '>Totales parciales: ' + str(faltantes) + ' especies sin precio.</p>'
-        + avisos_html + panel_alertas + '<section><h2>Vencimientos próximos y especies vencidas</h2><ul id="vencimientos-lista">' + lista_vencimientos + '</ul></section>'
+        + avisos_html + panel_alertas + _panel_letras(letras, generado_en.astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date()) + panel_flujo + '<section><h2>Vencimientos próximos y especies vencidas</h2><ul id="vencimientos-lista">' + lista_vencimientos + '</ul></section>'
         '<section><h2>Posiciones</h2><p class="muted">El efectivo se muestra aparte. Deslizá la tabla para ver todas las columnas.</p>'
         '<div class="contenedor-tabla" tabindex="0" aria-label="Posiciones de la cartera"><table class="tabla-posiciones"><thead><tr>' +
         ''.join('<th scope="col">' + _texto(titulo) + '</th>' for titulo in encabezados) + '</tr></thead><tbody id="posiciones-body">' + _filas_tabla(filas) + '</tbody></table></div></section>'

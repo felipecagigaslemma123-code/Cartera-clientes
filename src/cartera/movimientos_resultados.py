@@ -20,6 +20,7 @@ class Flujos:
     rentas: float = 0.0
     dividendos: float = 0.0
     gastos: float = 0.0
+    amortizaciones: float = 0.0
 
 
 @dataclass
@@ -124,7 +125,7 @@ def saldos_efectivo(efectivo, movimientos, hasta=None):
 def flujos(movimientos):
     """Desglosa flujos en pesos al cambio propio de cada movimiento."""
     campos = {"deposito": "aportes", "retiro": "retiros", "renta": "rentas",
-              "dividendo": "dividendos", "gasto": "gastos"}
+              "dividendo": "dividendos", "gasto": "gastos", "amortizacion": "amortizaciones"}
     componentes = {campo: [] for campo in campos.values()}
     for movimiento in _normalizados(movimientos):
         campo = campos.get(movimiento["tipo"])

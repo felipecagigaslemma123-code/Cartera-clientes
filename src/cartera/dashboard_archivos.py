@@ -128,10 +128,11 @@ def _publicar(ruta, html):
             temporal.unlink(missing_ok=True)
 
 
-def crear_dashboard(punto, carpeta, slug, fetch):
+def crear_dashboard(punto, carpeta, slug, fetch, *, datos=None, aviso_iamc=None):
     carpeta = Path(carpeta)
     nombres = ("perfil.json", "niveles.json", "instrumentos.json", "efectivo.json",
-               "dia_cero.json", "movimientos.csv", "historial.csv", "cache_precios.json", "dashboard.html")
+               "dia_cero.json", "movimientos.csv", "historial.csv", "cache_precios.json", "dashboard.html",
+               "compras_letras.json", "compras_bonos.json")
     rutas = {nombre: _camino(carpeta, nombre) for nombre in nombres}
     cliente = _perfil(_objeto_opcional(rutas["perfil.json"]), slug)
     niveles_brutos = _objeto_opcional(rutas["niveles.json"])
@@ -148,8 +149,9 @@ def crear_dashboard(punto, carpeta, slug, fetch):
         patrimonio_inicial(punto.posiciones, dia_cero)
     base = punto
     movimientos = leer_movimientos(rutas["movimientos.csv"])
-    validar_movimientos(base, movimientos, date.fromisoformat(dia_cero["fecha"]) if dia_cero else None,
-                        datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date())
+    generado_en = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+    fecha_dia_cero = date.fromisoformat(dia_cero["fecha"]) if dia_cero else None
+    validar_movimientos(base, movimientos, fecha_dia_cero, generado_en.date())
     punto, realizados = cartera_actual(base, movimientos)
     control = conciliar_efectivo(dia_cero, movimientos, efectivo)
     historial, avisos = _historial(rutas["historial.csv"], {p.ticker for p in punto.posiciones})
@@ -165,6 +167,34 @@ def crear_dashboard(punto, carpeta, slug, fetch):
             historial_realizado = _cargar_historial(carpeta, base)
         except (ValueError, OSError) as error:
             avisos.append("No se pudo calcular el rendimiento realizado histórico: {}".format(error))
+    from .flujo_fondos import calcular_flujo
+    from .iamc import leer_cierres
+    from .letras import calcular_letras
+    from .letras_archivos import leer_compras, leer_compras_bonos
+    try:
+        compras_letras = leer_compras(rutas["compras_letras.json"])
+    except (ValueError, OSError) as error:
+        compras_letras = None
+        avisos.append("No se pudieron leer los precios manuales de letras: {}".format(error))
+    letras = calcular_letras(base, movimientos, instrumentos, compras_letras, generado_en.date())
+    avisos.extend(letras["avisos"])
+    avisos_flujo = [aviso_iamc] if aviso_iamc else []
+    try:
+        compras_bonos = leer_compras_bonos(rutas["compras_bonos.json"])
+    except (ValueError, OSError) as error:
+        compras_bonos = None
+        avisos_flujo.append("No se pudieron leer las compras de bonos: {}.".format(error))
+    if datos is None and carpeta.parent.name == "clientes":
+        datos = carpeta.parent.parent
+    try:
+        cierres_iamc = leer_cierres(datos) if datos is not None else []
+    except (ValueError, OSError) as error:
+        cierres_iamc = []
+        avisos_flujo.append("No se pudieron leer los cierres de IAMC: {}.".format(error))
+    flujo = calcular_flujo(base, movimientos, instrumentos, cierres_iamc, compras_bonos,
+                           letras, generado_en.date(), fecha_dia_cero, actual=punto,
+                           cobros_historial=getattr(historial_realizado, "cobros", ()))
+    flujo["avisos"][:0] = avisos_flujo
     cliente_precios = ClientePrecios(fetch, rutas["cache_precios.json"], persistir_cache=False)
     cotizaciones = cliente_precios.obtener(punto.posiciones)
     mep = cliente_precios.dolar_mep()
@@ -186,9 +216,10 @@ def crear_dashboard(punto, carpeta, slug, fetch):
     html = generar_html(cliente=cliente, resultados=resultados, resumen=resumen,
                         cotizaciones=cotizaciones, niveles=niveles, instrumentos=instrumentos,
                         efectivo=efectivo, historial=historial,
-                        generado_en=datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")),
+                        generado_en=generado_en,
                         posiciones=punto.posiciones, dia_cero=dia_cero, mep=mep,
                         posiciones_base=base.posiciones, integral=integral,
-                        realizados=realizados, conciliacion=control, historial_realizado=historial_realizado)
+                        realizados=realizados, conciliacion=control, historial_realizado=historial_realizado,
+                        letras=letras, flujo_fondos=flujo)
     _publicar(rutas["dashboard.html"], html)
     return {"ruta": rutas["dashboard.html"], "cotizaciones": cotizaciones, "avisos": avisos}

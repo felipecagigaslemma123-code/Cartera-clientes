@@ -22,7 +22,7 @@ from .punto_partida import Lote, Posicion, PuntoPartida
 
 
 _COLUMNAS = ("fecha", "tipo", "ticker", "cantidad", "importe", "moneda", "tc", "tipo_activo", "nota")
-_TIPOS = {"compra", "venta", "renta", "dividendo", "deposito", "retiro", "gasto", "compra_usd", "venta_usd"}
+_TIPOS = {"compra", "venta", "renta", "amortizacion", "dividendo", "deposito", "retiro", "gasto", "compra_usd", "venta_usd"}
 _UNIDADES = {"cedear": 1, "accion": 1, "bono": 100, "on": 100, "letra": 100}
 
 
@@ -43,6 +43,7 @@ class Realizado:
     costo: Optional[float]
     resultado: Optional[float]
     origen_costo: str
+    amortizaciones: Optional[float] = None
 
 
 def _vacio(valor):
@@ -116,14 +117,18 @@ def _normalizar(movimiento):
     if moneda == "USD":
         tc = _numero(tc_bruto, "tc en USD", errores, positivo=True)
     elif not _vacio(tc_bruto):
-        errores.append("En ARS no se admite tc.")
+        if moneda == "ARS" and tipo in ("renta", "amortizacion"):
+            # Referencia del cobro para conciliar un flujo contractual en USD.
+            tc = _numero(tc_bruto, "tc del cobro", errores, positivo=True)
+        else:
+            errores.append("En ARS no se admite tc para este movimiento.")
     if tipo in ("compra_usd", "venta_usd") and moneda != "USD":
         errores.append("{} debe cargarse en USD con su tc.".format(tipo))
     tipo_activo = _texto(movimiento.get("tipo_activo"), "tipo_activo", errores)
     if tipo_activo and tipo_activo not in _UNIDADES:
         errores.append("Tipo de activo desconocido: {!r}.".format(tipo_activo))
     nota = _texto(movimiento.get("nota"), "nota", errores, conservar=True)
-    if importe is not None and tc is not None and not math.isfinite(importe * tc):
+    if importe is not None and moneda == "USD" and tc is not None and not math.isfinite(importe * tc):
         errores.append("El valor en pesos debe ser finito; revisá importe y tc.")
     if errores:
         raise ErrorMovimiento(errores)
@@ -158,7 +163,7 @@ def _normalizados(movimientos):
     return normalizados, errores
 
 
-def aplicar_movimientos(lotes, movimientos):
+def aplicar_movimientos(lotes, movimientos, *, _crear_compra=None):
     """Devuelve copias de los lotes restantes y las ventas, en orden estable."""
     pendientes = [replace(lote) for lote in lotes]
     ordenados, errores = _normalizados(movimientos)
@@ -179,7 +184,10 @@ def aplicar_movimientos(lotes, movimientos):
                                if lote.ticker == ticker and lote.costo is not None), Decimal(0)) + _decimal(importe)
             if not _en_rango(cantidad_total) or not _en_rango(costo_total):
                 raise ErrorMovimiento("Movimiento {} ({}): la cantidad o el costo acumulado excede el rango finito admitido.".format(indice, ticker))
-            pendientes.append(Lote(ticker, cantidad, "extracto", movimiento["fecha"], None, importe, movimiento["nota"]))
+            lote_nuevo = Lote(ticker, cantidad, "extracto", movimiento["fecha"], None, importe, movimiento["nota"])
+            if _crear_compra is not None:
+                lote_nuevo = _crear_compra(indice, dict(movimiento), lote_nuevo)
+            pendientes.append(lote_nuevo)
             continue
         disponibles = sum((_decimal(lote.cantidad) for lote in pendientes if lote.ticker == ticker), Decimal(0))
         if _decimal(cantidad) > disponibles:
@@ -248,10 +256,12 @@ def validar_movimientos(punto, movimientos, fecha_dia_cero, hoy):
             problemas.append("{} no admite cantidad; dejala vacía o en 0.".format(tipo))
         if tipo in ("deposito", "retiro", "compra_usd", "venta_usd") and ticker:
             problemas.append("{} no admite ticker.".format(tipo))
-        elif tipo in ("renta", "dividendo") and not ticker:
+        elif tipo in ("renta", "amortizacion", "dividendo") and not ticker:
             problemas.append("{} requiere ticker de una especie conocida.".format(tipo))
-        if tipo in ("venta", "renta", "dividendo", "gasto") and ticker and ticker not in tipos:
+        if tipo in ("venta", "renta", "amortizacion", "dividendo", "gasto") and ticker and ticker not in tipos:
             problemas.append("La especie {} no es conocida en esa fecha.".format(ticker))
+        if tipo == "amortizacion" and ticker in tipos and tipos[ticker] not in ("bono", "on", "letra"):
+            problemas.append("amortizacion requiere una especie de renta fija.")
         activo = movimiento["tipo_activo"]
         if tipo == "compra" and ticker:
             if ticker not in tipos and not activo:
@@ -389,6 +399,8 @@ def cartera_actual(punto, movimientos):
     lotes, realizados = aplicar_movimientos(punto.lotes, historial)
     metadatos = {posicion.ticker: replace(posicion) for posicion in punto.posiciones}
     cantidades = {posicion.ticker: _decimal(posicion.cantidad) for posicion in punto.posiciones}
+    amortizaciones = {}
+    ventas = iter(realizados)
     for _, movimiento in sorted(normalizados, key=lambda entrada: entrada[1]["fecha"]):
         tipo, ticker = movimiento["tipo"], movimiento["ticker"]
         if tipo == "compra":
@@ -396,8 +408,17 @@ def cartera_actual(punto, movimientos):
                 activo = movimiento["tipo_activo"]
                 metadatos[ticker] = Posicion(ticker, ticker, activo, 0.0, _UNIDADES[activo])
             cantidades[ticker] = cantidades.get(ticker, Decimal(0)) + _decimal(movimiento["cantidad"])
+        elif tipo == "amortizacion":
+            importe = _decimal(_importe_ars(movimiento))
+            amortizaciones[ticker] = amortizaciones.get(ticker, Decimal(0)) + importe
         elif tipo == "venta":
+            venta = next(ventas)
             cantidades[ticker] -= _decimal(movimiento["cantidad"])
+            if cantidades[ticker] == 0 and ticker in amortizaciones:
+                importe = amortizaciones.pop(ticker)
+                if not _en_rango(importe):
+                    raise ErrorMovimiento("Las amortizaciones de {} exceden el rango numérico.".format(ticker))
+                venta.amortizaciones = float(importe)
     posiciones = [replace(posicion, cantidad=float(cantidades[ticker]))
                   for ticker, posicion in metadatos.items() if cantidades[ticker] != 0]
     return PuntoPartida(posiciones, lotes), realizados

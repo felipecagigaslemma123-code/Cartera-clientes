@@ -53,6 +53,7 @@ class Historial:
     avisos: List[str] = field(default_factory=list)
     diferencias_tenencias: dict = field(default_factory=dict)
     diferencias_costos: dict = field(default_factory=dict)
+    cobros: List[dict] = field(default_factory=list)
 
 
 def _numero(valor, nombre, positivo=False):
@@ -179,6 +180,9 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
         fila["_clase"] = clase
         fila["_indice"] = indice
         fila["_origen"] = "estimado" if es_ajuste else "extracto"
+        if not es_ajuste and clase in ("renta", "cierre") and fila["especie"]:
+            historial.cobros.append(dict(ticker=fila["especie"], fecha=fila["operado"],
+                                         moneda=fila["moneda"], cuenta=fila["cuenta"], importe=fila["importe"]))
         if clase == "conversion":
             continue
         if clase in ("compra", "venta", "cierre"):

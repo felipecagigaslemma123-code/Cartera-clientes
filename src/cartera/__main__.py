@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+import unicodedata
 from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -63,11 +64,15 @@ def _mostrar_estado(slug, punto, contenido, referencia=None, base=None, movimien
     fondos = flujos(movimientos)
     lineas.append("Flujos en ARS · aportes: {} · retiros: {} · rentas: {} · dividendos: {} · gastos: {}".format(
         *(_numero(getattr(fondos, campo)) for campo in ("aportes", "retiros", "rentas", "dividendos", "gastos"))))
+    if fondos.amortizaciones:
+        lineas.append("Amortizaciones en ARS: " + _numero(fondos.amortizaciones))
     conocidos, excluidos = [], 0
     for venta in realizados:
         importe = "falta estimar" if venta.resultado is None else "$ " + _numero(venta.resultado)
         lineas.append("Realizado de {}: {} · {} · origen: {}".format(
             venta.ticker, venta.fecha.isoformat(), importe, _origen(venta.origen_costo)))
+        if venta.amortizaciones is not None:
+            lineas.append("  Amortizaciones de la posición: $ " + _numero(venta.amortizaciones))
         if venta.resultado is None:
             excluidos += 1
         else:
@@ -334,6 +339,27 @@ def _mostrar_historial(historial, carpeta):
     print("\n".join(lineas))
 
 
+def _revisar_amortizaciones(base, movimientos):
+    cantidades = {p.ticker: Decimal(str(p.cantidad)) for p in base.posiciones}
+    tipos = {p.ticker: p.tipo for p in base.posiciones}
+    encontradas = 0
+    for indice, movimiento in sorted(enumerate(movimientos, 1), key=lambda fila: fila[1]["fecha"]):
+        tipo, ticker = movimiento["tipo"], movimiento["ticker"]
+        if tipo == "compra":
+            tipos.setdefault(ticker, movimiento["tipo_activo"])
+            cantidades[ticker] = cantidades.get(ticker, Decimal(0)) + Decimal(str(movimiento["cantidad"]))
+        elif tipo == "venta":
+            cantidades[ticker] -= Decimal(str(movimiento["cantidad"]))
+            nota = unicodedata.normalize("NFKD", movimiento["nota"].casefold())
+            nota = "".join(c for c in nota if not unicodedata.combining(c))
+            if tipos[ticker] in ("bono", "on") and cantidades[ticker] > 0 and "amortiz" in nota:
+                encontradas += 1
+                print("Movimiento {} · {} · {} · posible amortización parcial · {} VN remanentes.".format(
+                    indice, movimiento["fecha"], ticker, _cantidad(cantidades[ticker])))
+    print("{} ventas parciales para revisar.".format(encontradas))
+    return 0
+
+
 def main(argumentos=None):
     parser = argparse.ArgumentParser(description="Seguimiento local de carteras: base, movimientos y resultado completo.")
     parser.add_argument("--datos", metavar="RUTA", help="Carpeta de datos; alternativa: CARTERA_DATOS.")
@@ -374,11 +400,39 @@ def main(argumentos=None):
     historial = comandos.add_parser("historial", help="Calcular lo vendido y cobrado desde los extractos.")
     historial.add_argument("--cliente", required=True, metavar="SLUG")
     historial.add_argument("--actualizar-mep", action="store_true", help="Actualizar MEP diario con cierres históricos de AL30 y AL30D.")
+    letras = comandos.add_parser("letras", help="Listar compras de letras para cargar su precio limpio.")
+    letras.add_argument("--cliente", required=True, metavar="SLUG")
+    precio_letra = comandos.add_parser("precio-letra", help="Registrar el precio manual de una compra de letra.")
+    precio_letra.add_argument("--cliente", required=True, metavar="SLUG")
+    precio_letra.add_argument("--referencia", required=True, metavar="REF")
+    precio_letra.add_argument("--precio", required=True, metavar="N", help="Precio limpio por cada 100 nominales, sin gastos.")
+    precio_letra.add_argument("--moneda", required=True, choices=("ARS", "USD"))
+    precio_letra.add_argument("--liquidacion", required=True, metavar="AAAA-MM-DD")
+    iamc = comandos.add_parser("iamc", help="Guardar el cierre diario de IAMC.")
+    iamc.add_argument("--html", metavar="RUTA", help="Procesar un HTML guardado.")
+    bonos = comandos.add_parser("bonos", help="Listar compras de bonos y ON.")
+    bonos.add_argument("--cliente", required=True, metavar="SLUG")
+    precio_bono = comandos.add_parser("precio-bono", help="Registrar el precio sucio de una compra de bono u ON.")
+    precio_bono.add_argument("--cliente", required=True, metavar="SLUG")
+    precio_bono.add_argument("--referencia", required=True, metavar="REF")
+    precio_bono.add_argument("--precio", required=True, metavar="N", help="Precio sucio por cada 100 VN originales.")
+    precio_bono.add_argument("--moneda", required=True, choices=("ARS", "USD"))
+    precio_bono.add_argument("--liquidacion", required=True, metavar="AAAA-MM-DD")
+    precio_bono.add_argument("--tc", metavar="N", help="Pesos por dólar de la compra, si difieren las monedas.")
+    flujo = comandos.add_parser("flujo", help="Revisar ventas cargadas como amortizaciones parciales.")
+    flujo.add_argument("--cliente", required=True, metavar="SLUG")
+    flujo.add_argument("--revisar", required=True, action="store_true")
     opciones = parser.parse_args(argumentos)
     datos = opciones.datos if opciones.datos is not None else os.environ.get("CARTERA_DATOS")
     if not datos or not datos.strip():
         parser.error("Indicá --datos RUTA o definí CARTERA_DATOS.")
     try:
+        if opciones.comando == "iamc":
+            from .iamc import ejecutar_iamc
+            return ejecutar_iamc(datos, opciones.html)
+        if opciones.comando in ("bonos", "precio-bono"):
+            from .letras_archivos import ejecutar_bonos
+            return ejecutar_bonos(opciones, datos)
         if opciones.comando == "importar":
             punto, _ = importar_cartera(datos, opciones.cliente, opciones.archivo)
             print("Base inicial guardada para {}: {} posiciones y {} lotes.".format(
@@ -387,6 +441,9 @@ def main(argumentos=None):
             _mostrar_actualizacion(actualizar_costos(datos, opciones.cliente, opciones.archivo))
         else:
             punto, contenido = cargar_cartera(datos, opciones.cliente)
+            if opciones.comando in ("letras", "precio-letra"):
+                from .letras_archivos import ejecutar_letras
+                return ejecutar_letras(opciones, datos)
             if opciones.comando == "historial":
                 from .historial import correr_historial
                 carpeta = _ruta_cartera(datos, opciones.cliente).parent
@@ -414,9 +471,16 @@ def main(argumentos=None):
                 return 0 if entrega["entregado"] else 1
             if opciones.comando == "dashboard":
                 from .dashboard_archivos import crear_dashboard
+                from .iamc import guardar_cierre_del_dia
                 carpeta = _ruta_cartera(datos, opciones.cliente).parent
-                entrega = crear_dashboard(punto, carpeta, opciones.cliente, consultar_json)
+                mensaje_iamc, aviso_iamc = guardar_cierre_del_dia(datos)
+                entrega = crear_dashboard(punto, carpeta, opciones.cliente, consultar_json, datos=datos,
+                                          aviso_iamc=aviso_iamc)
                 print("Dashboard guardado: {}".format(entrega["ruta"]))
+                if mensaje_iamc:
+                    print(mensaje_iamc)
+                if aviso_iamc:
+                    print("ADVERTENCIA: " + aviso_iamc)
                 _avisos_cotizaciones(entrega["cotizaciones"])
                 for aviso in entrega["avisos"]:
                     print("ADVERTENCIA: " + aviso)
@@ -430,6 +494,8 @@ def main(argumentos=None):
             if opciones.comando == "movimiento":
                 return _movimiento(opciones, datos, punto)
             movimientos, actual, realizados = _historia_actual(datos, opciones.cliente, punto, referencia)
+            if opciones.comando == "flujo":
+                return _revisar_amortizaciones(punto, movimientos)
             if opciones.comando == "capturar":
                 return _capturar(datos, opciones.cliente, actual)
             control = conciliar_efectivo(referencia, movimientos, _leer_efectivo(datos, opciones.cliente))

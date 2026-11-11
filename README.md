@@ -366,7 +366,7 @@ de alertas del dashboard.
 
 ## Verificación por etapa
 
-Para verificar las siete etapas y las comprobaciones adicionales:
+Para verificar las etapas implementadas y las comprobaciones adicionales:
 
 ```bash
 PYTHONPATH=src ~/.venvs/cartera/bin/python -m unittest discover -s tests -p 'test_etapa*' -v
@@ -396,3 +396,57 @@ Las decisiones abiertas figuran en el plan y el contrato.
 
 Esta carpeta no contiene datos reales de clientes. Las salidas se guardan en la ruta
 de datos, separada del código; las demostraciones y pruebas usan datos ficticios.
+
+
+## Tenencia de letras
+
+El dashboard incluye un panel de letras: cantidad vigente, vencimiento, días corridos restantes y pago contractual previsto. Se pueden desplegar las compras para ver su precio manual, fecha de liquidación y rendimiento hasta el vencimiento. El pago futuro se informa aparte del patrimonio y del resultado de la cartera.
+
+Los cálculos habilitados corresponden a LECAP/BONCAP en pesos y reutilizan el motor validado de Fixed Income Toolkit, guardado con su huella y versión dentro del proyecto. No hace falta conectar esa carpeta para ejecutar cartera. El contador toma la fecha argentina e incluye fines de semana y feriados.
+
+Primero se completan los datos contractuales en `instrumentos.json`. Para asociar el precio limpio de cada compra, expresado por 100 nominales:
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA letras --cliente SLUG
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA precio-letra --cliente SLUG --referencia base:1 --precio 110.50 --moneda ARS --liquidacion 2026-07-01
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA dashboard --cliente SLUG
+```
+
+`base:1` identifica el primer lote original; `movimiento:3`, la tercera fila de datos de movimientos. Usá las referencias que muestra `letras`. El precio manual queda separado de los costos, en `compras_letras.json`, y no se reutiliza si cambió la huella de la compra original.
+
+Dólar linked (por ejemplo, D30S6) se puede identificar en el panel como `LELINK`, pero su cálculo permanece pendiente: R006 del Toolkit todavía no tiene aprobación para producción. No se publica un importe estimado como si fuera el pago final en pesos. Tampoco se habilitan CER/TAMAR ni letras pagaderas en USD aplicando la fórmula de LECAP.
+
+Entradas, convenciones, límites y ejemplo ficticio: [LETRAS.md](docs/LETRAS.md). Implementación, verificaciones y revisión en el navegador: [REVISION_LETRAS.md](docs/REVISION_LETRAS.md).
+
+## Flujo de fondos de renta fija
+
+El dashboard incluye la sección **Flujo de fondos**: qué va a cobrar el cliente por sus bonos, obligaciones negociables y letras, cuándo y en qué moneda, y cuánto gana a vencimiento con el precio al que compró. No depende del precio de hoy ni modifica la valuación, el efectivo o el resultado completo. Reglas en [FLUJO_FONDOS.md](docs/FLUJO_FONDOS.md); fuente en [FUENTE_IAMC.md](docs/FUENTE_IAMC.md); revisión en [REVISION_ETAPA9.md](docs/REVISION_ETAPA9.md).
+
+Los cronogramas salen del cierre diario de IAMC. Hay que guardarlo cada día hábil, porque IAMC solo publica los pagos que faltan: un cierre que no se guardó no se puede recuperar. La primera vez se guarda a mano:
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA iamc
+```
+
+Hace una sola consulta por día y guarda el cierre en `RUTA/iamc/cierres/`, carpeta compartida por todos los clientes. `iamc --html ARCHIVO` procesa un HTML guardado, sin usar la red.
+
+Desde entonces, cada vez que se genera un dashboard con esa carpeta de datos, el comando `dashboard` intenta guardar el cierre publicado, con la misma regla de un intento por día. Si no puede, lo avisa, sigue con el último cierre guardado y no reintenta hasta el día siguiente. Alcanza con generar un dashboard cada día hábil para no perder cierres.
+
+Para cada cliente:
+
+1. En `instrumentos.json`, vincular cada bono u ON con IAMC: `"iamc": {"ticker": "AL30", "grupo": "tp"}` (`tp` títulos públicos, `on` obligaciones negociables). Sin vínculo, la especie figura como "sin vincular con IAMC".
+2. Cargar el precio pagado en cada compra, **sucio y por 100 VN originales**. Si se pagó en pesos un título que paga en dólares, agregar `--tc` con los pesos por dólar de esa operación:
+
+```bash
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA bonos --cliente SLUG
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA precio-bono --cliente SLUG --referencia base:1 --precio 81100 --moneda ARS --tc 1571.20 --liquidacion 2026-11-06
+PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA dashboard --cliente SLUG
+```
+
+3. Si la compra es anterior al primer cierre guardado, agregar en el vínculo los `pagos_manuales` del prospecto. Sin ellos se ven los pagos futuros, pero la TIR y el resultado a vencimiento quedan "sin dato": nunca se calculan solo con los pagos que faltan.
+
+Los pagos futuros se muestran aunque falte el precio, porque dependen solo de los nominales. Hoy está habilitada la tasa fija y las LECAP/BONCAP; CER, TAMAR, dólar linked y duales figuran como "proyección pendiente: requiere supuestos", sin importes.
+
+Una amortización parcial se carga como movimiento `amortizacion`, que no cambia los nominales. `flujo --cliente SLUG --revisar` lista las ventas viejas que parecen amortizaciones parciales, sin modificarlas.
+
+Verificación al 11/11/2026: **860 pruebas, todas aprobadas** (354 de etapas y 506 adicionales).

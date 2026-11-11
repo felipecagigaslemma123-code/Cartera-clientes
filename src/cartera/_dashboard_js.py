@@ -504,6 +504,11 @@ SCRIPT = r"""
       ingresos.push(ingreso('Aportes (no son ganancia)', historial.aportes), ingreso('Retiros (no son ganancia)', historial.retiros));
       hojas.push({nombre: 'Ventas', filas: ventas}, {nombre: 'Ingresos', filas: ingresos});
     }
+    if (Array.isArray(datos.flujo_fondos_excel)) {
+      const filasFlujo = datos.flujo_fondos_excel.map(fila => fila.map(celda =>
+        celda && celda.tipo === 'fecha' ? fechaExcel(celda.valor) : celda));
+      hojas.push({nombre: 'Flujo de fondos', filas: filasFlujo});
+    }
     return hojas;
   }
 
@@ -662,6 +667,24 @@ SCRIPT = r"""
     }
   }
 
+  function actualizarDiasLetras() {
+    if (!datos.letras || !Array.isArray(datos.letras.posiciones)) return;
+    const partes = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date()).map(parte => [parte.type, parte.value]));
+    const hoy = [partes.year, partes.month, partes.day].join('-');
+    const diaHoy = diaFecha(hoy);
+    if (diaHoy === null) return;
+    for (const [indice, posicion] of datos.letras.posiciones.entries()) {
+      const vencimiento = diaFecha(posicion.vencimiento);
+      const dias = vencimiento === null ? null : vencimiento - diaHoy;
+      texto('letras-dias-' + indice, dias === null ? 'sin dato; falta vencimiento' :
+        dias < 0 ? 'Vencida hace ' + plural(-dias) + '; cobro sin confirmar' :
+        dias === 0 ? '0 días · vence hoy' : plural(dias));
+    }
+    texto('letras-estado', 'Días corridos al ' + dia(hoy) + ', hora de Argentina. El contador se actualiza con la página abierta.');
+  }
+
   function renderizarVencimientos() {
     const lista = elemento('vencimientos-lista');
     if (!lista) return;
@@ -792,6 +815,10 @@ SCRIPT = r"""
   if (botonExcel) botonExcel.addEventListener('click', descargarExcel);
   mostrarEstadoAvisos();
   renderizar();
+  if (datos.letras && elemento('letras-panel')) {
+    actualizarDiasLetras();
+    setInterval(actualizarDiasLetras, 60000);
+  }
   if (habilitada) {
     actualizar();
     setInterval(() => { renderizar(); actualizar(); }, 300000);
