@@ -97,8 +97,8 @@ es positiva, `caucion_tomada`. Un grupo sin alguna de las dos filas no se suma y
 
 | Comprobante | Clase | Tratamiento |
 |---|---|---|
-| `COMPRA NORMAL`, `COMPRA TRADING`, `COMPRA PARIDAD` | `compra` | Lote nuevo |
-| `VENTA`, `VENTA TRADING` | `venta` | Consume lotes por FIFO |
+| `COMPRA NORMAL`, `COMPRA TRADING`, `COMPRA PARIDAD`, `COMPRA CABLE` | `compra` | Lote nuevo |
+| `VENTA`, `VENTA TRADING`, `VENTA PARIDAD`, `VENTA CABLE` | `venta` | Consume lotes por FIFO |
 | `RENTA Y AMORTIZ` de especie en `cierres.json` | `cierre` | Cierra la posición |
 | `RENTA Y AMORTIZ` de otra especie | `renta` | Ingreso |
 | `DIVIDENDOS` | `dividendo` | Ingreso, con su signo |

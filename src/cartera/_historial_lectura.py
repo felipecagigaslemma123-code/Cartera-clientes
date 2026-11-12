@@ -11,6 +11,7 @@ import re
 from collections import OrderedDict
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from html.parser import HTMLParser
 from numbers import Real
 from pathlib import Path
 from xml.etree.ElementTree import ParseError
@@ -27,13 +28,201 @@ _AJUSTES = ("fecha", "tipo", "ticker", "cantidad", "importe", "moneda", "tc", "t
 _TIPOS_AJUSTES = {"compra", "venta", "renta", "dividendo", "gasto"}
 _CLASES = {
     "COMPRA NORMAL": "compra", "COMPRA TRADING": "compra", "COMPRA PARIDAD": "compra",
-    "VENTA": "venta", "VENTA TRADING": "venta", "DIVIDENDOS": "dividendo", "RETENCION": "retencion",
+    "COMPRA CABLE": "compra",
+    "VENTA": "venta", "VENTA TRADING": "venta", "VENTA PARIDAD": "venta", "VENTA CABLE": "venta",
+    "DIVIDENDOS": "dividendo", "RETENCION": "retencion",
     "SUSCRIPCION FCI": "fci", "LIQUIDACION RESCATE FCI": "fci",
     "CREDITO DERMERC-": "gastos", "N C ARANCELES": "gastos", "NOTA DE CREDITO EO": "compensacion",
     "RECIBO DE COBRO": "aporte", "ORDEN DE PAGO": "retiro",
     "COMPRA CAUCION CONTADO": "caucion_colocada", "VENTA CAUCION TERMINO": "caucion_colocada",
     "VENTA CAUCION CONTADO": "caucion_tomada", "COMPRA CAUCION TERMINO": "caucion_tomada",
+    "IOL COMPRA": "compra", "IOL VENTA": "venta", "IOL IMPUESTO": "gastos",
+    "IOL RENTA": "renta", "IOL DIVIDENDO": "dividendo", "IOL GASTO DE COBRO": "gastos",
+    "IOL AMORTIZACION": "amortizacion", "IOL DEPOSITO": "aporte", "IOL EXTRACCION": "retiro",
+    "IOL SUSCRIPCION FCI": "fci", "IOL RESCATE FCI": "fci", "IOL CREDITO": "gastos",
+    "IOL CAUCION": "caucion_iol", "IOL LIQUIDACION CAUCION": "caucion_iol",
 }
+
+_ENCABEZADO_IOL = (
+    "Nro. de Mov.", "Nro. de Boleto", "Tipo Mov.", "Concert.", "Liquid.", "Est",
+    "Cant. titulos", "Precio", "Comis.", "Iva Com.", "Otros Imp.", "Monto",
+    "Observaciones", "Tipo Cuenta",
+)
+
+
+class _TablasHTML(HTMLParser):
+    """Extrae tablas sin interpretar el resto de la página exportada por IOL."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.tablas = []
+        self._tabla = None
+        self._fila = None
+        self._celda = None
+
+    def handle_starttag(self, etiqueta, atributos):
+        etiqueta = etiqueta.lower()
+        if etiqueta == "table" and self._tabla is None:
+            self._tabla = []
+        elif etiqueta == "tr" and self._tabla is not None:
+            self._fila = []
+        elif etiqueta in ("th", "td") and self._fila is not None:
+            self._celda = []
+
+    def handle_data(self, datos):
+        if self._celda is not None:
+            self._celda.append(datos)
+
+    def handle_endtag(self, etiqueta):
+        etiqueta = etiqueta.lower()
+        if etiqueta in ("th", "td") and self._celda is not None:
+            self._fila.append(" ".join("".join(self._celda).split()))
+            self._celda = None
+        elif etiqueta == "tr" and self._fila is not None:
+            if self._fila:
+                self._tabla.append(self._fila)
+            self._fila = None
+        elif etiqueta == "table" and self._tabla is not None:
+            self.tablas.append(self._tabla)
+            self._tabla = None
+
+
+def _numero_iol(valor, nombre, vacio=0.0):
+    texto = "" if valor is None else str(valor).strip()
+    if not texto:
+        return vacio
+    if not re.fullmatch(r"[+-]?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?", texto):
+        raise ErrorHistorial(nombre + " debe usar punto de miles y coma decimal.")
+    try:
+        numero = float(texto.replace(".", "").replace(",", "."))
+    except (ValueError, OverflowError):
+        raise ErrorHistorial(nombre + " debe ser un número finito.") from None
+    if not math.isfinite(numero):
+        raise ErrorHistorial(nombre + " debe ser un número finito.")
+    return numero
+
+
+def _fecha_iol(valor):
+    try:
+        return datetime.strptime(valor.strip(), "%d/%m/%y").date()
+    except (AttributeError, ValueError):
+        raise ErrorHistorial("Concert. debe ser una fecha válida (dd/mm/aa).") from None
+
+
+def _especie_iol(tipo):
+    coincidencia = re.search(r"\(([^()]*)\)", tipo)
+    especie = coincidencia.group(1).strip() if coincidencia else ""
+    if especie.endswith(" US$"):
+        especie = especie[:-4].rstrip()
+    return especie
+
+
+def _comprobante_iol(tipo, importe, cantidad):
+    if tipo.startswith("Compra("):
+        return "IOL COMPRA", abs(cantidad)
+    if tipo.startswith("Venta("):
+        return "IOL VENTA", -abs(cantidad)
+    if tipo.startswith("Pago de Renta"):
+        return ("IOL GASTO DE COBRO" if importe < 0 else "IOL RENTA"), 0.0
+    if tipo.startswith("Pago de Dividendos"):
+        return ("IOL GASTO DE COBRO" if importe < 0 else "IOL DIVIDENDO"), 0.0
+    if tipo.startswith("Pago de Amortización"):
+        if cantidad > 0:
+            raise ErrorHistorial("Una amortización no puede aumentar nominales.")
+        return "IOL AMORTIZACION", cantidad
+    if tipo.startswith("Depósito de Fondos"):
+        return "IOL DEPOSITO", 0.0
+    if tipo.startswith("Extracción de Fondos"):
+        return "IOL EXTRACCION", 0.0
+    if tipo.startswith("Suscripción FCI("):
+        return "IOL SUSCRIPCION FCI", 0.0
+    if tipo.startswith("Rescate FCI("):
+        return "IOL RESCATE FCI", 0.0
+    if tipo.startswith("Caución("):
+        return "IOL CAUCION", 0.0
+    if tipo == "Liquidación de Caución":
+        return "IOL LIQUIDACION CAUCION", 0.0
+    if tipo == "Crédito":
+        return "IOL CREDITO", 0.0
+    return tipo, cantidad
+
+
+def leer_extracto_iol(ruta):
+    """Lee la tabla HTML que IOL entrega con extensión ``.xls``."""
+    ruta = Path(ruta)
+    try:
+        texto = ruta.read_bytes().decode("utf-8")
+        analizador = _TablasHTML()
+        analizador.feed(texto)
+        analizador.close()
+    except (OSError, UnicodeError, ValueError):
+        raise ErrorHistorial(ruta.name + ": no se puede leer como extracto HTML de IOL válido.") from None
+    candidatas = [tabla for tabla in analizador.tablas if tabla and tuple(tabla[0]) == _ENCABEZADO_IOL]
+    if len(candidatas) != 1:
+        raise ErrorHistorial(ruta.name + ": no contiene una única tabla de operaciones históricas de IOL con el encabezado esperado.")
+    errores, filas = [], []
+    for numero_fila, valores in enumerate(candidatas[0][1:], 2):
+        contexto = "{} · fila {}".format(ruta.name, numero_fila)
+        if len(valores) != len(_ENCABEZADO_IOL):
+            errores.append(contexto + ": se requieren exactamente 14 columnas.")
+            continue
+        datos = dict(zip(_ENCABEZADO_IOL, valores))
+        if datos["Est"] != "Terminada":
+            continue
+        problemas = []
+        try:
+            numero = _numero_comprobante(datos["Nro. de Mov."])
+            if numero == "":
+                raise ErrorHistorial("Nro. de Mov. no puede estar vacío.")
+            operado = _fecha_iol(datos["Concert."])
+            importe = _numero_iol(datos["Monto"], "Monto")
+            cantidad = _numero_iol(datos["Cant. titulos"], "Cant. titulos")
+            cuentas = {
+                "Inversion Argentina Pesos": ("ARS", "PESOS"),
+                "Inversion Argentina Dolares": ("USD", "DOLARES"),
+            }
+            if datos["Tipo Cuenta"] not in cuentas:
+                raise ErrorHistorial("Tipo Cuenta no identifica una cuenta admitida de IOL.")
+            moneda, cuenta = cuentas[datos["Tipo Cuenta"]]
+            referencia = datos["Tipo Mov."]
+            comprobante, cantidad = _comprobante_iol(referencia, importe, cantidad)
+            especie = _especie_iol(referencia)
+        except ErrorHistorial as error:
+            problemas.extend(error.errores)
+        if problemas:
+            errores.extend(contexto + ": " + problema for problema in problemas)
+            continue
+        filas.append({
+            "moneda": moneda, "cuenta": cuenta, "operado": operado,
+            "comprobante": comprobante, "numero": numero, "cantidad": cantidad,
+            "especie": especie, "importe": importe, "saldo": None,
+            "referencia": referencia, "archivo": ruta.name, "fila": numero_fila,
+        })
+    operaciones = OrderedDict()
+    for fila in filas:
+        if fila["comprobante"] in ("IOL COMPRA", "IOL VENTA"):
+            operaciones.setdefault(fila["numero"], []).append(fila)
+    for numero, grupo in operaciones.items():
+        if len(grupo) > 1:
+            valido = (len(grupo) == 2 and {fila["moneda"] for fila in grupo} == {"ARS", "USD"}
+                      and len({fila["comprobante"] for fila in grupo}) == 1
+                      and len({fila["referencia"] for fila in grupo}) == 1)
+            if not valido:
+                errores.append("{}: Nro. de Mov. {} está repetido entre compras o ventas sin formar una operación en dólares válida.".format(
+                    ruta.name, numero))
+                continue
+        if len(grupo) == 1 and grupo[0]["moneda"] != "USD":
+            continue
+        for fila in grupo:
+            if fila["especie"].endswith("D"):
+                fila["especie"] = fila["especie"][:-1]
+        for fila in grupo:
+            if fila["moneda"] == "ARS" and len(grupo) == 2:
+                fila["comprobante"] = "IOL IMPUESTO"
+                fila["cantidad"] = 0.0
+    if errores:
+        raise ErrorHistorial(errores)
+    return filas
 
 
 class ErrorHistorial(ValueError):

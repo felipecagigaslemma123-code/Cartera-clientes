@@ -9,7 +9,10 @@ from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from .almacenamiento import ErrorCartera, _ruta_cartera, actualizar_costos, cargar_cartera, importar_cartera
+from .almacenamiento import (
+    ErrorCartera, _ruta_cartera, actualizar_costos, cargar_cartera, derivar_base,
+    importar_cartera,
+)
 from .calculos import costo_total, estado_costo
 from .dia_cero import _leer_dia_cero, _validar_efectivo
 from .precios import (
@@ -400,6 +403,9 @@ def main(argumentos=None):
     historial = comandos.add_parser("historial", help="Calcular lo vendido y cobrado desde los extractos.")
     historial.add_argument("--cliente", required=True, metavar="SLUG")
     historial.add_argument("--actualizar-mep", action="store_true", help="Actualizar MEP diario con cierres históricos de AL30 y AL30D.")
+    derivar = comandos.add_parser("derivar-base", help="Crear cartera.json desde la historia completa de extractos.")
+    derivar.add_argument("--cliente", required=True, metavar="SLUG")
+    derivar.add_argument("--reemplazar", action="store_true")
     letras = comandos.add_parser("letras", help="Listar compras de letras para cargar su precio limpio.")
     letras.add_argument("--cliente", required=True, metavar="SLUG")
     precio_letra = comandos.add_parser("precio-letra", help="Registrar el precio manual de una compra de letra.")
@@ -437,6 +443,13 @@ def main(argumentos=None):
             punto, _ = importar_cartera(datos, opciones.cliente, opciones.archivo)
             print("Base inicial guardada para {}: {} posiciones y {} lotes.".format(
                 opciones.cliente, len(punto.posiciones), len(punto.lotes)))
+        elif opciones.comando == "derivar-base":
+            punto, _ = derivar_base(datos, opciones.cliente, reemplazar=opciones.reemplazar)
+            print("Base derivada guardada para {}: {} posiciones y {} lotes.".format(
+                opciones.cliente, len(punto.posiciones), len(punto.lotes)))
+            for posicion in punto.posiciones:
+                print("{} · {} · cantidad {}.".format(
+                    posicion.ticker, posicion.especie, _cantidad(posicion.cantidad)))
         elif opciones.comando == "actualizar-costos":
             _mostrar_actualizacion(actualizar_costos(datos, opciones.cliente, opciones.archivo))
         else:

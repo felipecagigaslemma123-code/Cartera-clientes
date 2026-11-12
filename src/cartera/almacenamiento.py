@@ -101,6 +101,160 @@ def importar_cartera(datos, slug, archivo):
     return punto, contenido
 
 
+def _huella_extractos(archivos):
+    huella = hashlib.sha256()
+    for archivo in archivos:
+        nombre = archivo.name.encode("utf-8")
+        contenido = archivo.read_bytes()
+        huella.update(len(nombre).to_bytes(8, "big"))
+        huella.update(nombre)
+        huella.update(len(contenido).to_bytes(8, "big"))
+        huella.update(contenido)
+    return huella.hexdigest()
+
+
+def _leer_especies(ruta):
+    if ruta.is_symlink() or ruta.resolve().parent != ruta.parent.resolve():
+        raise ErrorCartera("especies.json debe permanecer en la carpeta del cliente y no ser un enlace.")
+    try:
+        contenido = json.loads(ruta.read_text(encoding="utf-8"), parse_constant=_rechazar_constante)
+    except FileNotFoundError:
+        raise ErrorCartera("No existe especies.json en la carpeta del cliente.") from None
+    except (OSError, ValueError, UnicodeError):
+        raise ErrorCartera("especies.json no es un JSON válido.") from None
+    if not isinstance(contenido, dict):
+        raise ErrorCartera("especies.json debe contener un objeto por ticker.")
+    return contenido
+
+
+def _movimientos_posteriores(ruta):
+    if not ruta.exists():
+        return False
+    if ruta.is_symlink() or ruta.resolve().parent != ruta.parent.resolve() or not ruta.is_file():
+        raise ErrorCartera("movimientos.csv debe permanecer en la carpeta del cliente y no ser un enlace.")
+    try:
+        lineas = [linea for linea in ruta.read_text(encoding="utf-8-sig").splitlines() if linea.strip()]
+    except (OSError, UnicodeError):
+        raise ErrorCartera("No se puede leer movimientos.csv antes de reemplazar la base.") from None
+    return len(lineas) > 1
+
+
+def _publicar_base_derivada(ruta, serializado, reemplazar):
+    """Publica la base completa y, al reemplazar, conserva los bytes previos."""
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    temporal_nuevo = temporal_historial = None
+    if not ruta.exists():
+        try:
+            temporal_nuevo = _escribir_temporal(ruta.parent, serializado)
+            try:
+                os.link(str(temporal_nuevo), str(ruta))
+            except FileExistsError:
+                raise ErrorCartera("cartera.json ya existe; usá --reemplazar para derivarla nuevamente.") from None
+        finally:
+            if temporal_nuevo is not None:
+                temporal_nuevo.unlink(missing_ok=True)
+        return
+    if not reemplazar:
+        raise ErrorCartera("cartera.json ya existe; usá --reemplazar para derivarla nuevamente.")
+    anterior = ruta.read_bytes()
+    ahora = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+    carpeta_historial = ruta.parent / "historial_cartera"
+    if carpeta_historial.is_symlink() or carpeta_historial.resolve().parent != ruta.parent.resolve():
+        raise ErrorCartera("historial_cartera debe permanecer en la carpeta del cliente.")
+    nombre = "cartera_{}_{}.json".format(ahora.strftime("%Y%m%dT%H%M%S_%f"), uuid.uuid4().hex)
+    respaldo = carpeta_historial / nombre
+    try:
+        temporal_nuevo = _escribir_temporal(ruta.parent, serializado)
+        carpeta_historial.mkdir(exist_ok=True)
+        temporal_historial = _escribir_temporal(carpeta_historial, anterior)
+        os.link(str(temporal_historial), str(respaldo))
+        temporal_historial.unlink()
+        temporal_historial = None
+        os.replace(str(temporal_nuevo), str(ruta))
+        temporal_nuevo = None
+    finally:
+        if temporal_nuevo is not None:
+            temporal_nuevo.unlink(missing_ok=True)
+        if temporal_historial is not None:
+            temporal_historial.unlink(missing_ok=True)
+
+
+def derivar_base(datos, slug, reemplazar=False):
+    """Deriva la base inicial de los lotes FIFO abiertos del historial completo."""
+    from .historial import ErrorHistorial, _archivos_extractos, _construir_desde_archivos
+
+    ruta = _ruta_cartera(datos, slug)
+    if ruta.is_symlink():
+        raise ErrorCartera("cartera.json no puede ser un enlace.")
+    existe = ruta.exists()
+    if existe and not reemplazar:
+        raise ErrorCartera("cartera.json ya existe; usá --reemplazar para derivarla nuevamente.")
+    if existe and reemplazar:
+        if (ruta.parent / "dia_cero.json").exists():
+            raise ErrorCartera("No se puede reemplazar la base porque ya existe un día cero.")
+        if _movimientos_posteriores(ruta.parent / "movimientos.csv"):
+            raise ErrorCartera("No se puede reemplazar la base porque movimientos.csv ya contiene movimientos posteriores.")
+
+    especies = _leer_especies(ruta.parent / "especies.json")
+    historial, _ = _construir_desde_archivos(ruta.parent)
+    problemas = []
+    faltantes = {}
+    for realizado in historial.realizados:
+        if realizado.cantidad_sin_lote > 0:
+            faltantes[realizado.ticker] = faltantes.get(realizado.ticker, Decimal(0)) + Decimal(str(realizado.cantidad_sin_lote))
+    for ticker, cantidad in sorted(faltantes.items()):
+        problemas.append("{}: historia incompleta; faltan lotes para {} unidades vendidas o cerradas.".format(ticker, cantidad))
+    for fila in historial.sin_clasificar:
+        if abs(float(fila.get("cantidad", 0))) > 0:
+            problemas.append("Movimiento sin clasificar con cantidad: {}.".format(
+                fila.get("referencia") or fila.get("comprobante") or fila.get("numero", "sin referencia")))
+    if not historial.lotes:
+        problemas.append("El historial no deja ningún lote abierto para derivar la base.")
+
+    unidades = {"cedear": 1, "accion": 1, "bono": 100, "on": 100, "letra": 100}
+    abiertos = []
+    vistos = set()
+    for lote in historial.lotes:
+        if lote.ticker not in vistos:
+            abiertos.append(lote.ticker)
+            vistos.add(lote.ticker)
+    definiciones = {}
+    for ticker in abiertos:
+        definicion = especies.get(ticker)
+        if not isinstance(definicion, dict):
+            problemas.append("{}: falta en especies.json.".format(ticker))
+            continue
+        especie, tipo = definicion.get("especie"), definicion.get("tipo")
+        if not isinstance(especie, str) or not especie.strip() or tipo not in unidades:
+            problemas.append("{}: especie o tipo inválido en especies.json.".format(ticker))
+            continue
+        definiciones[ticker] = (especie.strip(), tipo, unidades[tipo])
+    if problemas:
+        raise ErrorHistorial(problemas)
+
+    posiciones, lotes = [], []
+    for ticker in abiertos:
+        especie, tipo, cotiza_cada = definiciones[ticker]
+        propios = [lote for lote in historial.lotes if lote.ticker == ticker]
+        cantidad = float(sum((Decimal(str(lote.cantidad)) for lote in propios), Decimal(0)))
+        posiciones.append(Posicion(ticker, especie, tipo, cantidad, cotiza_cada))
+        for lote in propios:
+            if lote.costo is None:
+                lotes.append(Lote(ticker, lote.cantidad, "pendiente", lote.fecha, None, None, lote.nota))
+            else:
+                precio = float(Decimal(str(lote.costo)) / Decimal(str(lote.cantidad)) * Decimal(cotiza_cada))
+                if not math.isfinite(precio) or precio <= 0 or lote.costo <= 0:
+                    raise ErrorHistorial("{}: un lote abierto tiene costo no positivo o fuera de rango.".format(ticker))
+                lotes.append(Lote(ticker, lote.cantidad, lote.origen, lote.fecha, precio, lote.costo, lote.nota))
+    punto = PuntoPartida(posiciones=posiciones, lotes=lotes)
+    archivos = _archivos_extractos(ruta.parent)
+    origen = {"archivo": "extractos", "sha256": _huella_extractos(archivos)}
+    contenido = _contenido_base(punto, origen, datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")))
+    serializado = _serializar(contenido)
+    _publicar_base_derivada(ruta, serializado, reemplazar)
+    return punto, contenido
+
+
 def _positivo(valor):
     return isinstance(valor, (int, float)) and not isinstance(valor, bool) and math.isfinite(valor) and valor > 0
 

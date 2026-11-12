@@ -12,7 +12,8 @@ from decimal import Decimal
 from pathlib import Path
 
 from ._historial_lectura import (
-    ErrorHistorial, clasificar, consolidar, leer_ajustes, leer_extracto, leer_mep,
+    ErrorHistorial, clasificar, consolidar, leer_ajustes, leer_extracto,
+    leer_extracto_iol, leer_mep,
 )
 from ._historial_calculos import (
     Historial, RealizadoHistorico, conciliar_tenencias, construir_historial,
@@ -128,21 +129,29 @@ def _texto_costo(valor):
     return "sin dato" if valor is None else format(valor, ",.2f").translate(str.maketrans({",": ".", ".": ","}))
 
 
-def _preparar_historial(carpeta, punto, fetch=None, actualizar_mep=False):
+def _archivos_extractos(carpeta):
     carpeta = Path(carpeta)
-    if not carpeta.is_dir():
-        raise ErrorHistorial("La carpeta del cliente no existe.")
     extractos = _ruta(carpeta, "extractos", directorio=True)
     if not extractos.exists():
         raise ErrorHistorial("No existe extractos/: agregá los extractos antes de calcular el historial.")
-    archivos = sorted((p for p in extractos.iterdir() if p.suffix.lower() == ".xlsx"), key=lambda p: p.name)
+    archivos = sorted((p for p in extractos.iterdir() if p.suffix.lower() in (".xlsx", ".xls")), key=lambda p: p.name)
     if not archivos:
-        raise ErrorHistorial("extractos/ no contiene archivos .xlsx.")
-    filas = []
+        raise ErrorHistorial("extractos/ no contiene archivos .xlsx ni .xls.")
     for archivo in archivos:
         if archivo.is_symlink() or archivo.resolve().parent != extractos.resolve() or not archivo.is_file():
             raise ErrorHistorial("extractos/{} debe ser un archivo y no un enlace.".format(archivo.name))
-        filas.extend(leer_extracto(archivo))
+    return archivos
+
+
+def _construir_desde_archivos(carpeta, fetch=None, actualizar_mep=False):
+    carpeta = Path(carpeta)
+    if not carpeta.is_dir():
+        raise ErrorHistorial("La carpeta del cliente no existe.")
+    archivos = _archivos_extractos(carpeta)
+    filas = []
+    for archivo in archivos:
+        lector = leer_extracto_iol if archivo.suffix.lower() == ".xls" else leer_extracto
+        filas.extend(lector(archivo))
     ajustes = leer_ajustes(_ruta(carpeta, "ajustes_historial.csv"))
     cierres = _leer_cierres(_ruta(carpeta, "cierres.json"))
     mep = leer_mep(_ruta(carpeta, "mep_diario.csv"))
@@ -153,6 +162,12 @@ def _preparar_historial(carpeta, punto, fetch=None, actualizar_mep=False):
     if actualizar_mep:
         mep = _actualizar_mep(mep, fetch)
         historial = construir_historial(filas, ajustes=ajustes, cierres=cierres, mep=mep)
+    return historial, mep
+
+
+def _preparar_historial(carpeta, punto, fetch=None, actualizar_mep=False):
+    carpeta = Path(carpeta)
+    historial, mep = _construir_desde_archivos(carpeta, fetch, actualizar_mep)
     historial.diferencias_tenencias = conciliar_tenencias(historial.lotes, punto.posiciones)
     historial.diferencias_costos = _diferencias_costos(historial.lotes, punto)
     for ticker, valores in historial.diferencias_tenencias.items():

@@ -167,7 +167,8 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
     origenes, avisos = consolidar([_fila_normalizada(fila) for fila in filas])
     historial = Historial(avisos=list(avisos))
     procesables = []
-    cierres_agrupados, cauciones = {}, defaultdict(list)
+    cierres_agrupados, amortizaciones = {}, defaultdict(list)
+    cauciones, cauciones_iol = defaultdict(list), defaultdict(list)
     entradas = [(fila, False) for fila in origenes] + [(fila, True) for fila in _filas_ajustes(ajustes)]
     for indice, (original, es_ajuste) in enumerate(entradas):
         # Los metadatos que agregue un llamador a un renglón de extracto nunca
@@ -180,21 +181,27 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
         fila["_clase"] = clase
         fila["_indice"] = indice
         fila["_origen"] = "estimado" if es_ajuste else "extracto"
-        if not es_ajuste and clase in ("renta", "cierre") and fila["especie"]:
+        if (not es_ajuste and clase in ("renta", "cierre", "amortizacion")
+                and fila["especie"] and (clase != "amortizacion" or fila["importe"] != 0)):
             historial.cobros.append(dict(ticker=fila["especie"], fecha=fila["operado"],
                                          moneda=fila["moneda"], cuenta=fila["cuenta"], importe=fila["importe"]))
         if clase == "conversion":
             continue
-        if clase in ("compra", "venta", "cierre"):
+        if clase in ("compra", "venta", "cierre", "amortizacion"):
             if not fila["especie"]:
-                raise ErrorHistorial(_contexto(fila) + "Una compra, venta o cierre necesita especie.")
-            if clase != "cierre" and fila["cantidad"] == 0:
+                raise ErrorHistorial(_contexto(fila) + "Una compra, venta, cierre o amortización necesita especie.")
+            if clase in ("compra", "venta") and fila["cantidad"] == 0:
                 raise ErrorHistorial(_contexto(fila) + "Una compra o venta necesita cantidad distinta de cero.")
-        if clase.startswith("caucion_"):
+        if clase == "caucion_iol":
+            cauciones_iol[(fila["moneda"], fila.get("numero"))].append(fila)
+        elif clase.startswith("caucion_"):
             cauciones[(fila["moneda"], clase, fila["operado"])].append(fila)
         elif clase == "cierre":
             clave = (fila["especie"], fila["operado"])
             cierres_agrupados.setdefault(clave, []).append(fila)
+        elif clase == "amortizacion":
+            clave = (fila["especie"], fila["operado"])
+            amortizaciones.setdefault(clave, []).append(fila)
         else:
             procesables.append(fila)
     # Un cierre reúne todos los pagos de la especie en el día, incluso cuentas
@@ -204,6 +211,23 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
         evento = dict(primera)
         evento["_pagos"] = grupo
         procesables.append(evento)
+    # IOL informa por separado el pago y la baja de nominales. Una baja cierra
+    # solo esa cantidad; sin baja, el pago es una devolución parcial de capital.
+    for grupo in amortizaciones.values():
+        bajas = [-fila["cantidad"] for fila in grupo if fila["cantidad"] < 0]
+        if bajas:
+            primera = min(grupo, key=lambda fila: (_orden_numero(fila.get("numero")), fila["_indice"]))
+            evento = dict(primera)
+            evento["_clase"] = "cierre"
+            evento["_pagos"] = grupo
+            evento["_cantidad_cierre"] = _suma(bajas)
+            procesables.append(evento)
+        else:
+            for fila in grupo:
+                if fila["importe"] != 0:
+                    evento = dict(fila)
+                    evento["_clase"] = "renta"
+                    procesables.append(evento)
 
     def valor_ars(fila, importe=None):
         valor = fila["importe"] if importe is None else importe
@@ -247,6 +271,22 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
                 clase, grupo[0]["operado"].isoformat(), grupo[0]["moneda"], numeros))
             continue
         agregar_ingreso(clase, grupo[0], _suma(fila["importe"] for fila in grupo))
+    for (moneda, numero), grupo in cauciones_iol.items():
+        presentes = {fila["comprobante"] for fila in grupo}
+        requeridos = {"IOL CAUCION", "IOL LIQUIDACION CAUCION"}
+        if not requeridos.issubset(presentes):
+            historial.avisos.append(
+                "Caución IOL {} en {} sin ambas patas; no se suma capital.".format(numero, moneda))
+            continue
+        contado = next(fila for fila in grupo if fila["comprobante"] == "IOL CAUCION")
+        if contado["importe"] == 0:
+            historial.avisos.append(
+                "Caución IOL {} en {} sin signo de colocación/toma; no se suma capital.".format(numero, moneda))
+            continue
+        clase = "caucion_colocada" if contado["importe"] < 0 else "caucion_tomada"
+        liquidaciones = [fila for fila in grupo if fila["comprobante"] == "IOL LIQUIDACION CAUCION"]
+        referencia = max(liquidaciones, key=lambda fila: (fila["operado"], fila["_indice"]))
+        agregar_ingreso(clase, referencia, _suma(fila["importe"] for fila in grupo))
 
     creados, abiertos = [], defaultdict(deque)
     importes_extracto, importes_estimados = [], []
@@ -287,7 +327,9 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
         elif clase in ("venta", "cierre"):
             ticker = fila["especie"]
             if clase == "cierre":
-                cantidad = _suma(lote.cantidad for lote in abiertos[ticker])
+                cantidad = fila.get("_cantidad_cierre")
+                if cantidad is None:
+                    cantidad = _suma(lote.cantidad for lote in abiertos[ticker])
                 importes = [valor_ars(pago) for pago in fila["_pagos"]]
                 importe = None if any(valor is None for valor in importes) else _suma(importes)
             else:
