@@ -45,7 +45,9 @@ dentro de su propio contenedor.
 
 Al abrir la página, al apretar el botón y cada 5 minutos:
 
-1. Consulta **una vez** cada panel que usan las posiciones, más `/live/mep`. Nunca pide especie
+1. Consulta **una vez** cada panel que usan las posiciones, más `/live/mep`. Una posición puede traer
+   `endpoint_alterno`: si no aparece en su panel, se busca en ese (una BONCAP, de tipo `letra`, cotiza en
+   `arg_bonds`). Nunca pide especie
    por especie. No inicia una ronda si la anterior no terminó. Corta cada consulta a los 15
    segundos.
 2. Una respuesta que no sea una lista, una especie ausente o un `c` que no sea positivo es

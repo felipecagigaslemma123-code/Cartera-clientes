@@ -14,6 +14,8 @@ El contador visible es vencimiento menos **hoy en Argentina**, en días corridos
 
 El pago esperado es cantidad vigente / base nominal × VPV. Se muestra aparte: no modifica la valuación a precios de mercado, el efectivo, el resultado completo, el realizado ni el día cero. No calcula el precio ni el resultado de una venta anticipada; esa venta conserva el tratamiento existente.
 
+Un bono capitalizable (BONCAP) también se carga con tipo `letra`, aunque el mercado lo liste como bono: su precio se busca en el panel de letras y, si no está, en el de bonos ([PRECIOS.md](PRECIOS.md)).
+
 ## Datos contractuales manuales
 
 En `instrumentos.json`, sin cambiar su vencimiento existente:

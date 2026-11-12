@@ -8,7 +8,7 @@ from decimal import Decimal, ROUND_HALF_EVEN, localcontext
 from zoneinfo import ZoneInfo
 
 from .dia_cero import patrimonio_inicial
-from .precios import ENDPOINTS
+from .precios import ENDPOINTS, ENDPOINTS_ALTERNOS
 from ._dashboard_js import SCRIPT
 
 
@@ -156,6 +156,7 @@ def _posiciones(resultados, cotizaciones, niveles, instrumentos, posiciones, dia
             "tipo": posicion.tipo if posicion else resultado.tipo,
             "cantidad": cantidad, "cotiza_cada": unidad,
             "endpoint": ENDPOINTS.get(posicion.tipo) if posicion else None,
+            "endpoint_alterno": ENDPOINTS_ALTERNOS.get(posicion.tipo) if posicion else None,
             "costo": costo, "estado_costo": origen,
             "ultimo": ultimo, "bid": _numero(cotizacion.bid, positivo=True) if cotizacion else None,
             "ask": _numero(cotizacion.ask, positivo=True) if cotizacion else None,

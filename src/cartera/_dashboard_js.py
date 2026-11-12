@@ -767,16 +767,22 @@ SCRIPT = r"""
     ocupada = true;
     if (boton) boton.disabled = true;
     try {
-      const endpoints = [...new Set(posiciones.map(posicion => posicion.endpoint).filter(endpoint => pendientes.has(endpoint)))];
+      const endpoints = [...new Set(posiciones.flatMap(posicion => [posicion.endpoint, posicion.endpoint_alterno]).filter(endpoint => pendientes.has(endpoint)))];
       const respuestas = await Promise.all([...endpoints, 'mep'].map(async endpoint => [endpoint, await panel(endpoint)]));
       const porEndpoint = new Map(respuestas);
       const tablas = new Map(endpoints.map(endpoint => [endpoint, indexar(porEndpoint.get(endpoint))]));
       const ahora = new Date().toISOString();
       let exitos = 0;
       for (const posicion of posiciones) {
-        const tabla = tablas.get(posicion.endpoint);
-        const fila = tabla ? tabla.get(posicion.ticker) : null;
-        const ultimo = fila ? positivo(fila.c) : null;
+        // Una letra que no está en su panel se busca en el alterno: los bonos capitalizables cotizan con los bonos.
+        let fila = null;
+        let ultimo = null;
+        for (const endpoint of [posicion.endpoint, posicion.endpoint_alterno]) {
+          const tabla = tablas.get(endpoint);
+          fila = tabla ? tabla.get(posicion.ticker) : null;
+          ultimo = fila ? positivo(fila.c) : null;
+          if (ultimo !== null) break;
+        }
         if (ultimo !== null) {
           Object.assign(posicion, {ultimo, bid: positivo(fila.px_bid), ask: positivo(fila.px_ask), pct_dia: finito(fila.pct_change), estado: 'vivo', consultado_en: ahora});
           exitos += 1;

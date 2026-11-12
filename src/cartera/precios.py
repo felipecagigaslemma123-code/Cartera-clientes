@@ -17,6 +17,8 @@ from zoneinfo import ZoneInfo
 
 ENDPOINTS = {"cedear": "arg_cedears", "accion": "arg_stocks", "bono": "arg_bonds",
              "letra": "arg_notes", "on": "arg_corp"}
+# Un bono capitalizable (BONCAP) se carga como letra, pero cotiza en el panel de bonos.
+ENDPOINTS_ALTERNOS = {"letra": "arg_bonds"}
 _BASE = "https://data912.com/live/"
 _COLUMNAS = ["consultado_en", "ticker", "ultimo", "bid", "ask"]
 
@@ -149,35 +151,48 @@ class ClientePrecios:
         posiciones = list(posiciones)
         ahora = _instante(self.ahora())
         cache = _leer_cache(self.ruta_cache)
-        grupos = {}
-        for posicion in posiciones:
-            endpoint = ENDPOINTS.get(posicion.tipo)
-            if endpoint is not None:
-                grupos.setdefault(endpoint, []).append(posicion)
         cotizaciones, vivos = {}, {}
-        for endpoint, panel_posiciones in grupos.items():
-            filas = {}
-            repetidos = set()
-            for fila in self._panel(endpoint):
-                if not isinstance(fila, dict) or not isinstance(fila.get("symbol"), str):
-                    continue
-                ticker = fila["symbol"]
-                if ticker in filas:
-                    repetidos.add(ticker)
-                filas[ticker] = fila
-            for posicion in panel_posiciones:
-                ticker = posicion.ticker
-                fila = filas.get(ticker, {}) if ticker not in repetidos else {}
-                ultimo = _numero(fila.get("c"), positivo=True)
-                if ultimo is not None:
-                    cotizacion = Cotizacion(
-                        ticker=ticker, ultimo=ultimo,
-                        bid=_numero(fila.get("px_bid"), positivo=True),
-                        ask=_numero(fila.get("px_ask"), positivo=True),
-                        pct_dia=_numero(fila.get("pct_change")),
-                        estado="vivo", consultado_en=ahora,
-                    )
-                    cotizaciones[ticker] = vivos[ticker] = cotizacion
+        paneles = {}
+
+        def panel_indexado(endpoint):
+            # Cada panel se pide una sola vez por consulta, también si se usa como alterno.
+            if endpoint not in paneles:
+                filas, repetidos = {}, set()
+                for fila in self._panel(endpoint):
+                    if not isinstance(fila, dict) or not isinstance(fila.get("symbol"), str):
+                        continue
+                    ticker = fila["symbol"]
+                    if ticker in filas:
+                        repetidos.add(ticker)
+                    filas[ticker] = fila
+                paneles[endpoint] = (filas, repetidos)
+            return paneles[endpoint]
+
+        def cotizar(mapa):
+            grupos = {}
+            for posicion in posiciones:
+                endpoint = mapa.get(posicion.tipo)
+                if endpoint is not None and posicion.ticker not in vivos:
+                    grupos.setdefault(endpoint, []).append(posicion)
+            for endpoint, panel_posiciones in grupos.items():
+                filas, repetidos = panel_indexado(endpoint)
+                for posicion in panel_posiciones:
+                    ticker = posicion.ticker
+                    fila = filas.get(ticker, {}) if ticker not in repetidos else {}
+                    ultimo = _numero(fila.get("c"), positivo=True)
+                    if ultimo is not None:
+                        cotizacion = Cotizacion(
+                            ticker=ticker, ultimo=ultimo,
+                            bid=_numero(fila.get("px_bid"), positivo=True),
+                            ask=_numero(fila.get("px_ask"), positivo=True),
+                            pct_dia=_numero(fila.get("pct_change")),
+                            estado="vivo", consultado_en=ahora,
+                        )
+                        cotizaciones[ticker] = vivos[ticker] = cotizacion
+
+        cotizar(ENDPOINTS)
+        # Segunda pasada: solo lo que no apareció en su panel principal.
+        cotizar(ENDPOINTS_ALTERNOS)
         for posicion in posiciones:
             if posicion.ticker not in cotizaciones:
                 cotizaciones[posicion.ticker] = cache.get(posicion.ticker) or Cotizacion(

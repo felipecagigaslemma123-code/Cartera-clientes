@@ -59,6 +59,8 @@ de consulta; nunca la presentes como hora del último precio.
 `ClientePrecios.obtener` funciona así:
 
 1. Agrupa las posiciones por endpoint y llama **una sola vez** a cada uno que necesita.
+   Una `letra` que no está en `arg_notes` se busca después en `arg_bonds`, donde cotizan los bonos
+   capitalizables (BONCAP). Ese segundo panel se pide solo si hace falta y tampoco se repite.
 2. Para cada posición:
 
 | Situación | `estado` | `ultimo`, `bid`, `ask` | `consultado_en` |
