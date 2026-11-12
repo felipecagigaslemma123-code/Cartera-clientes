@@ -6,7 +6,8 @@ puso o sacó. Es un cálculo aparte del resultado desde el día cero: no lo reem
 ## Archivos, en la carpeta del cliente
 
 ```text
-extractos/*.xlsx        cuentas corrientes del broker, en cualquier cantidad y con períodos superpuestos
+extractos/*.xlsx, *.xls cuentas corrientes del broker, en cualquier cantidad y con períodos superpuestos
+especies.json           nombre y tipo de cada especie; solo para derivar-base
 ajustes_historial.csv   lo que no está en los extractos; opcional
 cierres.json            especies cuyo pago final las cierra; opcional, lista de tickers
 mep_diario.csv          fecha,mep; opcional, lo genera historial --actualizar-mep
@@ -28,6 +29,69 @@ Liquida, Operado, Comprobante, Numero, Cantidad, Especie, Precio, Importe, Saldo
   e `Importe` son el mismo. El mismo `Numero` con otro importe no es un duplicado.
 - **Saldo:** si dentro de un mismo archivo un `Saldo` no coincide con el anterior más el `Importe`, con
   tolerancia de 1, se agrega un aviso con archivo y fila. No frena el cálculo.
+
+## Extractos de InvertirOnline
+
+Archivo `.xls` de "Operaciones históricas". **No es un Excel:** es una página HTML con una tabla. Se lee con
+`html.parser`, en UTF-8, convirtiendo las entidades (`Dep&#243;sito`). Un `.xls` que no contenga esa tabla es
+inválido. `extractos/` admite `.xlsx`, que se lee con `leer_extracto`, y `.xls`, con `leer_extracto_iol`.
+
+Encabezado exacto, 14 columnas; las celdas se limpian de etiquetas y de espacios repetidos:
+
+```text
+Nro. de Mov., Nro. de Boleto, Tipo Mov., Concert., Liquid., Est, Cant. titulos, Precio, Comis., Iva Com.,
+Otros Imp., Monto, Observaciones, Tipo Cuenta
+```
+
+- **Filas:** solo cuentan las de `Est` igual a `Terminada`. Las demás se ignoran.
+- **Números:** punto de miles y coma decimal (`-413.228,38`, `1581,7106`, `305`).
+- **Fecha:** `Concert.`, con formato `dd/mm/aa`, del siglo XXI.
+- **Cuenta:** `Inversion Argentina Pesos` es ARS, cuenta `PESOS`; `Inversion Argentina Dolares` es USD, cuenta
+  `DOLARES`. Otra cuenta hace inválido el archivo.
+- **Importe:** `Monto`, con su signo. Ya incluye comisiones e impuestos. `saldo` es `None`: no hay control de saldo.
+- **Número:** `Nro. de Mov.`. **Referencia:** el texto original de `Tipo Mov.`.
+- **Especie:** lo que está entre paréntesis en `Tipo Mov.`, sin el sufijo ` US$`. Sin paréntesis, vacía.
+
+`Tipo Mov.` se traduce a un `comprobante` propio. Lo que no figura en la tabla conserva su texto original y
+queda `sin_clasificar`.
+
+| `Tipo Mov.` | `comprobante` | `cantidad` | Clase |
+|---|---|---|---|
+| `Compra(X)` | `IOL COMPRA` | positiva | `compra` |
+| `Venta(X)` | `IOL VENTA` | negativa | `venta` |
+| Fila en pesos de una operación en dólares | `IOL IMPUESTO` | 0 | `gastos` |
+| `Pago de Renta(X)`, monto ≥ 0 | `IOL RENTA` | 0 | `renta` |
+| `Pago de Dividendos(X)`, monto ≥ 0 | `IOL DIVIDENDO` | 0 | `dividendo` |
+| `Pago de Renta` o `Pago de Dividendos`, monto < 0 | `IOL GASTO DE COBRO` | 0 | `gastos` |
+| `Pago de Amortización(X)` | `IOL AMORTIZACION` | la del archivo, ≤ 0 | ver abajo |
+| `Depósito de Fondos…` | `IOL DEPOSITO` | 0 | `aporte` |
+| `Extracción de Fondos…` | `IOL EXTRACCION` | 0 | `retiro` |
+| `Suscripción FCI(X)`, `Rescate FCI(X)` | `IOL SUSCRIPCION FCI`, `IOL RESCATE FCI` | 0 | `fci` |
+| `Caución(…)` | `IOL CAUCION` | 0 | ver abajo |
+| `Liquidación de Caución` | `IOL LIQUIDACION CAUCION` | 0 | ver abajo |
+| `Crédito` | `IOL CREDITO` | 0 | `gastos`, con su signo |
+
+**Operación en dólares.** Una compra o venta en dólares ocupa dos filas con el mismo `Nro. de Mov.`: la de la
+cuenta en dólares es la operación, y la de la cuenta en pesos solo trae un impuesto cobrado en pesos, con la
+misma cantidad repetida. La cantidad se cuenta **una sola vez**: la fila en pesos sale como `IOL IMPUESTO`, con
+cantidad 0. La especie de las dos filas pierde la `D` final, que solo indica que cotiza en dólares (`AE38D` es
+`AE38`). Cualquier otra repetición de `Nro. de Mov.` entre compras o ventas hace inválido el archivo.
+
+**Gasto de cobro.** Una renta o un dividendo en dólares llega con otra fila en pesos, de monto negativo, que es
+su comisión. Va a `gastos`, no a `renta`, para que los cobros queden limpios.
+
+**Amortización.** Las filas `IOL AMORTIZACION` se agrupan por especie y fecha, aunque estén en cuentas distintas:
+
+- Si alguna trae cantidad negativa, es un **cierre** por esa cantidad, no por toda la posición abierta. El importe
+  es la suma de las filas del grupo, cada una en pesos. Consume lotes por FIFO, como una venta, y si no alcanzan
+  el resultado es "sin dato". No hace falta `cierres.json`.
+- Si ninguna trae cantidad, es una devolución parcial de capital: los nominales no bajan y se suma como `renta`.
+
+**Caución.** Las dos filas comparten `Nro. de Mov.` y tienen fechas distintas: se agrupan por moneda y número, y
+se suman. La fecha del ingreso es la de la liquidación. Si `IOL CAUCION` es negativa es `caucion_colocada`; si
+es positiva, `caucion_tomada`. Un grupo sin alguna de las dos filas no se suma y genera un aviso.
+
+`cobros` incluye las rentas y las filas de amortización con importe, no los gastos de cobro.
 
 ## Clasificación de cada renglón
 
@@ -104,6 +168,31 @@ total conocido = realizado con costo + dividendos + retenciones + rentas
 Los lotes abiertos se comparan por especie contra las posiciones de la base. Se informan las diferencias de
 cantidad, con tolerancia de 0,5. Esta etapa **no modifica la base** ni el cálculo del resultado desde el día
 cero. Un costo derivado que difiere del de la base en más de 1 peso se informa, no se corrige.
+
+## Base derivada
+
+`derivar-base` arma `cartera.json` cuando la historia de movimientos está completa, sin Excel de punto de partida.
+Usa los mismos archivos que `historial` y además `especies.json` ([FORMATOS.md](FORMATOS.md)).
+
+- **Posiciones:** una por especie con lotes abiertos; la cantidad es la suma de sus lotes. `especie` y `tipo`
+  salen de `especies.json`, y `cotiza_cada`, del tipo.
+- **Lotes:** los lotes abiertos del historial, en su orden, con su fecha y su origen. `precio` es
+  `costo / cantidad × cotiza_cada`. Un lote sin costo en pesos queda `pendiente`, sin precio ni costo.
+- **`origen`** de la base: `archivo` es `extractos`, y `sha256`, la huella de los nombres y bytes de los archivos
+  de `extractos/`, en orden de nombre.
+
+No escribe nada, y termina con error, si:
+
+- alguna venta o cierre no tiene lotes suficientes: la historia está incompleta. Lista especie y cantidad.
+- hay un renglón `sin_clasificar` con cantidad distinta de cero: puede ser una entrada o salida de títulos.
+- una especie con lotes abiertos no figura en `especies.json`, o su tipo no es válido. Lista todas.
+- no queda ningún lote abierto.
+- ya existe `cartera.json`. Con `--reemplazar` guarda la versión anterior en `historial_cartera/` y escribe la
+  nueva, salvo que exista `dia_cero.json` o `movimientos.csv` tenga movimientos: ahí los movimientos posteriores
+  se contarían dos veces.
+
+Los renglones `sin_clasificar` sin cantidad y los avisos del historial no frenan: se muestran.
+Después de `derivar-base`, `historial` no informa diferencias de cantidad ni de costo.
 
 ## Salidas
 

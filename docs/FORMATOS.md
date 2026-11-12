@@ -165,6 +165,16 @@ Bloques opcionales por especie: `letra`, con los datos contractuales de una LECA
                     "pagos_manuales": {"fuente": "Prospecto", "pagos": [["2026-07-09", "8", "0.27"]]}}}}
 ```
 
+### `especies.json`
+
+Lo escribe el asesor. Lo usa `derivar-base` para saber qué es cada especie; puede incluir especies ya vendidas.
+
+```json
+{"AAA": {"especie": "CEDEAR Demo A", "tipo": "cedear"}, "BOND1": {"especie": "Bono Demo", "tipo": "bono"}}
+```
+
+`tipo`: `cedear`, `accion`, `bono`, `on` o `letra`. `especie` es un texto no vacío.
+
 ### `niveles.json`
 
 ```json

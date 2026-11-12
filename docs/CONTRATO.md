@@ -321,6 +321,16 @@ Lanzan `ErrorHistorial` (subclase de `ValueError`) ante un archivo inválido.
 - `conciliar_tenencias`: `{ticker: {"derivada": n, "base": n, "diferencia": n}}`, solo con las diferencias que
   superan la tolerancia.
 
+Etapa 10:
+
+```python
+leer_extracto_iol(ruta) -> list[dict]                       # cartera.historial; mismas claves que leer_extracto
+derivar_base(datos, slug, reemplazar=False) -> (PuntoPartida, dict)   # cartera.almacenamiento
+```
+
+`derivar_base` devuelve lo mismo que `importar_cartera` y lanza `ErrorCartera` o `ErrorHistorial`, sin escribir nada.
+`clasificar` devuelve `amortizacion` para `IOL AMORTIZACION`; `construir_historial` la resuelve como cierre o renta.
+
 `Historial`:
 
 - `realizados`: lista de `RealizadoHistorico`: `ticker`, `fecha`, `cantidad`, `cantidad_sin_lote`, `importe_ars`,
@@ -348,6 +358,7 @@ python3 -m cartera --datos RUTA efectivo-dia-cero --cliente SLUG --ars N --usd N
 python3 -m cartera --datos RUTA dashboard --cliente SLUG
 python3 -m cartera --datos RUTA alertas --cliente SLUG
 python3 -m cartera --datos RUTA historial --cliente SLUG [--actualizar-mep]
+python3 -m cartera --datos RUTA derivar-base --cliente SLUG [--reemplazar]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha AAAA-MM-DD --tipo TIPO --importe N [--ticker T] [--cantidad N] [--moneda ARS|USD] [--tc N] [--tipo-activo TIPO] [--nota TEXTO]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --ticker X --cantidad N --importe I [--nota N]
 ```

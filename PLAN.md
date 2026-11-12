@@ -195,6 +195,23 @@ prueba con AL30 e YM34O contra la calculadora de IAMC.
 
 ---
 
+## Etapa 10: Extractos de InvertirOnline y base derivada
+
+**Pedido de Felipe del 12/11/2026:** cargar carteras con la historia completa de movimientos, sin armar a mano el
+Excel de punto de partida. El primer caso llega en el formato de InvertirOnline.
+
+- `leer_extracto_iol`: lee el archivo de movimientos históricos de InvertirOnline y entrega las mismas filas
+  que `leer_extracto`. `extractos/` admite `.xlsx` y `.xls`.
+- El historial clasifica esos comprobantes y trata la amortización con baja de nominales como un cierre.
+- `derivar-base`: arma `cartera.json` con los lotes abiertos del historial y `especies.json`.
+
+Reglas en `docs/HISTORIAL.md`, `docs/FORMATOS.md` y `docs/CONTRATO.md`.
+
+**Listo cuando** pasa `tests/test_etapa10_*` y Claude comprobó, con dos carteras reales, que la tenencia
+derivada coincide con la del broker.
+
+---
+
 ## Fuera de alcance
 
 - Evaluar lo operado en otro broker antes de la llegada del cliente.
