@@ -4,7 +4,7 @@ import fcntl
 import json
 import os
 import tempfile
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -160,13 +160,25 @@ def _validar_contrato_bono(datos, configuracion, ticker, registro):
     cronograma = cronograma_iamc(cierre, simbolo, grupo)
     if cronograma is None:
         raise ErrorLetra("{} sin cronograma en IAMC al {}.".format(ticker, cierre["fecha_cierre"]))
-    if not cronograma.habilitado:
-        raise ErrorLetra("{} con proyección pendiente: requiere supuestos.".format(ticker))
-    if not cronograma.pagos:
-        raise ErrorLetra("El cronograma de {} no informa el último pago.".format(ticker))
-    if date.fromisoformat(registro["fecha_liquidacion"]) >= cronograma.pagos[-1].fecha:
+    indexado = not cronograma.habilitado and isinstance(vinculo.get("indice"), dict) \
+        and cronograma.familia in ("cer", "dl", "var", "capv")
+    if not cronograma.habilitado and not indexado:
+        raise ErrorLetra("{} con proyección pendiente: falta el bloque indice en instrumentos.json.".format(ticker))
+    if indexado:
+        # Los títulos ajustables se validan con las fechas crudas de IAMC: el precio no
+        # depende de la proyección, y sus pagos se cobran en pesos.
+        fila = next(f for f in cierre["calculadora_bonos"]["ins"] if f.get("tk") == simbolo and f.get("g") == grupo)
+        dias = [registro_iamc[0] for registro_iamc in fila.get("f") or ()]
+        if not dias:
+            raise ErrorLetra("El cronograma de {} no informa el último pago.".format(ticker))
+        ultimo, moneda = cronograma.liquidacion + timedelta(days=int(max(dias))), "ARS"
+    else:
+        if not cronograma.pagos:
+            raise ErrorLetra("El cronograma de {} no informa el último pago.".format(ticker))
+        ultimo, moneda = cronograma.pagos[-1].fecha, cronograma.moneda
+    if date.fromisoformat(registro["fecha_liquidacion"]) >= ultimo:
         raise ErrorLetra("La liquidación debe ser anterior al último pago de IAMC.")
-    precio_en_moneda_flujo(registro, cronograma.moneda)
+    precio_en_moneda_flujo(registro, moneda)
 
 
 def _ejecutar_compras(opciones, datos, bonos):

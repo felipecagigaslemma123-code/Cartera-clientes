@@ -282,7 +282,11 @@ def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy
     if not vigente.pagos or liquidacion >= vigente.pagos[-1].fecha:
         fila["motivo"] = "sin dato: la liquidación debe ser anterior al último pago"
         return fila
-    cronograma = _para_compra(seleccion, primera_liq, [], liquidacion, manuales is not None)
+    # Un título ajustable de pago único sin renta (LECER, BONCER cero cupón, LELINK,
+    # capitalizable) no tiene pagos antes del vencimiento: no hay hueco que completar.
+    cero_cupon = (vigente.familia in ("cer", "dl", "capv") and len(seleccion) == 1
+                  and all(pago.renta == 0 for pago in seleccion.values()))
+    cronograma = _para_compra(seleccion, primera_liq, [], liquidacion, manuales is not None or cero_cupon)
     fila["pagos"] = [_pago(pago, nominales, hoy) for pago in cronograma.pagos]
     try:
         precio = precio_en_moneda_flujo(registro, vigente.moneda)
@@ -300,7 +304,9 @@ def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy
     total = sum((pago.total for pago in cronograma.pagos), Decimal(0)) * nominales / 100
     tir = tir_compra(precio, liquidacion, cronograma.pagos)
     fila.update(total_a_cobrar=_importe(total), resultado_vto=_importe(total - inversion), tir=_importe(tir))
-    if vigente.familia != _FIJA:
+    # La TIR es estimada si algún pago usa el REM o un supuesto manual; con todos los
+    # índices publicados es definitiva aunque el título sea ajustable.
+    if vigente.familia != _FIJA and any(not str(p.origen).startswith("definitivo") for p in cronograma.pagos):
         fila["tir_estimada"] = True
     if vigente.familia == "cer" and contrato and indices:
         from .pagos_indexados import _cer, _referencia

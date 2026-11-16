@@ -79,3 +79,24 @@ tolerancia de 1 pb, y deja un solo aviso por título con los valores. Pruebas en
 Prueba de carga completa en una copia de los datos: X30N6 cobra ARS 2.760.521 el 30/11, **definitivo**
 (referencia 13/11, con el feriado del 23/11); X29E7 ARS 32.361.982, estimado; TZV28 ARS 76.328, estimado;
 TZXM7 muestra el aviso. Faltan los precios de compra y el `instrumentos.json` de la cartera propia.
+
+## Carga de precios de las letras CER (16/11/2026)
+
+Con el OK de Felipe se cargaron con `precio-bono` las compras de X30N6 (125,0897, liquidación 03/09/2026) y
+X29E7 (102,3645, liquidación 21/09/2026), tomadas del extracto en pesos de Bull (importe / nominales × 100).
+Al hacerlo aparecieron tres errores más, corregidos con pruebas en `tests/test_extra_etapa11_revision.py`:
+
+5. **`precio-bono` rechazaba los títulos ajustables** con el mensaje de la etapa 9 ("requiere supuestos").
+   Ahora acepta los que tienen `iamc.indice`, valida la liquidación contra la fecha cruda del último pago de
+   IAMC y exige precio en pesos.
+6. **TIR "sin dato" en compras anteriores al primer cierre guardado.** La regla de la etapa 9 supone que en
+   ese tramo pudo haber cupones. Un título ajustable de pago único sin renta (LECER, BONCER cero cupón,
+   LELINK, capitalizable) no tiene pagos antes del vencimiento: ahora se toma como completo. Un título con
+   cupones sigue pidiendo los pagos del tramo.
+7. **El tablero se rompía** al mostrar la primera TIR de un título ajustable: el texto "(estimada, ARS)" se
+   sumaba a una tupla. Habría impedido generar el dashboard de Mariano. Ahora la TIR anotada va como texto
+   en pantalla y en Excel. Además, la TIR solo figura "estimada" si algún pago usa el REM o un supuesto
+   manual: la de X30N6, con el CER ya publicado, es definitiva.
+
+Resultado en una copia de los datos: X30N6, TIR 24,31 % en pesos (real 0,24 %), definitiva; X29E7, 25,47 %
+estimada (real 0,33 %). Los tres tableros se generan sin errores.

@@ -797,14 +797,19 @@ def _panel_flujo(flujo):
             encabezados += ["Inversión" + unidad, "Total a cobrar" + unidad,
                             "Resultado a vencimiento" + unidad, "TIR de compra"]
             fila += [_numero_flujo(compra.get(campo)) for campo in ("inversion", "total_a_cobrar", "resultado_vto")]
+            # _numero_flujo devuelve (texto, valor de Excel). Una TIR estimada se anota en el
+            # texto, y Excel recibe ese mismo texto para que no parezca un dato observado.
             tir = _numero_flujo(compra.get("tir"), 4)
+            texto = tir[0]
             if compra.get("tir_estimada"):
-                tir += " (estimada, ARS)"
+                texto += " (estimada, ARS)"
+            elif "tir_real" in compra:
+                texto += " (ARS)"
             if "tir_real" in compra:
-                tir += " · Real: " + _numero_flujo(compra.get("tir_real"), 4)
+                texto += " · Real: " + _numero_flujo(compra.get("tir_real"), 4)[0]
             if compra.get("motivo_tir_real"):
-                tir += " · TIR real sin dato: " + compra["motivo_tir_real"]
-            fila.append(tir)
+                texto += " · TIR real sin dato: " + compra["motivo_tir_real"]
+            fila.append(tir if texto == tir[0] else (texto, texto))
             partes.append(tabla(ticker + " · " + titulo, encabezados, [fila]))
             if compra.get("motivo"):
                 partes.append(nota(compra["motivo"], "aviso"))
