@@ -429,6 +429,10 @@ def main(argumentos=None):
     flujo = comandos.add_parser("flujo", help="Revisar ventas cargadas como amortizaciones parciales.")
     flujo.add_argument("--cliente", required=True, metavar="SLUG")
     flujo.add_argument("--revisar", required=True, action="store_true")
+    informe = comandos.add_parser("informe", help="Generar el informe para el cliente desde el último dashboard.")
+    informe.add_argument("--cliente", required=True, metavar="SLUG")
+    informe.add_argument("--salida", metavar="CARPETA", help="Carpeta del informe; por defecto, informes/ del cliente.")
+    informe.add_argument("--pdf", action="store_true", help="Generar también el PDF con Google Chrome.")
     opciones = parser.parse_args(argumentos)
     datos = opciones.datos if opciones.datos is not None else os.environ.get("CARTERA_DATOS")
     if not datos or not datos.strip():
@@ -445,6 +449,9 @@ def main(argumentos=None):
         if opciones.comando == "iamc":
             from .iamc import ejecutar_iamc
             return ejecutar_iamc(datos, opciones.html)
+        if opciones.comando == "informe":
+            from .informe import ejecutar_informe
+            return ejecutar_informe(opciones, datos)
         if opciones.comando in ("bonos", "precio-bono"):
             from .letras_archivos import ejecutar_bonos
             return ejecutar_bonos(opciones, datos)

@@ -50,7 +50,8 @@ Las secciones van en este orden. Una sección sin datos no se muestra: no queda 
   - **Patrimonio total** = `integral.patrimonio_final`, con su equivalente en dólares al MEP. Si no hay dato,
     dice "sin dato".
   - **Invertido en títulos**: la suma de las valuaciones y su peso en el patrimonio.
-  - **Efectivo**: el de `integral.efectivo`, con pesos y dólares por separado.
+  - **Efectivo**: el de `integral.efectivo`, con pesos y dólares por separado. Un saldo faltante dice "sin dato", sin
+    signo de moneda.
 
 ### 2. Composición
 
@@ -110,6 +111,8 @@ hasta el vencimiento y TIR. Debajo, un indicador por moneda con el **total a cob
 cada moneda: `ARS`, `USD MEP` y `USD cable` van en indicadores separados. **Nunca se suman monedas.**
 
 - Total a cobrar de un título del flujo: `total_proyectado`. De una letra: `pago_vencimiento`.
+- Una letra ajustable (LECER, LELINK) aparece tanto en `letras` como en `flujo_fondos`: se toma solo la del
+  flujo, que tiene el pago proyectado.
 - Próximo pago de un título del flujo: `proximo_pago`. De una letra: el vencimiento.
 
 ### 6. Próximos cobros
@@ -139,7 +142,9 @@ Solo si existe `historial`. Tres indicadores:
   el patrimonio, "sin dato".
 
 Debajo, barras con el resultado de cada operación de `historial.realizados`, ordenadas por fecha. Las positivas
-van hacia arriba en un color y las negativas hacia abajo en otro. Cada barra lleva el ticker y el mes.
+van hacia arriba en un color y las negativas hacia abajo en otro. Cada barra lleva el ticker y el mes. Con más de
+14 operaciones, una barra por mes con la suma del resultado, solo con el mes, y una nota con la cantidad de
+operaciones: con 40 barras no se lee nada.
 
 Nota con el desglose: ventas y vencimientos (`realizado_extracto`), rentas (`ingresos.renta.equivalente_ars`) y
 otros (cauciones, FCI y dividendos, netos de gastos). Aclara que los importes son **pesos nominales sin ajuste
@@ -157,7 +162,8 @@ la del último precio de la fecha del informe; el informe **no constituye una re
   son SVG en línea, generados en Python.
 - Pensado para imprimir en **A4 vertical**: `@page {size: A4; margin: 0}` y una hoja por bloque (1: resumen,
   composición y tenencia; 2: rendimiento y cobros por título; 3: próximos cobros, cobros por año, resultados y
-  aclaraciones). Pie de página con el nombre del asesor, "Uso exclusivo del cliente" y "n / 3".
+  aclaraciones). Pie de página con el nombre del asesor, "Uso exclusivo del cliente" y el título de la hoja. No se numeran
+  las páginas: una tenencia larga ocupa más de una página impresa y el número quedaría mal.
 - Las reglas para pantallas angostas van dentro de `@media screen`. Si no, Chrome las aplica al imprimir
   (210 mm ≈ 794 px) y desarma la grilla: es lo que pasó en el prototipo.
 - Fondo blanco, un color principal oscuro para los dólares y los títulos, un segundo color para los pesos y
