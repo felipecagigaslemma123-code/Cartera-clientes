@@ -299,6 +299,38 @@ tir_compra(precio, liquidacion, pagos) -> Decimal | None
 - Los importes son `Decimal`, convertidos desde el texto del número (`Decimal(str(x))`), para que 0.42
   sea exactamente `Decimal("0.42")`. Ninguna función modifica lo recibido.
 
+## `cartera.indices`
+
+Etapa 11. Reglas en `docs/PROYECCIONES.md`.
+
+```python
+Rem(mes, ipc, ipc_12m, ipc_24m, tamar, tamar_12m, tc, tc_12m)
+Valor(valor: Decimal, origen: str)        # "publicado", "proyectado" o "manual"
+
+leer_rem(ruta) -> Rem
+serie_bcra(captura, clave) -> dict[date, Decimal]
+inflacion_mensual(rem, hasta) -> dict[date, Decimal]
+indice_cer(publicado, inflacion, fecha) -> Valor
+indice_a3500(publicado, rem, fecha) -> Valor
+tamar_diaria(publicado, rem, fecha) -> Valor
+tem_tamar(tna, margen) -> Decimal
+proyectar_capitalizable(mv, tem, n, me, tems) -> Decimal
+```
+
+- `Rem.mes`: primer día del mes relevado. `ipc`, `tamar` y `tc`: `dict` de primer día de mes a valor, solo
+  los meses con mediana explícita. IPC y TAMAR en tanto por uno (1,7 % es `Decimal("0.017")`); `tc` en $/USD.
+  Los `*_12m` y `ipc_24m` son las medianas de "próx. 12 meses" y "próx. 24 meses", en la misma unidad.
+  Números del Excel convertidos con `Decimal(str(x))` y recién después divididos por 100.
+- `serie_bcra`: `captura` es el `dict` que guarda el comando `indices` (mismo formato que
+  `tools/bcra_extraer.py`). `clave`: `cer`, `a3500` o `tamar_tna`; TAMAR se devuelve en tanto por uno.
+- `inflacion_mensual`: desde el mes relevado hasta `hasta` (primer día de mes), inclusive.
+- `indice_cer`, `indice_a3500`, `tamar_diaria`: valor de la curva de `PROYECCIONES.md` para `fecha`. Un día
+  sin dato anterior al último publicado devuelve el publicado anterior, con origen `publicado`.
+- `tem_tamar`: `(1 + (tna + margen) × 32/365)^(365/384) − 1`.
+- `proyectar_capitalizable`: `mv × Π ((1 + tems[k]) / (1 + tem))^(e_k)` sobre `n − me` meses; `tems` tiene
+  al menos `ceil(n − me)` valores.
+- Cálculos con `Decimal` y precisión de 50 dígitos. Ninguna función modifica lo recibido.
+
 ## `cartera.historial`
 
 ```python

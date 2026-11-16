@@ -210,6 +210,24 @@ Reglas en `docs/HISTORIAL.md`, `docs/FORMATOS.md` y `docs/CONTRATO.md`.
 **Listo cuando** pasa `tests/test_etapa10_*` y Claude comprobó, con dos carteras reales, que la tenencia
 derivada coincide con la del broker.
 
+## Etapa 11: Proyección de títulos ajustables
+
+**Pedido de Felipe del 13/11/2026:** proyectar en el flujo de fondos los títulos ajustados por CER, TAMAR y
+A3500, y los duales, con los datos del BCRA y las expectativas del REM. Basta con actualizar los datos una vez
+por semana y el REM una vez por mes.
+
+- `cartera.indices`: series del BCRA (el extractor de `tools/bcra_extraer.py` pasa a `src`), lectura del REM y
+  curvas de CER, A3500 y TAMAR, con el origen de cada valor.
+- Comando `indices`. El `dashboard` lo intenta cuando los datos están viejos.
+- `instrumentos.json` suma el bloque `indice`; datos compartidos `feriados.json` y `supuestos_manual.json`.
+- El flujo de fondos muestra importes de CER, TAMAR, dólar linked y duales, cada pago como "definitivo" o
+  "estimado" con su origen, y guarda una estimación por semana para compararla con el cobro.
+
+Reglas en `docs/PROYECCIONES.md`, `docs/FLUJO_FONDOS.md` y `docs/CONTRATO.md`.
+
+**Listo cuando** pasa `tests/test_etapa11_*` y Claude comprobó con carteras reales (una con dólar linked y otra con CER) los pagos
+contra el BCRA, el REM y la calculadora de IAMC con los mismos supuestos.
+
 ---
 
 ## Fuera de alcance

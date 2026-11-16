@@ -25,8 +25,9 @@ nominales por FIFO y, desde ese momento, el flujo de esos nominales deja de most
 | Letras LECAP/BONCAP ya habilitadas en [LETRAS.md](LETRAS.md) | Su pago previsto entra al calendario consolidado; se sigue usando el motor existente |
 | CER, TAMAR/BADLAR (`var`), dólar linked (`dl`), capitalizables variables y duales (`cap`, `capv`) | Se listan con la leyenda "proyección pendiente: requiere supuestos". **No se muestran importes** |
 
-CER, TAMAR, dólar linked y duales quedan para una etapa posterior, que va a definir el archivo de
-supuestos (inflación, tasa y devaluación mensuales). No se adelanta nada de eso en esta etapa.
+CER, TAMAR, dólar linked y duales se proyectan desde la etapa 11, con datos del BCRA y el REM: ver
+[PROYECCIONES.md](PROYECCIONES.md). Las familias `cap` son LECAP/BONCAP de tasa fija y las cubre el panel
+de letras.
 
 ## Fuente de los cronogramas: IAMC
 
