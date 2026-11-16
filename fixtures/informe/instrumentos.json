@@ -1,0 +1,32 @@
+{
+  "AL30": {
+    "iamc": {
+      "ticker": "AL30",
+      "grupo": "tp"
+    }
+  },
+  "YM34O": {
+    "iamc": {
+      "ticker": "YM34O",
+      "grupo": "on"
+    }
+  },
+  "TZV28": {
+    "iamc": {
+      "ticker": "TZV28",
+      "grupo": "tp",
+      "indice": {
+        "tipo": "A3500",
+        "rezago_habiles": 3,
+        "fuente": "fixture"
+      }
+    }
+  },
+  "S30N6": {
+    "vencimiento": "2026-11-30",
+    "letra": {
+      "familia": "LECAP",
+      "moneda_pago": "ARS"
+    }
+  }
+}

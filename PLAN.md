@@ -230,11 +230,28 @@ contra el BCRA, el REM y la calculadora de IAMC con los mismos supuestos.
 
 ---
 
+## Etapa 12: Informe para el cliente
+
+**Pedido de Felipe del 16/11/2026:** un archivo para presentarle al cliente, con los datos del dashboard
+mostrados de forma más visual. El prototipo que armó Claude con una cartera real quedó aprobado.
+
+- `cartera.informe`: lee el bloque `datos-cartera` del último dashboard y arma un modelo con la composición,
+  la tenencia, la TIR de compra, los cobros y los resultados.
+- Comando `informe`: escribe un HTML A4 de tres hojas, sin recursos externos, con gráficos SVG. Con `--pdf`
+  también genera el PDF con Chrome.
+
+Reglas en `docs/INFORME.md` y `docs/CONTRATO.md`.
+
+**Listo cuando** pasa `tests/test_etapa12_*` y Claude comprobó con una cartera real que el informe coincide con
+el dashboard y que el PDF sale en tres hojas sin cortes.
+
+---
+
 ## Fuera de alcance
 
 - Evaluar lo operado en otro broker antes de la llegada del cliente.
 - Resultado en dólares **desde la compra**. En esta versión, el resultado en dólar
   MEP se calcula solo desde el día cero.
 - Acceso programático al broker, órdenes o ejecución.
-- Exposición al cliente final.
+- Exposición al cliente final, salvo el informe de la etapa 12, que el asesor entrega como documento.
 - Cálculo impositivo.

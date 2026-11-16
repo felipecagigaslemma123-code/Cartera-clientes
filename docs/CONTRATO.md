@@ -378,6 +378,48 @@ derivar_base(datos, slug, reemplazar=False) -> (PuntoPartida, dict)   # cartera.
 `datos-cartera` suma `historial`: `total_conocido`, `ingresos`, `aportes`, `retiros`, `realizados`,
 `ventas_sin_dato`, `valores_sin_dato`, `cantidad_sin_clasificar` y `avisos`.
 
+## `cartera.informe`
+
+Etapa 12. Reglas en [INFORME.md](INFORME.md).
+
+```python
+class ErrorInforme(ValueError): ...
+
+leer_datos_dashboard(ruta) -> dict
+armar_informe(datos, instrumentos=None, perfil=None, cantidad_cobros=7) -> dict
+informe_html(modelo) -> str
+exportar_pdf(ruta_html, ruta_pdf, navegador=None) -> Path
+```
+
+- `leer_datos_dashboard` devuelve el JSON del bloque `datos-cartera`. Si falta el archivo, el bloque o el
+  JSON es inválido, lanza `ErrorInforme`.
+- `armar_informe` es pura: no lee archivos ni consulta la red. Los importes, pesos y tasas son `Decimal`
+  (convertidos con `Decimal(str(x))`); un dato faltante es `None`. Devuelve:
+
+  | Clave | Contenido |
+  |---|---|
+  | `cliente`, `asesor` | textos; `asesor` puede ser `None` |
+  | `fecha` | `date` de `generado_en` |
+  | `mep` | dólar MEP del dashboard |
+  | `patrimonio` | `integral.patrimonio_final` o `None` |
+  | `invertido` | suma de valuaciones |
+  | `efectivo` | `{"ARS": ..., "USD": ...}` o `None` |
+  | `composicion` | lista de `{"clase", "valuacion", "peso", "tickers"}`, por valuación descendente |
+  | `peso_dolares` | peso de las clases que cobran en dólares |
+  | `tenencia` | lista de `{"ticker", "descripcion", "clase", "cantidad", "precio", "valuacion", "peso", "vs_compra", "vencimiento"}` |
+  | `rendimientos` | lista de `{"ticker", "moneda", "tir", "tir_min", "tir_max", "estimada", "compras", "proximo_pago", "total_a_cobrar"}`; `proximo_pago` es `{"fecha", "importe"}` |
+  | `a_cobrar` | `{moneda: total}` solo con las monedas presentes (`ARS`, `USD MEP`, `USD cable`) |
+  | `proximos_cobros` | lista de `{"fecha", "ticker", "concepto", "moneda", "importe", "estimado"}` |
+  | `cobros_por_anio` | `{"AAAA": {moneda: total}}` con todas las monedas del calendario |
+  | `resultados` | `None` sin `historial`; si no, `{"ganancia_realizada", "ventas", "rentas_ars", "rentas_usd", "rentas_equivalente", "otros", "aportes", "retiros", "acumulado", "operaciones"}`, con `operaciones` = lista de `{"ticker", "fecha", "resultado"}` por fecha |
+
+  Fechas como `date`. Pesos y tasas en tanto por uno.
+- `informe_html` arma el documento completo de [INFORME.md](INFORME.md).
+- `exportar_pdf` usa Chrome *headless*. Si `navegador` es `None`, busca la ruta estándar de macOS. Si no lo
+  encuentra o Chrome falla, lanza `ErrorInforme` y no deja un PDF a medias.
+- Para las pruebas, el módulo expone `_NAVEGADOR` (ruta por defecto de Chrome, que usan `exportar_pdf` y el
+  comando) y `_hoy()` (fecha de Argentina, que usa el comando para la antigüedad del dashboard).
+
 ## Línea de comandos
 
 ```bash
@@ -393,6 +435,7 @@ python3 -m cartera --datos RUTA historial --cliente SLUG [--actualizar-mep]
 python3 -m cartera --datos RUTA derivar-base --cliente SLUG [--reemplazar]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha AAAA-MM-DD --tipo TIPO --importe N [--ticker T] [--cantidad N] [--moneda ARS|USD] [--tc N] [--tipo-activo TIPO] [--nota TEXTO]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --ticker X --cantidad N --importe I [--nota N]
+python3 -m cartera --datos RUTA informe --cliente SLUG [--salida CARPETA] [--pdf]
 ```
 
 `--datos` se puede omitir si está definida `CARTERA_DATOS`. Errores de validación:
