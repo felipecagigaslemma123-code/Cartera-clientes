@@ -484,6 +484,10 @@ def _posicion(ticker, nominales, instrumentos, cierres, fecha_cierre, lotes, pre
     if contrato is not None and not isinstance(contrato, dict):
         fila["motivo"] = "proyección pendiente: bloque contractual de índice inválido"
         return fila
+    manuales = _configuracion_manual(vinculo, ticker, avisos)
+    if contrato is not None and manuales:
+        # Un cupón TAMAR en curso devenga desde el último pago del prospecto.
+        contrato = dict(contrato, _pagos_previos=tuple(sorted(manuales)))
     try:
         serie = _serie(cierres, vinculo["ticker"], vinculo["grupo"], contrato=contrato,
                        indices=indices, avisos=avisos)
@@ -494,7 +498,6 @@ def _posicion(ticker, nominales, instrumentos, cierres, fecha_cierre, lotes, pre
         if not vigente.habilitado:
             fila["motivo"] = _PENDIENTE
             return fila
-        manuales = _configuracion_manual(vinculo, ticker, avisos)
         seleccion, primera_liq, advertencias = _fusionar_pagos(serie, manuales)
     except (ValueError, DecimalException, KeyError, TypeError) as error:
         fila["motivo"] = ("proyección pendiente: " + str(error) if contrato is not None else

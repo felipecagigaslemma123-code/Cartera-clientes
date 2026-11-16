@@ -191,3 +191,56 @@ class TirDeAjustablesEnPantalla(CompraAnteriorAlPrimerCierre):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VentanaTamar(Base):
+    """Cupón TAMAR: promedio de los días hábiles con dato de [inicio − rezago, pago − rezago).
+
+    Así se reproducen al centésimo de diezmilésimo los 12 cupones pagados de BAM27 y RVS1O en
+    2025 y 2026 (avisos de MAE y CNV). El motor anterior excluía el inicio e incluía el fin.
+    """
+
+    def contrato(self, **extra):
+        return dict({"tipo": "TAMAR", "rezago_habiles": 7, "fuente": "fixture",
+                     "_pagos_previos": (date(2026, 5, 27), date(2026, 8, 27))}, **extra)
+
+    def primer_pago(self, contrato):
+        return cronograma_iamc(self.cierre, "RVS1O", "on", contrato=contrato, indices=self.indices,
+                               avisos=[]).pagos[0]
+
+    def test_ventana_incluye_el_inicio_y_excluye_el_fin(self):
+        from cartera.pagos_indexados import _ventana_tamar
+        indices = {"tamar_tna": {date(2026, 8, 3): Decimal("0.30"), date(2026, 8, 4): Decimal("0.20"),
+                                 date(2026, 8, 6): Decimal("0.10"), date(2026, 8, 7): Decimal("0.90")},
+                   "feriados": {}, "tamar": {}, "rem": None}
+        valores = _ventana_tamar(indices, date(2026, 8, 3), date(2026, 8, 7))
+        # El 05/08 no tiene dato publicado: no cuenta ni arrastra el anterior.
+        self.assertEqual([v.valor for v in valores], [Decimal("0.30"), Decimal("0.20"), Decimal("0.10")])
+
+    def test_cupon_en_curso_se_calcula_desde_el_ultimo_pago(self):
+        pago = self.primer_pago(self.contrato())
+        self.assertEqual(pago.fecha, date(2026, 11, 27))
+        serie = self.indices["tamar_tna"]
+        # 7 hábiles antes del 27/08 y del 27/11 (sin feriados cargados en el fixture).
+        ultimo = max(serie)
+        publicados = [serie[d] for d in serie if date(2026, 8, 18) <= d < date(2026, 11, 18)]
+        # Los hábiles posteriores al último dato van con la mediana del REM de noviembre.
+        proyectados = [d for d in (date(2026, 11, 12), date(2026, 11, 13), date(2026, 11, 16), date(2026, 11, 17))
+                       if d > ultimo]
+        self.assertEqual(ultimo, date(2026, 11, 11))
+        valores = publicados + [Decimal("0.239")] * len(proyectados)
+        promedio = sum(valores) / len(valores)
+        self.assertTrue(pago.origen.startswith("estimado · REM"))
+        self.assertAlmostEqual(pago.renta, Decimal("6.30137") * (promedio + Decimal("0.0389")), places=20)
+        self.assertNotAlmostEqual(float(pago.renta), 2.201816, places=2)  # IAMC con v.vig
+
+    def test_sin_pagos_previos_usa_la_tasa_vigente_de_iamc(self):
+        contrato = self.contrato()
+        del contrato["_pagos_previos"]
+        pago = self.primer_pago(contrato)
+        self.assertAlmostEqual(float(pago.renta), 2.201816, places=5)
+        self.assertEqual(pago.origen, "definitivo · IAMC publicado")
+
+    def test_piso_de_la_tasa(self):
+        pago = self.primer_pago(self.contrato(piso="0.9"))
+        self.assertEqual(pago.renta, Decimal("6.30137") * Decimal("0.9"))

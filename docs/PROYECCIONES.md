@@ -1,8 +1,9 @@
 # Proyección de títulos ajustables: CER, TAMAR y dólar linked
 
-Versión 1.2 · 16/11/2026 · Especificación aprobada por Felipe para la etapa 11.
+Versión 1.3 · 16/11/2026 · Especificación aprobada por Felipe para la etapa 11.
 La 1.1 (Codex) documentó el tipo de cambio mensual del REM y la captura anticipada del CER. La 1.2 (revisión de
-Claude) fija la base del A3500 de IAMC y suma las letras CER y dólar linked al flujo.
+Claude) fija la base del A3500 de IAMC y suma las letras CER y dólar linked al flujo. La 1.3 corrige la
+ventana del cupón TAMAR, calcula el cupón en curso y agrega el piso.
 
 ## Qué se busca
 
@@ -170,10 +171,17 @@ con `precio-bono` (`bonos --cliente SLUG` la lista). Sin `iamc.indice` sigue com
 ```
 
 - Amortización: la de IAMC.
-- Primer cupón (el período ya empezó): `renta = f[j][3] × v.vig`, como IAMC. Se marca `publicado`.
-- Cupones siguientes: `renta = f[j][3] × (promedio de TAMAR diaria + v.m)`, con el promedio de los días
-  corridos del período del cupón corrido `rezago_habiles` días hábiles hacia atrás. Inicio del período:
-  la fecha del pago anterior.
+- Cada cupón: `renta = f[j][3] × (promedio de TAMAR + v.m)`. El promedio es aritmético sobre los días
+  hábiles de `[inicio − rezago, pago − rezago)`: incluye el primer día y excluye el último. Inicio: la
+  fecha del pago anterior. Dentro del tramo publicado cuentan solo los días con dato del BCRA; después,
+  los hábiles con la TAMAR proyectada. `f[j][3]` ya trae la base de días del título (30/360 o real/365).
+- Cupón en curso: su inicio es el último pago de `pagos_manuales` anterior al cupón. Sin esos pagos se
+  usa `f[j][3] × v.vig`, como IAMC, marcado `publicado`. **Ese valor no es confiable**: el 13/11/2026
+  `v.vig` daba cupones 23 % (BAM27) y 25 % (RVS1O) más altos que el contrato.
+- `"piso": "0"` (opcional) en el bloque `indice`: tasa mínima del cupón, en tanto por uno.
+- Verificado con los 12 cupones pagados de BAM27 y RVS1O en 2025 y 2026: todos coinciden al
+  diezmilésimo con el aviso de pago. El 24/12 y el 31/12/2025 no hubo TAMAR publicada: para BAM27 cuentan
+  como días no hábiles.
 - Si `v.idx` no es `TAMAR` (por ejemplo, BADLAR), queda "proyección pendiente: índice sin fuente".
 
 ### Capitalizables TAMAR (`capv` con una pata TAMAR)

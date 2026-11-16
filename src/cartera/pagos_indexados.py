@@ -75,6 +75,27 @@ def _tamar(indices, fecha):
     return tamar_diaria(publicado, rem, fecha)
 
 
+def _ventana_tamar(indices, inicio, fin):
+    """TAMAR diaria de los días hábiles de [inicio, fin): publicada si hay dato, si no proyectada.
+
+    Dentro del tramo publicado solo cuentan los días con dato del BCRA, como en los avisos de pago
+    (verificado con los 12 cupones de BAM27 y RVS1O de 2025 y 2026).
+    """
+    publicado, feriados = indices["tamar_tna"], indices["feriados"]
+    ultimo = max(publicado) if publicado else None
+    valores, dia = [], inicio
+    while dia < fin:
+        if ultimo is not None and dia <= ultimo:
+            if dia in publicado:
+                valores.append(_publicado(publicado, dia)[1])
+        elif dia.weekday() < 5 and dia not in feriados.get(str(dia.year), ()):
+            valores.append(_tamar(indices, dia))
+        dia += timedelta(days=1)
+    if not valores:
+        raise ValueError("El período del cupón TAMAR no tiene días hábiles.")
+    return valores
+
+
 def _tasa(valor):
     tasa = Decimal(str(valor))
     if not tasa.is_finite():
@@ -191,16 +212,20 @@ def proyectar_pagos(fila, contrato, cierre, liquidacion, indices, avisos):
             origen = valor.origen
         elif familia == "var":
             base = _decimal(registro[3], "Base del cupón", cero=True)
-            if j == 0:
+            if j:
+                anterior = registros[j - 1][0]
+            else:
+                # El cupón en curso empieza en el último pago cargado del prospecto.
+                anterior = max((dia for dia in contrato.get("_pagos_previos", ()) if dia < fecha), default=None)
+            if anterior is None:
                 renta = base * _tasa(fila["v"]["vig"])
                 pagos.append((fecha, amortizacion, renta, "definitivo · IAMC publicado", None))
                 continue
-            inicio, fin = referencia(registros[j - 1][0]), referencia(fecha)
-            dias = (fin - inicio).days
-            if dias <= 0:
-                raise ValueError("El período corrido del cupón TAMAR no tiene días.")
-            valores = [_tamar(indices, inicio + timedelta(days=i)) for i in range(1, dias + 1)]
-            renta = base * (sum(v.valor for v in valores) / dias + _tasa(fila["v"]["m"]))
+            valores = _ventana_tamar(indices, referencia(anterior), referencia(fecha))
+            tasa = sum(v.valor for v in valores) / len(valores) + _tasa(fila["v"]["m"])
+            if contrato.get("piso") is not None:
+                tasa = max(tasa, _tasa(contrato["piso"]))
+            renta = base * tasa
             origen = _origen(valores)
         else:
             if len(registros) != 1:

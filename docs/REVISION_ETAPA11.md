@@ -100,3 +100,31 @@ Al hacerlo aparecieron tres errores más, corregidos con pruebas en `tests/test_
 
 Resultado en una copia de los datos: X30N6, TIR 24,31 % en pesos (real 0,24 %), definitiva; X29E7, 25,47 %
 estimada (real 0,33 %). Los tres tableros se generan sin errores.
+
+## Cupones TAMAR: BAM27 y RVS1O (16/11/2026)
+
+Codex juntó los avisos de pago oficiales (MAE y CNV) de los seis servicios de cada título y la definición
+contractual de la tasa. Con esos datos se controló la fórmula del motor.
+
+**Corrección 8: ventana del promedio.** Se probaron los 12 cupones pagados contra la TAMAR del BCRA:
+
+| Fórmula | Cupones que coinciden al diezmilésimo |
+|---|---|
+| Contrato: días hábiles con dato de `[inicio − rezago, pago − rezago)` | 12 de 12 |
+| Motor anterior: días corridos de `(inicio − rezago, pago − rezago]`, arrastrando el último dato | 0 de 12 (desvío de hasta 0,19 por 100 VN) |
+
+Para que coincidan BAM27 dic-2025 y mar-2026, el 24/12/2025 tiene que contar como no hábil. Ese día el
+BCRA no publicó TAMAR, y tampoco el 31/12.
+
+**Corrección 9: cupón en curso.** El motor tomaba la tasa vigente de IAMC (`v.vig`) para el próximo cupón y
+lo marcaba "definitivo". Al 13/11, esa tasa daba 4,55 (BAM27) y 2,20 (RVS1O) por 100 VN; con el contrato
+salen 3,69 y 1,77. Ahora el cupón en curso se calcula con la ventana del contrato desde el último pago de
+`pagos_manuales`. Sin esos pagos queda la tasa de IAMC.
+
+**Agregado: piso.** `indice.piso` opcional; RVS1O tiene piso de 0 %.
+
+Cuatro pruebas nuevas en `tests/test_extra_etapa11_revision.py` (`VentanaTamar`). Pasan las 972.
+
+**Cobros de control.** Los importes oficiales superan lo acreditado por Bull: BAM27 57,1865 contra 57,0895
+por 100 VN (−0,17 %) y RVS1O 28,3402 contra 28,2952 (−0,16 %). Los avisos no muestran deducciones. Lo más
+probable es un arancel del agente de custodia. El flujo usa el importe oficial.
