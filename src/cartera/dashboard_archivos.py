@@ -169,6 +169,7 @@ def crear_dashboard(punto, carpeta, slug, fetch, *, datos=None, aviso_iamc=None)
             avisos.append("No se pudo calcular el rendimiento realizado histórico: {}".format(error))
     from .flujo_fondos import calcular_flujo
     from .iamc import leer_cierres
+    from .indices_archivos import actualizar_indices, estado_indices, leer_indices, registrar_proyecciones
     from .letras import calcular_letras
     from .letras_archivos import leer_compras, leer_compras_bonos
     try:
@@ -191,9 +192,24 @@ def crear_dashboard(punto, carpeta, slug, fetch, *, datos=None, aviso_iamc=None)
     except (ValueError, OSError) as error:
         cierres_iamc = []
         avisos_flujo.append("No se pudieron leer los cierres de IAMC: {}.".format(error))
+    indices = None
+    if datos is not None and any(isinstance(v.get("iamc"), dict) and "indice" in v["iamc"]
+                                 for v in instrumentos.values()):
+        try:
+            avisos_flujo.extend(actualizar_indices(datos, generado_en.date(), automatico=True))
+        except OSError as error:
+            avisos_flujo.append("No se pudieron actualizar los índices: {}.".format(error))
+        indices = leer_indices(datos, generado_en.date())
+        avisos_flujo.extend(indices["avisos"])
+        avisos_flujo.append(estado_indices(indices, generado_en.date()))
     flujo = calcular_flujo(base, movimientos, instrumentos, cierres_iamc, compras_bonos,
                            letras, generado_en.date(), fecha_dia_cero, actual=punto,
-                           cobros_historial=getattr(historial_realizado, "cobros", ()))
+                           cobros_historial=getattr(historial_realizado, "cobros", ()), indices=indices)
+    if indices is not None:
+        try:
+            registrar_proyecciones(carpeta, flujo, generado_en.date())
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            avisos_flujo.append("No se pudo consultar o guardar la proyección semanal: {}.".format(error))
     flujo["avisos"][:0] = avisos_flujo
     cliente_precios = ClientePrecios(fetch, rutas["cache_precios.json"], persistir_cache=False)
     cotizaciones = cliente_precios.obtener(punto.posiciones)

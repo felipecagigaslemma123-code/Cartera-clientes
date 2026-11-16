@@ -86,6 +86,26 @@ def _huella(referencia, dato):
     return hashlib.sha256(contenido).hexdigest()
 
 
+def letras_indexadas(instrumentos):
+    """Letras CER o dólar linked que siguen el flujo indexado de IAMC en lugar del panel de letras."""
+    resultado = set()
+    for ticker, configuracion in (instrumentos or {}).items():
+        vinculo = configuracion.get("iamc") if isinstance(configuracion, dict) else None
+        if isinstance(vinculo, dict) and isinstance(vinculo.get("indice"), dict):
+            resultado.add(ticker)
+    return resultado
+
+
+def referencias_flujo(base, movimientos, instrumentos):
+    """Compras con precio en compras_bonos.json: bonos, ON y letras indexadas vinculadas a IAMC."""
+    indexadas = letras_indexadas(instrumentos)
+    referencias = referencias_compras(base, movimientos, tipos=("bono", "on"))
+    if indexadas:
+        referencias += [ref for ref in referencias_compras(base, movimientos, tipos=("letra",))
+                        if ref["ticker"] in indexadas]
+    return referencias
+
+
 def referencias_compras(base, movimientos, tipos=("letra",)):
     """Relaciona compras originales y remanentes usando el FIFO ya existente.
 

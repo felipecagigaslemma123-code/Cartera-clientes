@@ -79,3 +79,24 @@ Decisión de Felipe del 11/11/2026, implementada por Claude en `cartera.iamc.gua
 
 - Aprobar las tres correcciones y la versión 1.1 de la especificación.
 - Definir el archivo de supuestos para CER, TAMAR, dólar linked y duales (etapa siguiente).
+
+## Seguimiento de Codex (12/11/2026), revisado el 16/11/2026
+
+Cambios sin commitear en `flujo_fondos.py`, `iamc.py` y `README.md`, con 6 pruebas nuevas en
+`tests/test_extra_etapa9_seguimiento.py`. **Aprobados sin correcciones.**
+
+- El control de cobros solo se arma para pagos desde el día cero. Coincide con la versión 1.1.
+- Una posición vendida conserva los pagos que cobró antes de la venta, aunque ya no tenga nominales.
+- Una letra que vence hoy figura como "debería haberse cobrado", con los nominales del día anterior. Una
+  letra que venció antes del día cero no entra al calendario.
+- `iamc`: se rechaza un cierre cuya liquidación es anterior a la fecha de cierre, y el dashboard no
+  reemplaza un cierre ya archivado de la misma fecha. La publicación usa un enlace duro; se comprobó que
+  funciona en la carpeta de OneDrive.
+
+Controles: pasan las 929 pruebas existentes (la única falla es `test_etapa11_indices`, que espera la etapa
+11 sin implementar). Con copias de las tres carteras reales, el flujo de fondos con y sin estos cambios es
+idéntico: ninguna tiene día cero, y las posiciones cerradas sin pagos siguen sin mostrarse.
+
+Cierres de IAMC: el 16/11 se archivó el del 13/11. Se perdieron los del 09 y 10/11. Cada cierre queda
+publicado hasta el siguiente: el del 16/11 se guarda con cualquier dashboard generado entre ese cierre y el
+del 17/11.

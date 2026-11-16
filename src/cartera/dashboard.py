@@ -761,13 +761,21 @@ def _panel_flujo(flujo):
             fecha_cobro(proximo), _numero_flujo(proximo.get("total")),
             _numero_flujo(posicion.get("total_proyectado")), _numero_flujo(posicion.get("pagos_restantes"), 3),
         ]]))
+        indexados = [[_fecha_flujo(pago.get("fecha")), _numero_flujo(pago.get("total")),
+                      pago["estado"], pago["origen"]] for pago in posicion.get("pagos", [])
+                     if pago["origen"].startswith(("definitivo ·", "estimado ·"))]
+        if indexados:
+            partes.append(tabla(ticker + " · Pagos indexados",
+                                ["Fecha contractual", "Total" + unidad, "Estado", "Origen"], indexados))
         cobros = []
         for pago in posicion.get("pagos", []):
             cobro = pago.get("cobro")
             if cobro is not None:
                 cobros.append([_fecha_flujo(pago.get("fecha")), cobro.get("estado", "sin dato"),
                                _numero_flujo(cobro.get("teorico")), _numero_flujo(cobro.get("registrado")),
-                               _numero_flujo(cobro.get("diferencia")), cobro.get("origen") or "—",
+                               _numero_flujo(cobro.get("diferencia")), (cobro.get("origen") or "—") +
+                               (" · estimación del {}: {}".format(cobro["fecha_estimacion"],
+                                _numero_flujo(cobro["estimacion_anterior"])) if "estimacion_anterior" in cobro else ""),
                                "Sí" if cobro.get("convertido") else "—"])
         if cobros:
             partes.append('<h4>Control de cobros</h4>')
@@ -789,7 +797,14 @@ def _panel_flujo(flujo):
             encabezados += ["Inversión" + unidad, "Total a cobrar" + unidad,
                             "Resultado a vencimiento" + unidad, "TIR de compra"]
             fila += [_numero_flujo(compra.get(campo)) for campo in ("inversion", "total_a_cobrar", "resultado_vto")]
-            fila.append(_numero_flujo(compra.get("tir"), 4))
+            tir = _numero_flujo(compra.get("tir"), 4)
+            if compra.get("tir_estimada"):
+                tir += " (estimada, ARS)"
+            if "tir_real" in compra:
+                tir += " · Real: " + _numero_flujo(compra.get("tir_real"), 4)
+            if compra.get("motivo_tir_real"):
+                tir += " · TIR real sin dato: " + compra["motivo_tir_real"]
+            fila.append(tir)
             partes.append(tabla(ticker + " · " + titulo, encabezados, [fila]))
             if compra.get("motivo"):
                 partes.append(nota(compra["motivo"], "aviso"))

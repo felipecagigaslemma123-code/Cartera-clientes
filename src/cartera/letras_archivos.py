@@ -11,7 +11,8 @@ from zoneinfo import ZoneInfo
 from .almacenamiento import _ruta_cartera, cargar_cartera
 from .dia_cero import _leer_dia_cero
 from .letras import (
-    ErrorLetra, precio_en_moneda_flujo, referencias_compras, validar_compras, validar_dato_compra,
+    ErrorLetra, precio_en_moneda_flujo, referencias_compras, referencias_flujo, validar_compras,
+    validar_dato_compra,
 )
 from .movimientos import leer_movimientos, validar_movimientos
 
@@ -119,6 +120,16 @@ def _listar_compras(referencias, compras, nombre_plural):
         print("No hay compras de {} en la base ni en los movimientos.".format(nombre_plural))
 
 
+def _instrumentos_crudos(bruto):
+    if bruto is None:
+        return {}
+    try:
+        instrumentos = json.loads(bruto.decode("utf-8"), object_pairs_hook=_objeto, parse_constant=_constante)
+    except (AttributeError, UnicodeError, ValueError) as error:
+        raise ErrorLetra("instrumentos.json: " + str(error)) from None
+    return instrumentos if isinstance(instrumentos, dict) else {}
+
+
 def _configuracion_instrumento(bruto, ticker):
     if bruto is None:
         return {}
@@ -177,7 +188,12 @@ def _ejecutar_compras(opciones, datos, bonos):
         referencia_cero = _leer_dia_cero(fuentes[2]) if fuentes[2].exists() else None
         hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
         validar_movimientos(base, movimientos, date.fromisoformat(referencia_cero["fecha"]) if referencia_cero else None, hoy)
-        referencias = referencias_compras(base, movimientos, tipos=tipos)
+        if bonos:
+            # Incluye las letras CER o dólar linked vinculadas a IAMC con su índice.
+            instrumentos = _instrumentos_crudos(previos[fuentes[3]])
+            referencias = referencias_flujo(base, movimientos, instrumentos)
+        else:
+            referencias = referencias_compras(base, movimientos, tipos=tipos)
         ruta = _ruta(carpeta, archivo)
         compras = leer_compras(ruta, bonos=bonos)
         if opciones.comando == listado:

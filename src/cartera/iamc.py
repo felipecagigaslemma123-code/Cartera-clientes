@@ -146,6 +146,8 @@ def extraer_html(contenido, *, max_bytes=None):
     if _fecha_iso(datos["on"].get("fecha"), "on.fecha") != cierre:
         raise ErrorExtraccion("Los títulos públicos y las ON tienen fechas de cierre diferentes.")
     liquidacion = _fecha_iso(datos["calc"].get("liq"), "calc.liq")
+    if liquidacion < cierre:
+        raise ErrorExtraccion("La fecha de liquidación es anterior a la fecha de cierre.")
     for clave in ("tp", "on"):
         if _fecha_iso(datos[clave].get("fecha_liq"), clave + ".fecha_liq") != liquidacion:
             raise ErrorExtraccion("La liquidación de {} no coincide con la calculadora.".format(clave))
@@ -211,13 +213,13 @@ def _bytes_json(contenido):
     return (json.dumps(contenido, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
 
-def _publicar(ruta, contenido):
+def _publicar(ruta, contenido, *, reemplazar=True):
     """Publicación atómica; el archivo anterior sobrevive a un fallo de reemplazo."""
     ruta = Path(ruta)
     if ruta.is_symlink():
         raise ErrorExtraccion("No se publica sobre un enlace: " + str(ruta))
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    if ruta.exists() and ruta.read_bytes() == contenido:
+    if ruta.exists() and (not reemplazar or ruta.read_bytes() == contenido):
         return False
     temporal = None
     try:
@@ -229,7 +231,14 @@ def _publicar(ruta, contenido):
             os.fsync(salida.fileno())
         if ruta.is_symlink():
             raise ErrorExtraccion("El destino pasó a ser un enlace.")
-        os.replace(str(temporal), str(ruta))
+        if reemplazar:
+            os.replace(str(temporal), str(ruta))
+        else:
+            # Publica el archivo completo solo si ninguna corrida lo archivó antes.
+            try:
+                os.link(temporal, ruta)
+            except FileExistsError:
+                return False
         return True
     finally:
         if temporal is not None:
@@ -407,7 +416,7 @@ def procesar_cierre(archivo=None, *, cache=None, hoy=None, fetch=None):
     return cierre
 
 
-def _archivar(datos, archivo=None, fetch=None):
+def _archivar(datos, archivo=None, fetch=None, *, solo_nuevos=False):
     """Guarda el cierre publicado y dice si esa fecha de cierre era nueva."""
     carpeta = _carpeta_iamc(datos)
     cierre = procesar_cierre(archivo, cache=carpeta / "cache", fetch=fetch)
@@ -417,6 +426,9 @@ def _archivar(datos, archivo=None, fetch=None):
         origen = Path(archivo).expanduser()
         if origen.resolve() == destino.resolve() or (destino.exists() and destino.samefile(origen)):
             raise ErrorExtraccion("El cierre JSON no puede sobrescribir el HTML de origen.")
+    if solo_nuevos:
+        nuevo = _publicar(destino, _bytes_json(cierre), reemplazar=False)
+        return cierre, destino, nuevo
     nuevo = not destino.exists()
     return cierre, guardar_cierre(cierre, destino.parent), nuevo
 
@@ -432,7 +444,8 @@ def guardar_cierre_del_dia(datos, fetch=None):
     try:
         if not any((_carpeta_iamc(datos) / "cierres").glob("*.json")):
             return None, None
-        cierre, _, nuevo = _archivar(datos, fetch=fetch or (lambda url: _obtener_url(url, espera=10)))
+        cierre, _, nuevo = _archivar(datos, fetch=fetch or (lambda url: _obtener_url(url, espera=10)),
+                                    solo_nuevos=True)
     except Exception as error:  # Un paso auxiliar no puede impedir el dashboard.
         return None, ("No se pudo guardar el cierre de IAMC de hoy: {} "
                       "Se usa el último cierre guardado.".format(str(error).rstrip(".") + "."))

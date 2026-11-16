@@ -430,7 +430,7 @@ PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA iamc
 
 Hace una sola consulta por día y guarda el cierre en `RUTA/iamc/cierres/`, carpeta compartida por todos los clientes. `iamc --html ARCHIVO` procesa un HTML guardado, sin usar la red.
 
-Desde entonces, cada vez que se genera un dashboard con esa carpeta de datos, el comando `dashboard` intenta guardar el cierre publicado, con la misma regla de un intento por día. Si no puede, lo avisa, sigue con el último cierre guardado y no reintenta hasta el día siguiente. Alcanza con generar un dashboard cada día hábil para no perder cierres.
+Desde entonces, cada vez que se genera un dashboard con esa carpeta de datos, el comando `dashboard` intenta guardar el cierre publicado, con la misma regla de un intento por día. Si no puede, lo avisa, sigue con el último cierre guardado y no reintenta hasta el día siguiente. Para archivar un cierre nuevo, generá el primer dashboard del día después de que IAMC lo publique. Si el cierre publicado ya estaba archivado, el dashboard conserva ese archivo.
 
 Para cada cliente:
 

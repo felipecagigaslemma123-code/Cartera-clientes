@@ -414,6 +414,7 @@ def main(argumentos=None):
     precio_letra.add_argument("--precio", required=True, metavar="N", help="Precio limpio por cada 100 nominales, sin gastos.")
     precio_letra.add_argument("--moneda", required=True, choices=("ARS", "USD"))
     precio_letra.add_argument("--liquidacion", required=True, metavar="AAAA-MM-DD")
+    comandos.add_parser("indices", help="Actualizar series BCRA y el último REM publicado.")
     iamc = comandos.add_parser("iamc", help="Guardar el cierre diario de IAMC.")
     iamc.add_argument("--html", metavar="RUTA", help="Procesar un HTML guardado.")
     bonos = comandos.add_parser("bonos", help="Listar compras de bonos y ON.")
@@ -433,6 +434,14 @@ def main(argumentos=None):
     if not datos or not datos.strip():
         parser.error("Indicá --datos RUTA o definí CARTERA_DATOS.")
     try:
+        if opciones.comando == "indices":
+            from .indices_archivos import actualizar_indices
+            avisos_indices = actualizar_indices(datos)
+            for aviso in avisos_indices:
+                print(aviso, file=sys.stderr)
+            if not avisos_indices:
+                print("Series del BCRA y REM al día.")
+            return 1 if avisos_indices else 0
         if opciones.comando == "iamc":
             from .iamc import ejecutar_iamc
             return ejecutar_iamc(datos, opciones.html)

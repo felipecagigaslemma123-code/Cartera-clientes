@@ -8,7 +8,7 @@ from decimal import Decimal, DecimalException, localcontext
 from typing import List, Optional
 
 from .letras import (
-    ErrorLetra, _decimal, _fecha, _hoy_argentina, _texto_decimal, referencias_compras,
+    ErrorLetra, _decimal, _fecha, _hoy_argentina, _texto_decimal, letras_indexadas, referencias_flujo,
     validar_compras, validar_dato_compra,
 )
 from .movimientos import ErrorMovimiento, _normalizados, cartera_actual
@@ -26,6 +26,7 @@ class Pago:
     amortizacion: Decimal
     renta: Decimal
     origen: str
+    dual: Optional[tuple] = None
 
     @property
     def total(self):
@@ -60,7 +61,16 @@ def _fecha_cierre(cierre):
     return _fecha(cierre.get("fecha_cierre"), "Fecha del cierre IAMC")
 
 
-def cronograma_iamc(cierre, ticker, grupo):
+def _fecha_a3500_iamc(cierre, fecha_cierre):
+    """Fecha del A3500 con que IAMC expresa los flujos dólar linked de ese cierre."""
+    variables = (cierre.get("macro") or {}).get("vars") if isinstance(cierre.get("macro"), dict) else None
+    for variable in variables or ():
+        if isinstance(variable, dict) and variable.get("k") == "a3500":
+            return _fecha(variable.get("f"), "Fecha del A3500 de IAMC")
+    return fecha_cierre
+
+
+def cronograma_iamc(cierre, ticker, grupo, *, contrato=None, indices=None, avisos=None):
     """Lee pagos por 100 nominales originales del registro exacto de calculadora."""
     fecha_cierre = _fecha_cierre(cierre)
     calculadora = cierre.get("calculadora_bonos")
@@ -78,7 +88,16 @@ def cronograma_iamc(cierre, ticker, grupo):
     liquidacion = _fecha(fila.get("liq"), "Liquidación IAMC")
     habilitado = familia == _FIJA
     pagos = {}
-    if habilitado:
+    if contrato is not None and indices is not None and familia in ("cer", "dl", "var", "capv"):
+        from .pagos_indexados import proyectar_pagos
+        # IAMC expresa los flujos dólar linked al A3500 de su bloque macro, que puede
+        # ser anterior a la fecha del cierre (el 12/11/2026 usó el del 11/11).
+        fila = dict(fila, _fecha_a3500_iamc=_fecha_a3500_iamc(cierre, fecha_cierre))
+        pagos = {fecha: Pago(fecha, amortizacion, renta, origen, dual)
+                 for fecha, amortizacion, renta, origen, dual in proyectar_pagos(
+                     fila, contrato, fecha_cierre, liquidacion, indices, avisos)}
+        habilitado, moneda, plaza = True, "ARS", "ARS"
+    elif habilitado:
         if moneda not in ("ARS", "USD") or moneda == "USD" and plaza not in ("MEP", "CCL"):
             raise ValueError("{}: moneda o plaza inválida para un flujo de tasa fija.".format(ticker))
         if not isinstance(fila.get("f"), list):
@@ -98,10 +117,16 @@ def cronograma_iamc(cierre, ticker, grupo):
                       [pagos[fecha] for fecha in sorted(pagos)])
 
 
-def _serie(cierres, ticker, grupo):
+def _serie(cierres, ticker, grupo, *, contrato=None, indices=None, avisos=None):
     serie = []
     for cierre in sorted(cierres, key=_fecha_cierre):
-        cronograma = cronograma_iamc(cierre, ticker, grupo)
+        try:
+            cronograma = cronograma_iamc(cierre, ticker, grupo, contrato=contrato, indices=indices, avisos=avisos)
+        except (ValueError, DecimalException, KeyError, TypeError) as error:
+            if contrato is None or cierre is max(cierres, key=_fecha_cierre):
+                raise
+            avisos.append("Cierre IAMC del {} sin proyección: {}.".format(_fecha_cierre(cierre), error))
+            cronograma = None
         if cronograma is None:
             liquidacion = _fecha(cierre.get("fecha_liquidacion"), "Liquidación del cierre IAMC")
             serie.append((liquidacion, {}, None))
@@ -222,15 +247,23 @@ def _moneda(cronograma):
 def _pago(pago, nominales, hoy):
     factor = None if nominales is None else nominales / 100
     lunes = pago.fecha + timedelta(days=7 - pago.fecha.weekday()) if pago.fecha.weekday() >= 5 else None
-    return {"fecha": pago.fecha.isoformat(), "fecha_cobro": lunes.isoformat() if lunes else None,
+    fila = {"fecha": pago.fecha.isoformat(), "fecha_cobro": lunes.isoformat() if lunes else None,
             "amortizacion": _importe(pago.amortizacion * factor if factor is not None else None),
             "renta": _importe(pago.renta * factor if factor is not None else None),
             "total": _importe(pago.total * factor if factor is not None else None),
             "origen": pago.origen,
             "estado": "proyectado" if pago.fecha > hoy else "debería haberse cobrado"}
+    if pago.dual is not None:
+        pata, diferencia = pago.dual
+        fila["pata"] = pata
+        fila["diferencia_patas"] = _importe(diferencia * factor if factor is not None else None)
+        fila["origen"] += " · pata " + pata
+        if factor is not None:
+            fila["origen"] += " (diferencia ARS " + format(diferencia * factor, ".2f") + ")"
+    return fila
 
 
-def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy):
+def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy, contrato=None, indices=None):
     from .letras import precio_en_moneda_flujo
 
     nominales = Decimal(str(referencia["cantidad_restante"]))
@@ -267,6 +300,24 @@ def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy
     total = sum((pago.total for pago in cronograma.pagos), Decimal(0)) * nominales / 100
     tir = tir_compra(precio, liquidacion, cronograma.pagos)
     fila.update(total_a_cobrar=_importe(total), resultado_vto=_importe(total - inversion), tir=_importe(tir))
+    if vigente.familia != _FIJA:
+        fila["tir_estimada"] = True
+    if vigente.familia == "cer" and contrato and indices:
+        from .pagos_indexados import _cer, _referencia
+        try:
+            inicial = _decimal(contrato["valor_inicial"], "CER inicial")
+            # El precio real se deflacta con el CER de la referencia contractual de la
+            # liquidación, igual que los pagos.
+            ref_liq = _referencia(liquidacion, contrato.get("rezago_habiles"), indices["feriados"], [])
+            precio_real = precio * inicial / _cer(indices, ref_liq).valor
+            pagos_reales = []
+            for pago in cronograma.pagos:
+                ref = _referencia(pago.fecha, contrato.get("rezago_habiles"), indices["feriados"], [])
+                factor = inicial / _cer(indices, ref).valor
+                pagos_reales.append(Pago(pago.fecha, pago.amortizacion * factor, pago.renta * factor, pago.origen))
+            fila["tir_real"] = _importe(tir_compra(precio_real, liquidacion, pagos_reales))
+        except (ValueError, DecimalException, KeyError) as error:
+            fila["motivo_tir_real"] = str(error)
     if tir is None:
         fila["motivo"] = "TIR sin dato: fuera del intervalo de cálculo"
     return fila
@@ -339,7 +390,9 @@ def _control_cobro(registros, teorico, cronograma, origen):
 
 def _pagos_posicion(seleccion, vigente, nominales, base, movimientos, extractos, hoy, dia_cero):
     fechas = sorted(seleccion)
-    cobros = _asignar_cobros(fechas, (m for m in movimientos if m["tipo"] in ("renta", "amortizacion")), hoy)
+    fechas_control = [fecha for fecha in fechas if dia_cero is not None and fecha >= dia_cero]
+    cobros = _asignar_cobros(fechas_control,
+                            (m for m in movimientos if m["tipo"] in ("renta", "amortizacion")), hoy)
     historicos = _asignar_cobros(fechas, extractos, hoy)
     filas = []
     for fecha in fechas:
@@ -407,10 +460,8 @@ def _fila_posicion(ticker, nominales):
             "pagos_restantes": None, "compras": [], "pagos": []}
 
 
-def _posicion(posicion, instrumentos, cierres, fecha_cierre, lotes, precios, base,
-              movimientos, extractos, hoy, dia_cero, avisos):
-    ticker = posicion.ticker
-    nominales = Decimal(str(posicion.cantidad))
+def _posicion(ticker, nominales, instrumentos, cierres, fecha_cierre, lotes, precios, base,
+              movimientos, extractos, hoy, dia_cero, avisos, indices):
     fila = _fila_posicion(ticker, nominales)
     configuracion = instrumentos.get(ticker, {})
     vinculo = configuracion.get("iamc") if isinstance(configuracion, dict) else None
@@ -423,8 +474,13 @@ def _posicion(posicion, instrumentos, cierres, fecha_cierre, lotes, precios, bas
     if fecha_cierre is None:
         fila["motivo"] = "sin cronograma: falta un cierre de IAMC guardado"
         return fila
+    contrato = vinculo.get("indice")
+    if contrato is not None and not isinstance(contrato, dict):
+        fila["motivo"] = "proyección pendiente: bloque contractual de índice inválido"
+        return fila
     try:
-        serie = _serie(cierres, vinculo["ticker"], vinculo["grupo"])
+        serie = _serie(cierres, vinculo["ticker"], vinculo["grupo"], contrato=contrato,
+                       indices=indices, avisos=avisos)
         vigente = serie[-1][2]
         if vigente is None or vigente.habilitado and not vigente.pagos:
             fila["motivo"] = "sin cronograma en IAMC al {}".format(fecha_cierre)
@@ -434,8 +490,9 @@ def _posicion(posicion, instrumentos, cierres, fecha_cierre, lotes, precios, bas
             return fila
         manuales = _configuracion_manual(vinculo, ticker, avisos)
         seleccion, primera_liq, advertencias = _fusionar_pagos(serie, manuales)
-    except (ValueError, DecimalException) as error:
-        fila["motivo"] = "sin cronograma válido en IAMC al {}".format(fecha_cierre)
+    except (ValueError, DecimalException, KeyError, TypeError) as error:
+        fila["motivo"] = ("proyección pendiente: " + str(error) if contrato is not None else
+                          "sin cronograma válido en IAMC al {}".format(fecha_cierre))
         avisos.append("{}: {}".format(ticker, error))
         return fila
     avisos.extend("{}: {}".format(ticker, aviso) for aviso in advertencias)
@@ -451,13 +508,14 @@ def _posicion(posicion, instrumentos, cierres, fecha_cierre, lotes, precios, bas
     fila.update(moneda=vigente.moneda, plaza=vigente.plaza, moneda_etiqueta=_moneda(vigente),
                 pagos=pagos, proximo_pago=futuros[0] if futuros else None, pagos_restantes=len(futuros),
                 total_proyectado=_importe(sum((Decimal(p["total"]) for p in futuros), Decimal(0))),
-                compras=[_compra(ref, precios.get(ref["referencia"]), vigente, seleccion, primera_liq, manuales, hoy)
+                compras=[_compra(ref, precios.get(ref["referencia"]), vigente, seleccion, primera_liq, manuales, hoy,
+                                  contrato, indices)
                          for ref in lotes])
     return fila
 
 
 def calcular_flujo(base, movimientos, instrumentos, cierres, compras=None, letras=None, hoy=None,
-                   fecha_dia_cero=None, *, actual=None, cobros_historial=()):
+                   fecha_dia_cero=None, *, actual=None, cobros_historial=(), indices=None):
     """Construye el panel de pagos a partir de nominales y cronogramas guardados."""
     hoy = _hoy_argentina() if hoy is None else _fecha(hoy, "Fecha de hoy")
     dia_cero = None if fecha_dia_cero is None else _fecha(fecha_dia_cero, "Día cero")
@@ -472,12 +530,27 @@ def calcular_flujo(base, movimientos, instrumentos, cierres, compras=None, letra
     normalizados, errores = _normalizados(movimientos)
     if errores:
         raise ErrorMovimiento(errores)
+    tipos = ("bono", "on")
+    # Las letras CER o dólar linked con contrato de índice siguen el flujo de IAMC.
+    indexadas = letras_indexadas(instrumentos)
+
+    def en_flujo(tipo, ticker):
+        return tipo in tipos or tipo == "letra" and ticker in indexadas
+
+    saldos = {p.ticker: Decimal(str(p.cantidad)) for p in actual.posiciones if en_flujo(p.tipo, p.ticker)}
+    # Una especie cerrada puede tener derecho a pagos anteriores a su venta.
+    for posicion in base.posiciones:
+        if en_flujo(posicion.tipo, posicion.ticker):
+            saldos.setdefault(posicion.ticker, Decimal(0))
     movimientos_por_ticker, lotes, extractos = defaultdict(list), defaultdict(list), defaultdict(list)
     for _, movimiento in sorted(normalizados, key=lambda fila: fila[1]["fecha"]):
-        movimientos_por_ticker[movimiento["ticker"]].append(movimiento)
+        ticker = movimiento["ticker"]
+        movimientos_por_ticker[ticker].append(movimiento)
+        if movimiento["tipo"] == "compra" and (movimiento["tipo_activo"] in tipos or ticker in indexadas):
+            saldos.setdefault(ticker, Decimal(0))
     for fila in cobros_historial:
         extractos[fila["ticker"]].append(fila)
-    referencias = referencias_compras(base, movimientos, tipos=("bono", "on"))
+    referencias = referencias_flujo(base, movimientos, instrumentos)
     for ref in referencias:
         if ref["cantidad_restante"] > 0:
             lotes[ref["ticker"]].append(ref)
@@ -486,13 +559,14 @@ def calcular_flujo(base, movimientos, instrumentos, cierres, compras=None, letra
     posiciones, calendario = [], {}
     with localcontext() as contexto:
         contexto.prec = 50
-        for posicion in actual.posiciones:
-            if posicion.tipo not in ("bono", "on"):
+        for ticker, nominales in saldos.items():
+            avisos_posicion = []
+            fila = _posicion(ticker, nominales, instrumentos, cierres, fecha_cierre, lotes[ticker],
+                             precios, inicial.get(ticker, Decimal(0)), movimientos_por_ticker[ticker],
+                             extractos[ticker], hoy, dia_cero, avisos_posicion, indices)
+            if not nominales and not fila["pagos"]:
                 continue
-            ticker = posicion.ticker
-            fila = _posicion(posicion, instrumentos, cierres, fecha_cierre, lotes[ticker], precios,
-                             inicial.get(ticker, Decimal(0)), movimientos_por_ticker[ticker], extractos[ticker],
-                             hoy, dia_cero, avisos)
+            avisos.extend(avisos_posicion)
             posiciones.append(fila)
             for pago in fila["pagos"]:
                 # Un pago anterior al día cero figura en el control, sin importe
@@ -501,6 +575,8 @@ def calcular_flujo(base, movimientos, instrumentos, cierres, compras=None, letra
                     _sumar_calendario(calendario, fila["moneda_etiqueta"], pago)
         for letra in (letras or {}).get("posiciones", []):
             ticker = letra["ticker"]
+            if ticker in indexadas:
+                continue
             habilitada = letra["familia"] in ("LECAP", "BONCAP")
             total = letra["pago_vencimiento"]
             if not habilitada or total is None:
@@ -510,13 +586,12 @@ def calcular_flujo(base, movimientos, instrumentos, cierres, compras=None, letra
                 posiciones.append(fila)
                 continue
             fecha = _fecha(letra["vencimiento"], "Vencimiento de letra")
-            if fecha < hoy:
+            if fecha <= hoy:
                 cantidad = _cantidad_en_fecha(fecha, dia_cero, inicial.get(ticker, Decimal(0)),
                                              movimientos_por_ticker[ticker])
-                if cantidad == 0:
+                if cantidad is None or cantidad == 0:
                     continue
-                total = (_importe(cantidad / Decimal(letra["base_nominal"]) * Decimal(letra["valor_por_base"]))
-                         if cantidad is not None else None)
+                total = _importe(cantidad / Decimal(letra["base_nominal"]) * Decimal(letra["valor_por_base"]))
             estado = "proyectado" if fecha > hoy else "debería haberse cobrado"
             _sumar_calendario(calendario, "ARS", {"fecha": fecha.isoformat(), "estado": estado, "total": total})
     # Una moneda ausente no tiene pagos ese mes; presente con None, importe sin dato.
