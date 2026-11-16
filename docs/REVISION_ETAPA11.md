@@ -94,7 +94,7 @@ Al hacerlo aparecieron tres errores más, corregidos con pruebas en `tests/test_
    LELINK, capitalizable) no tiene pagos antes del vencimiento: ahora se toma como completo. Un título con
    cupones sigue pidiendo los pagos del tramo.
 7. **El tablero se rompía** al mostrar la primera TIR de un título ajustable: el texto "(estimada, ARS)" se
-   sumaba a una tupla. Habría impedido generar el dashboard de Mariano. Ahora la TIR anotada va como texto
+   sumaba a una tupla. Habría impedido generar el dashboard de mdm. Ahora la TIR anotada va como texto
    en pantalla y en Excel. Además, la TIR solo figura "estimada" si algún pago usa el REM o un supuesto
    manual: la de X30N6, con el CER ya publicado, es definitiva.
 
