@@ -298,6 +298,10 @@ tir_compra(precio, liquidacion, pagos) -> Decimal | None
   por 100 VN en la moneda de los flujos. `None` si no hay pagos o no hay solución en `(-0,99; 10)`.
 - Los importes son `Decimal`, convertidos desde el texto del número (`Decimal(str(x))`), para que 0.42
   sea exactamente `Decimal("0.42")`. Ninguna función modifica lo recibido.
+- Etapa 13, en `datos-cartera.flujo_fondos`: cada compra suma `intereses_corridos`, `ganancia_precio`,
+  `intereses` y, si el inicio del cupón se supuso, `intereses_corridos_estimados`; sin separación,
+  `motivo_capital`. Cada pago de la compra suma `capital` y `ganancia`. Cada posición suma
+  `capital_pendiente` y `ganancia_pendiente` (o `None`). Importes como texto, igual que los demás.
 
 ## `cartera.indices`
 
@@ -407,11 +411,13 @@ exportar_pdf(ruta_html, ruta_pdf, navegador=None) -> Path
   | `composicion` | lista de `{"clase", "valuacion", "peso", "tickers"}`, por valuación descendente |
   | `peso_dolares` | peso de las clases que cobran en dólares |
   | `tenencia` | lista de `{"ticker", "descripcion", "clase", "cantidad", "precio", "valuacion", "peso", "vs_compra", "vencimiento"}` |
-  | `rendimientos` | lista de `{"ticker", "moneda", "tir", "tir_min", "tir_max", "estimada", "compras", "proximo_pago", "total_a_cobrar"}`; `proximo_pago` es `{"fecha", "importe"}` |
+  | `rendimientos` | lista de `{"ticker", "moneda", "tir", "tir_min", "tir_max", "estimada", "compras", "proximo_pago", "total_a_cobrar", "capital", "ganancia"}`; `proximo_pago` es `{"fecha", "importe"}` |
   | `a_cobrar` | `{moneda: total}` solo con las monedas presentes (`ARS`, `USD MEP`, `USD cable`) |
-  | `proximos_cobros` | lista de `{"fecha", "ticker", "concepto", "moneda", "importe", "estimado"}` |
+  | `a_cobrar_capital` | `{moneda: lo que devuelve lo invertido}` con las mismas monedas; `None` si a algún título de esa moneda le falta la separación |
+  | `proximos_cobros` | lista de `{"fecha", "ticker", "concepto", "moneda", "importe", "capital", "estimado"}` |
+  | `cobros_por_anio_capital` | `{"AAAA": {moneda: capital}}` de los pagos futuros; `None` en una moneda si a algún pago de ese año le falta la separación |
   | `cobros_por_anio` | `{"AAAA": {moneda: total}}` con todas las monedas del calendario |
-  | `resultados` | `None` sin `historial`; si no, `{"ganancia_realizada", "ventas", "rentas_ars", "rentas_usd", "rentas_equivalente", "otros", "aportes", "retiros", "acumulado", "operaciones"}`, con `operaciones` = lista de `{"ticker", "fecha", "resultado"}` por fecha |
+  | `resultados` | `None` sin `historial`; si no, `{"ganancia_realizada", "ventas", "rentas_ars", "rentas_usd", "rentas_equivalente", "otros", "aportes", "retiros", "tenencia", "desde_dia_cero", "incompletos", "faltantes", "acumulado", "operaciones"}`. `tenencia` es la suma de `posiciones[].resultado` (`None` si alguna falta); `desde_dia_cero`, el resultado de los movimientos posteriores al día cero; `incompletos`, la cantidad de operaciones del historial sin resultado; `faltantes`, la lista de textos que explican por qué `acumulado` es `None`; `operaciones` = lista de `{"ticker", "fecha", "resultado"}` por fecha |
 
   Fechas como `date`. Pesos y tasas en tanto por uno.
 - `informe_html` arma el documento completo de [INFORME.md](INFORME.md).

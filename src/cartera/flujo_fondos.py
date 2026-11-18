@@ -263,6 +263,59 @@ def _pago(pago, nominales, hoy):
     return fila
 
 
+def _intereses_corridos(seleccion, pagos, liquidacion):
+    """Renta devengada a la liquidación, por 100 VN, y si la fecha de inicio del cupón es estimada.
+
+    El precio sucio la incluye y el primer cupón la devuelve: es capital, no ganancia. Se reparte
+    lineal en días corridos entre el pago anterior y el siguiente. Si el pago anterior no está en el
+    cronograma, se supone que el período mide lo mismo que el siguiente.
+    """
+    primero = pagos[0]
+    if primero.renta == 0:
+        return Decimal(0), False
+    anteriores = [fecha for fecha in seleccion if fecha <= liquidacion]
+    estimado = not anteriores
+    if anteriores:
+        inicio = max(anteriores)
+    elif len(pagos) > 1:
+        inicio = primero.fecha - (pagos[1].fecha - primero.fecha)
+    else:
+        return None, True
+    periodo = (primero.fecha - inicio).days
+    if periodo <= 0:
+        return None, True
+    transcurrido = min(max((liquidacion - inicio).days, 0), periodo)
+    return primero.renta * transcurrido / periodo, estimado
+
+
+def _separar_capital(fila, seleccion, pagos, liquidacion, inversion, nominales):
+    """Divide lo que se cobra en capital invertido que vuelve y ganancia (docs/FLUJO_FONDOS.md).
+
+    capital: la inversión (precio sucio). Los intereses corridos pagados al comprar vuelven con el
+    primer cupón; el resto se recupera con cada amortización, en proporción a los nominales que
+    amortiza. ganancia_precio = amortizaciones − capital limpio (comprar bajo la par, ajuste por
+    índice); intereses = rentas − intereses corridos.
+    """
+    factor = nominales / 100
+    corrido, estimado = _intereses_corridos(seleccion, pagos, liquidacion)
+    amortizacion = sum((pago.amortizacion for pago in pagos), Decimal(0)) * factor
+    renta = sum((pago.renta for pago in pagos), Decimal(0)) * factor
+    if corrido is None or amortizacion <= 0:
+        fila["motivo_capital"] = ("sin dato: no se pudo estimar el inicio del cupón" if corrido is None
+                                  else "sin dato: el título no amortiza capital")
+        return
+    corrido *= factor
+    limpio = inversion - corrido
+    fila.update(intereses_corridos=_importe(corrido), ganancia_precio=_importe(amortizacion - limpio),
+                intereses=_importe(renta - corrido))
+    if estimado and corrido:
+        fila["intereses_corridos_estimados"] = True
+    for indice, (pago, salida) in enumerate(zip(pagos, fila["pagos"])):
+        capital = limpio * pago.amortizacion * factor / amortizacion + (corrido if indice == 0 else 0)
+        salida["capital"] = _importe(capital)
+        salida["ganancia"] = _importe(pago.total * factor - capital)
+
+
 def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy, contrato=None, indices=None):
     from .letras import precio_en_moneda_flujo
 
@@ -304,6 +357,7 @@ def _compra(referencia, registro, vigente, seleccion, primera_liq, manuales, hoy
     total = sum((pago.total for pago in cronograma.pagos), Decimal(0)) * nominales / 100
     tir = tir_compra(precio, liquidacion, cronograma.pagos)
     fila.update(total_a_cobrar=_importe(total), resultado_vto=_importe(total - inversion), tir=_importe(tir))
+    _separar_capital(fila, seleccion, cronograma.pagos, liquidacion, inversion, nominales)
     # La TIR es estimada si algún pago usa el REM o un supuesto manual; con todos los
     # índices publicados es definitiva aunque el título sea ajustable.
     if vigente.familia != _FIJA and any(not str(p.origen).startswith("definitivo") for p in cronograma.pagos):
@@ -520,7 +574,26 @@ def _posicion(ticker, nominales, instrumentos, cierres, fecha_cierre, lotes, pre
                 compras=[_compra(ref, precios.get(ref["referencia"]), vigente, seleccion, primera_liq, manuales, hoy,
                                   contrato, indices)
                          for ref in lotes])
+    fila.update(_capital_pendiente(fila["compras"], futuros, saldo_lotes == nominales))
     return fila
+
+
+def _capital_pendiente(compras, futuros, lotes_completos):
+    """Cuánto de lo que falta cobrar devuelve capital invertido y cuánto es ganancia.
+
+    Solo con todas las compras separadas: si a una le falta el precio, los dos quedan sin dato.
+    """
+    vacio = {"capital_pendiente": None, "ganancia_pendiente": None}
+    if not futuros or not compras or not lotes_completos:
+        return vacio
+    capital = Decimal(0)
+    for compra in compras:
+        proyectados = [pago for pago in compra["pagos"] if pago["estado"] == "proyectado"]
+        if any(pago.get("capital") is None for pago in proyectados):
+            return vacio
+        capital += sum((Decimal(pago["capital"]) for pago in proyectados), Decimal(0))
+    total = sum((Decimal(pago["total"]) for pago in futuros), Decimal(0))
+    return {"capital_pendiente": _importe(capital), "ganancia_pendiente": _importe(total - capital)}
 
 
 def calcular_flujo(base, movimientos, instrumentos, cierres, compras=None, letras=None, hoy=None,

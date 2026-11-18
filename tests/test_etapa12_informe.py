@@ -134,7 +134,9 @@ class Modelo(unittest.TestCase):
         self.assertEqual(r["ventas"], D("200000"))
         self.assertEqual((r["rentas_ars"], r["rentas_usd"], r["rentas_equivalente"]), (D("50000"), D("20"), D("80000")))
         self.assertEqual(r["otros"], D("20000"))
-        self.assertEqual(r["acumulado"], D("2010000") - D("3000000") + D("1200000"))
+        # Versión 1.1: ganancia realizada + movimientos desde el día cero (ninguno) + tenencia actual.
+        self.assertEqual((r["tenencia"], r["desde_dia_cero"], r["faltantes"]), (D("95000"), D("0"), []))
+        self.assertEqual(r["acumulado"], D("300000") + D("95000"))
         self.assertEqual([o["ticker"] for o in r["operaciones"]], ["TX26", "S31O5"])
         self.assertEqual(r["operaciones"][1], {"ticker": "S31O5", "fecha": dt.date(2025, 10, 31), "resultado": D("-10000")})
 

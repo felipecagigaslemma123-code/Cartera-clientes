@@ -187,6 +187,38 @@ TIR_compra       : precio_flujo = Σ (amort_t + renta_t) / (1 + TIR)^(dias_t / 3
 - `resultado_vto` es una suma nominal de dinero a cobrar en distintas fechas. Se presenta con esa
   aclaración, no como ganancia actual.
 
+### Capital que vuelve y ganancia
+
+Pedido de Felipe del 18/11/2026 (etapa 13). Lo que se cobra de un bono no es todo ganancia: una parte
+devuelve lo que se pagó al comprarlo. Para cada compra con precio, en la moneda de los flujos y con sus
+nominales `N`:
+
+```text
+corrido          = renta del primer pago posterior a la liquidación × días desde el pago anterior hasta
+                   la liquidación / días del período                      (intereses corridos pagados)
+capital_limpio   = inversion − corrido × N / 100
+amortizaciones   = Σ amortizacion_t × N / 100
+ganancia_precio  = amortizaciones − capital_limpio      comprar bajo la par (o sobre: negativa) y,
+                                                        en un ajustable, el ajuste por el índice
+intereses        = Σ renta_t × N / 100 − corrido × N / 100
+resultado_vto    = ganancia_precio + intereses          (igual que antes)
+```
+
+- **Por pago:** `capital_t = capital_limpio × amortizacion_t / Σ amortizacion`, y el primer pago suma además
+  el corrido. `ganancia_t = pago_t − capital_t`. La suma de los `capital_t` es exactamente la inversión.
+- **Pago anterior:** la fecha de pago más cercana anterior o igual a la liquidación en el cronograma del
+  título. Si no está (cronogramas manuales que empiezan después de la compra), se supone que el período
+  mide lo mismo que el siguiente y se marca `intereses_corridos_estimados`.
+- Lineal en días corridos: no reproduce la convención de cada prospecto (30/360, real/365). El error es una
+  fracción del cupón y solo mueve importe entre capital e intereses: el total no cambia.
+- Sin dato (`motivo_capital`) si el título no amortiza o no se puede ubicar el inicio del cupón.
+- **Por posición:** `capital_pendiente` = suma del capital de los pagos `proyectado` de sus compras, y
+  `ganancia_pendiente` = `total_proyectado − capital_pendiente`. Sin dato si alguna compra no tiene la
+  separación o si los lotes no suman los nominales de la posición.
+- Dashboard: "Devuelve capital" y "Ganancia" en la tarjeta de la posición y en los pagos de cada compra;
+  "Por precio" y "Por intereses" en cada compra, con una nota sobre los intereses corridos. El Excel los
+  recibe en las mismas tablas.
+
 ### Lo cobrado y lo por cobrar
 
 - Pagos con fecha contractual menor o igual a hoy: **"debería haberse cobrado"**.

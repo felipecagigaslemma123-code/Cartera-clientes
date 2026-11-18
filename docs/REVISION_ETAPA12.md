@@ -46,3 +46,32 @@ Los cambios 1 a 4 están en la especificación (`docs/INFORME.md`) y los cubren 
   coincidan con su dashboard. Sin día cero, los dos dicen "sin dato" en patrimonio y resultado acumulado.
 - **Rentas en pesos de mdm.** El indicador dice $ 0 porque su historial no registra rentas en pesos. Puede ser
   correcto, pero no se revisó contra los extractos.
+
+## Corrección del 17/11/2026: resultado acumulado (versión 1.1)
+
+Al analizar una cartera real con tenencias anteriores al primer extracto apareció un error de la versión 1.0.
+El resultado acumulado era patrimonio − aportes + retiros, y esas tenencias entran sin un aporte registrado:
+el informe las contaba como ganancia. En esa cartera daba de más por todo su valor de entrada. Lo mismo pasa
+con los títulos transferidos desde otro broker. No se veía porque, sin día cero, el patrimonio es "sin dato".
+
+**Nuevo cálculo, aprobado por Felipe:** ganancia realizada + resultado de los movimientos desde el día cero +
+resultado de la tenencia actual frente a su costo. Como cada tenencia previa tiene su costo de entrada, lo
+ganado antes no cuenta. No necesita el patrimonio ni el día cero. No incluye la variación del dólar sobre el
+efectivo en dólares.
+
+| Control con los dashboards reales | Resultado |
+|---|---|
+| Cartera con tenencias previas, sin día cero | Antes "sin dato" (y de más al cargar el día cero); ahora coincide con un cálculo independiente por patrimonio, capital inicial y aportes, con $ 58 de diferencia por conversiones de dólares |
+| Cartera con historia completa y día cero | Antes y ahora difieren en $ 1.767 sobre $ 512.405 (0,3 %): la variación del dólar sobre el efectivo y conversiones |
+| Cartera con una operación del historial sin resultado | Ahora "sin dato", con el motivo. Antes la ganancia realizada se mostraba como completa: ahora aclara que suma lo conocido |
+
+Además, la nota dice el resultado de la tenencia con palabras ("una pérdida de $ …") en lugar de un monto con
+signo negativo, y el signo pesos no se separa del número al cortar el renglón. Con doce años de cobros en
+dólares y 59 operaciones, la hoja de flujo se pasaba 8 píxeles y las aclaraciones quedaban solas en una quinta
+página: el gráfico de cobros por año pasó de 160 a 150 de alto y los renglones de próximos cobros, de 5 a 4
+píxeles de margen. Pruebas nuevas en `tests/test_extra_informe_acumulado.py`; se actualizó la que esperaba la
+fórmula anterior en `tests/test_etapa12_informe.py`. Suite: 1010 pruebas, todas aprobadas.
+
+Sigue pendiente: Bull informa juntas renta y amortización, así que en una cartera con amortizaciones parciales
+"Rentas cobradas" incluye capital devuelto. El resultado acumulado no cambia: esa parte se compensa con la
+tenencia.

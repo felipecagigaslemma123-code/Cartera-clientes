@@ -756,10 +756,12 @@ def _panel_flujo(flujo):
         proximo = posicion.get("proximo_pago") or {}
         partes.append('<article class="tarjeta"><h3>' + _texto(ticker) + '</h3>')
         partes.append(tabla(ticker, ["VN vigentes", "Moneda de cobro", "Próximo pago", "Cobro estimado",
-                                    "Importe próximo pago", "Total proyectado", "Pagos restantes"], [[
+                                    "Importe próximo pago", "Total proyectado", "Devuelve capital",
+                                    "Ganancia", "Pagos restantes"], [[
             _numero_flujo(posicion.get("cantidad"), 3), moneda, _fecha_flujo(proximo.get("fecha")),
             fecha_cobro(proximo), _numero_flujo(proximo.get("total")),
-            _numero_flujo(posicion.get("total_proyectado")), _numero_flujo(posicion.get("pagos_restantes"), 3),
+            _numero_flujo(posicion.get("total_proyectado")), _numero_flujo(posicion.get("capital_pendiente")),
+            _numero_flujo(posicion.get("ganancia_pendiente")), _numero_flujo(posicion.get("pagos_restantes"), 3),
         ]]))
         indexados = [[_fecha_flujo(pago.get("fecha")), _numero_flujo(pago.get("total")),
                       pago["estado"], pago["origen"]] for pago in posicion.get("pagos", [])
@@ -795,8 +797,10 @@ def _panel_flujo(flujo):
                 encabezados += ["Tipo de cambio ARS/USD", "Precio en moneda de cobro por 100 VN"]
                 fila += [_numero_flujo(compra["tc"], 3), _numero_flujo(compra.get("precio_flujo"))]
             encabezados += ["Inversión" + unidad, "Total a cobrar" + unidad,
-                            "Resultado a vencimiento" + unidad, "TIR de compra"]
-            fila += [_numero_flujo(compra.get(campo)) for campo in ("inversion", "total_a_cobrar", "resultado_vto")]
+                            "Resultado a vencimiento" + unidad, "Por precio" + unidad, "Por intereses" + unidad,
+                            "TIR de compra"]
+            fila += [_numero_flujo(compra.get(campo)) for campo in
+                     ("inversion", "total_a_cobrar", "resultado_vto", "ganancia_precio", "intereses")]
             # _numero_flujo devuelve (texto, valor de Excel). Una TIR estimada se anota en el
             # texto, y Excel recibe ese mismo texto para que no parezca un dato observado.
             tir = _numero_flujo(compra.get("tir"), 4)
@@ -813,14 +817,24 @@ def _panel_flujo(flujo):
             partes.append(tabla(ticker + " · " + titulo, encabezados, [fila]))
             if compra.get("motivo"):
                 partes.append(nota(compra["motivo"], "aviso"))
+            if compra.get("intereses_corridos"):
+                partes.append(nota("El precio incluye {} de intereses corridos{}: vuelven con el primer cupón como "
+                                   "capital, no como ganancia.".format(
+                                       _numero_flujo(compra["intereses_corridos"])[0] + unidad,
+                                       " (estimados: falta el pago anterior a la compra)"
+                                       if compra.get("intereses_corridos_estimados") else "")))
+            if compra.get("motivo_capital"):
+                partes.append(nota("Capital y ganancia " + compra["motivo_capital"] + "."))
             pagos = [[_fecha_flujo(pago.get("fecha")), fecha_cobro(pago), _numero_flujo(pago.get("renta")),
                       _numero_flujo(pago.get("amortizacion")), _numero_flujo(pago.get("total")),
+                      _numero_flujo(pago.get("capital")), _numero_flujo(pago.get("ganancia")),
                       pago["estado"], pago["origen"]] for pago in compra.get("pagos", [])]
             if pagos:
                 partes.append('<h4>Pagos de la compra</h4>')
                 partes.append(tabla(ticker + " · " + titulo + " · Pagos",
                                     ["Fecha contractual", "Cobro estimado", "Renta" + unidad,
-                                     "Amortización" + unidad, "Total" + unidad, "Estado", "Origen"], pagos))
+                                     "Amortización" + unidad, "Total" + unidad, "Devuelve capital" + unidad,
+                                     "Ganancia" + unidad, "Estado", "Origen"], pagos))
             partes.append('</details>')
         partes.append('</article>')
     if pendientes:

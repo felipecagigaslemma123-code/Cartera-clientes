@@ -1,6 +1,9 @@
 # Informe para el cliente
 
-Versión 1.0 · 16/11/2026 · Pedido de Felipe para la etapa 12.
+Versión 1.2 · 18/11/2026 · Pedido de Felipe para la etapa 12. La 1.1 cambia el cálculo del resultado acumulado
+(sección 8): restarle los aportes al patrimonio daba de más en una cartera con tenencias anteriores al primer
+extracto. La 1.2 separa, en lo que se va a cobrar, lo que devuelve lo invertido de la ganancia (secciones 5 y
+6; etapa 13).
 
 ## Qué se busca
 
@@ -106,9 +109,21 @@ Barras horizontales con la TIR de cada título del flujo de fondos y la TEA de c
 
 ### 5. Cobros por título
 
-Tabla con título (y su cantidad de compras), moneda de cobro, fecha y monto del próximo pago, total a cobrar
-hasta el vencimiento y TIR. Debajo, un indicador por moneda con el **total a cobrar**, sumado solo dentro de
-cada moneda: `ARS`, `USD MEP` y `USD cable` van en indicadores separados. **Nunca se suman monedas.**
+Tabla con título (cantidad de compras y moneda de cobro abajo), próximo pago (fecha y monto), total a cobrar
+hasta el vencimiento, **cuánto de eso devuelve lo invertido**, **cuánto es ganancia** y TIR. Debajo, un
+indicador por moneda con el **total a cobrar**, sumado solo dentro de cada moneda: `ARS`, `USD MEP` y
+`USD cable` van en indicadores separados. **Nunca se suman monedas.** Cada indicador lleva una barra con las
+dos partes y el texto "X devuelve lo invertido · Y de ganancia".
+
+- Lo que devuelve lo invertido de un título del flujo: `capital_pendiente` (docs/FLUJO_FONDOS.md, "Capital
+  que vuelve y ganancia"); la ganancia, `ganancia_pendiente`. De una letra: Σ `cantidad_restante × precio /
+  100` de sus lotes, y la ganancia es el pago menos eso; sin dato si los lotes no suman la cantidad de la
+  letra.
+- Si a un título de una moneda le falta la separación, el indicador de esa moneda no la muestra (no se
+  completa con una parte).
+- Una nota explica que no todo es ganancia: una parte devuelve lo pagado al comprar, incluidos los intereses
+  corridos, y la ganancia son los intereses y la diferencia por comprar bajo la par (en un ajustable, también
+  el ajuste por el índice).
 
 - Total a cobrar de un título del flujo: `total_proyectado`. De una letra: `pago_vencimiento`.
 - Una letra ajustable (LECER, LELINK) aparece tanto en `letras` como en `flujo_fondos`: se toma solo la del
@@ -118,7 +133,10 @@ cada moneda: `ARS`, `USD MEP` y `USD cable` van en indicadores separados. **Nunc
 ### 6. Próximos cobros
 
 Lista con los próximos siete eventos posteriores a la fecha del informe: fecha, título, concepto ("Renta",
-"Renta y amortización" o "Vencimiento") e importe con su moneda. Un pago estimado dice "estimado".
+"Renta y amortización" o "Vencimiento") e importe con su moneda. Un pago estimado dice "estimado". Un pago
+que amortiza agrega entre paréntesis cuánto es ganancia ("Vencimiento ($ 53.744 de ganancia)"): el resto
+devuelve lo invertido. Una renta sola no lleva el paréntesis: es toda ganancia, salvo unos centavos de
+intereses corridos de una compra reciente.
 
 - Sale de los pagos `proyectado` de cada posición del flujo y de los vencimientos de las letras.
 - Concepto: "Vencimiento" si la fecha es el `vencimiento` de la posición (o, si la posición no lo tiene, si
@@ -129,17 +147,35 @@ Lista con los próximos siete eventos posteriores a la fecha del informe: fecha,
 ### 7. Cobros por año
 
 Barras por año con los cobros en dólares de `flujo_fondos.calendario`, una barra por moneda (MEP y cable,
-juntas pero sin apilarse) y el valor arriba de cada una. Los pesos se informan en el indicador de la
+juntas pero sin apilarse) y el valor arriba de cada una. Cada barra se parte en dos tonos: abajo, en el color
+de la moneda, lo que devuelve lo invertido; arriba, en verde, la ganancia (`cobros_por_anio_capital`: suma
+del capital de los pagos de ese año y moneda). Si a algún pago de ese año y moneda le falta la separación,
+la barra va de un solo color. La leyenda suma "Ganancia" solo si alguna barra está partida. Los pesos se informan en el indicador de la
 sección 5, no en este gráfico, porque su escala lo aplastaría.
 
 ### 8. Resultados desde el inicio
 
 Solo si existe `historial`. Tres indicadores:
 
-- **Ganancia realizada** = `historial.total_conocido`.
+- **Ganancia realizada** = `historial.total_conocido`. Si el historial tiene operaciones sin resultado
+  (`ventas_sin_dato`, `valores_sin_dato` o `cantidad_sin_clasificar` mayores que cero), el indicador aclara que
+  suma solo lo conocido y cuántas faltan.
 - **Rentas cobradas**: pesos y dólares de `ingresos.renta`, por separado.
-- **Resultado acumulado** = patrimonio total − `aportes.equivalente_ars` + `retiros.equivalente_ars`. Si falta
-  el patrimonio, "sin dato".
+- **Resultado acumulado** = ganancia realizada + resultado desde el día cero + resultado de la tenencia actual:
+  - Resultado desde el día cero: la suma de `realizados[].resultado` (ventas registradas como movimientos) más
+    `integral.rentas`, `integral.dividendos` e `integral.amortizaciones`, menos `integral.gastos`. Sin movimientos
+    es cero.
+  - Resultado de la tenencia actual: la suma de `posiciones[].resultado`, valuación menos costo.
+
+  No usa el patrimonio ni los aportes. Una tenencia anterior al primer extracto o un título transferido desde
+  otro broker entra en la cartera sin un aporte registrado, pero con su costo de entrada: restar los aportes al
+  patrimonio la contaba como ganancia. Por eso tampoco necesita el día cero. No incluye la variación del dólar
+  sobre el efectivo en dólares.
+
+  Es "sin dato", con el motivo en la nota, si falta la ganancia realizada, si el historial tiene operaciones sin
+  resultado, si a una posición le falta el resultado (costo o precio) o si una venta desde el día cero no tiene
+  resultado. Supone que el historial llega hasta el día cero y lo posterior está en los movimientos: si un mismo
+  período figura en los dos, se cuenta dos veces.
 
 Debajo, barras con el resultado de cada operación de `historial.realizados`, ordenadas por fecha. Las positivas
 van hacia arriba en un color y las negativas hacia abajo en otro. Cada barra lleva el ticker y el mes. Con más de
@@ -147,8 +183,10 @@ van hacia arriba en un color y las negativas hacia abajo en otro. Cada barra lle
 operaciones: con 40 barras no se lee nada.
 
 Nota con el desglose: ventas y vencimientos (`realizado_extracto`), rentas (`ingresos.renta.equivalente_ars`) y
-otros (cauciones, FCI y dividendos, netos de gastos). Aclara que los importes son **pesos nominales sin ajuste
-por inflación**.
+otros (cauciones, FCI y dividendos, netos de gastos). Explica el resultado acumulado con el resultado de la
+tenencia actual y, si no es cero, el de los movimientos desde el día cero, dichos en palabras ("una pérdida de
+$ 1.234"), o qué falta si es "sin dato". Aclara que los importes son **pesos nominales sin ajuste por
+inflación**.
 
 ### 9. Aclaraciones
 

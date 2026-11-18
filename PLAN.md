@@ -247,6 +247,23 @@ el dashboard y que el PDF sale en tres hojas sin cortes.
 
 ---
 
+## Etapa 13: Capital que vuelve y ganancia
+
+**Pedido de Felipe del 18/11/2026:** al cobrar un bono, distinguir lo que devuelve la inversión de lo que es
+ganancia, y la ganancia entre la compra bajo la par y los intereses.
+
+- `flujo_fondos`: por compra, intereses corridos, ganancia por precio e intereses; por pago, capital y
+  ganancia; por posición, capital y ganancia pendientes.
+- Dashboard y Excel con esas columnas. Informe: "devuelve lo invertido" y "ganancia" por título, por moneda y
+  en los próximos cobros que amortizan.
+
+Reglas en `docs/FLUJO_FONDOS.md` ("Capital que vuelve y ganancia"), `docs/INFORME.md` 1.2 y `docs/CONTRATO.md`.
+
+**Listo cuando** pasa `tests/test_extra_capital_ganancia.py` y Claude comprobó con carteras reales que lo que
+vuelve de cada compra suma su inversión.
+
+---
+
 ## Fuera de alcance
 
 - Evaluar lo operado en otro broker antes de la llegada del cliente.
