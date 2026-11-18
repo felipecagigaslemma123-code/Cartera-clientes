@@ -36,6 +36,11 @@ python3 -m cartera --datos RUTA informe --cliente SLUG [--salida CARPETA] [--pdf
   (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --headless=new --no-pdf-header-footer
   --print-to-pdf=...`). Si Chrome no está instalado, el HTML se escribe igual y el comando termina con un
   error que dice cómo imprimirlo desde el navegador. No se agregan dependencias de Python.
+- **Carpeta del cliente** (pedido de Felipe del 18/11/2026): si `perfil.json` tiene `carpeta_informes` (ruta
+  absoluta o relativa a la carpeta de datos, por ejemplo `"../Clientes/<carpeta del cliente>/Informes"`), el
+  comando genera el PDF aunque no se pida `--pdf` y deja una copia como `Informe de cartera AAAA-MM-DD.pdf`.
+  Crea la carpeta si no existe y reemplaza el informe de la misma fecha. Sin Chrome, deja ahí el HTML y
+  termina con error. Una ruta vacía o que no es texto es un error y no se escribe nada.
 - Si el dashboard tiene más de 3 días, el comando lo avisa por consola con la antigüedad ("el dashboard tiene
   9 días") y escribe el informe igual.
 - Errores: si falta el dashboard o su bloque de datos, el comando termina con código distinto de cero, un

@@ -862,8 +862,9 @@ def ejecutar_informe(opciones, datos):
     carpeta = _ruta_cartera(datos, opciones.cliente).parent
     try:
         datos_dashboard = leer_datos_dashboard(carpeta / "dashboard.html")
-        modelo = armar_informe(datos_dashboard, _json_opcional(carpeta / "instrumentos.json"),
-                               _json_opcional(carpeta / "perfil.json"))
+        perfil = _json_opcional(carpeta / "perfil.json")
+        entrega = _carpeta_entrega(perfil, datos)
+        modelo = armar_informe(datos_dashboard, _json_opcional(carpeta / "instrumentos.json"), perfil)
     except ErrorInforme as error:
         print(str(error), file=sys.stderr)
         return 1
@@ -878,11 +879,41 @@ def ejecutar_informe(opciones, datos):
     if antiguedad > _ANTIGUEDAD_MAXIMA:
         print("ADVERTENCIA: el dashboard tiene {} días. Si hay datos nuevos, generalo de nuevo antes del informe.".format(
             antiguedad))
-    if opciones.pdf:
+    ruta_pdf = None
+    if opciones.pdf or entrega is not None:
         try:
             ruta_pdf = exportar_pdf(ruta_html, ruta_html.with_suffix(".pdf"))
         except ErrorInforme as error:
             print(str(error), file=sys.stderr)
+            if entrega is not None:
+                _entregar(ruta_html, entrega, modelo["fecha"])
             return 1
         print("PDF guardado: {}".format(ruta_pdf))
+    if entrega is not None:
+        _entregar(ruta_pdf, entrega, modelo["fecha"])
     return 0
+
+
+def _carpeta_entrega(perfil, datos):
+    """Carpeta del cliente donde se deja una copia del informe (`perfil.carpeta_informes`).
+
+    Ruta absoluta o relativa a la carpeta de datos. None si el perfil no la define.
+    """
+    valor = (perfil or {}).get("carpeta_informes") if isinstance(perfil, dict) else None
+    if valor is None:
+        return None
+    if not isinstance(valor, str) or not valor.strip():
+        raise ErrorInforme("perfil.json: carpeta_informes debe ser una ruta.")
+    ruta = Path(valor).expanduser()
+    return (ruta if ruta.is_absolute() else Path(datos).expanduser() / ruta).resolve()
+
+
+def _entregar(origen, carpeta, fecha):
+    import shutil
+
+    carpeta.mkdir(parents=True, exist_ok=True)
+    destino = carpeta / "Informe de cartera {}{}".format(fecha.isoformat(), origen.suffix)
+    temporal = destino.with_name("." + destino.name + ".tmp")
+    shutil.copyfile(str(origen), str(temporal))
+    os.replace(str(temporal), str(destino))
+    print("Copia para el cliente: {}".format(destino))
