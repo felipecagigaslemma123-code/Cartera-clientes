@@ -3,13 +3,28 @@
 Seguimiento interno de carteras de clientes, local en una Mac. Instrucciones para el
 desarrollo en [AGENTS.md](AGENTS.md) y etapas en [PLAN.md](PLAN.md).
 
-El objetivo aprobado es medir el resultado completo desde el día cero, incorporando
-movimientos y cobros. El desarrollo se entrega por etapas: Codex implementa, Claude
-revisa y Felipe valida los criterios. Están implementadas la base inicial, los precios,
-el día cero, el dashboard, las alertas, los movimientos y el resultado completo en pesos.
-La etapa 6 agrega el rendimiento realizado histórico a partir de extractos, separado
-del seguimiento desde el día cero. La etapa 7 incorpora alertas de niveles mientras
-el dashboard está abierto, con actualización cada cinco minutos.
+**Si llegás por primera vez, empezá por el [mapa del proyecto](docs/MAPA.md):** qué hace
+cada parte (pasado, presente y futuro de la cartera, en renta fija y renta variable),
+dónde está y en qué rama trabajar.
+
+La herramienta sigue la cartera de cada cliente en tres tiempos:
+
+- **Pasado:** ganancia realizada desde los extractos de los brokers (ventas, rentas,
+  dividendos, cauciones, amortizaciones).
+- **Presente:** tenencia, valuación con precios en vivo y riesgo de la cartera.
+- **Futuro:** flujo de fondos de la renta fija por cada nominal (bonos, ON y letras,
+  incluidos los ajustables por CER, TAMAR o dólar con datos del BCRA).
+
+Las salidas son un dashboard HTML para el asesor, un informe PDF para el cliente,
+descargas en Excel y alertas. El desarrollo se entregó por etapas (14 hasta hoy, ver
+[PLAN.md](PLAN.md)): Codex implementa, Claude especifica y revisa, y Felipe valida los
+criterios. Hay 1079 pruebas automáticas, sin acceso a la red:
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests
+```
+
+Los datos de los clientes no están en el repositorio: se indican con `--datos`.
 
 ## Preparar el entorno
 
