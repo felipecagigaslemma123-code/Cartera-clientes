@@ -67,9 +67,10 @@ la Mac de Felipe. Si responde desde la red de la empresa, sirve como prueba prev
 
 ## Punto de partida técnico
 
-El cliente de las APIs de BYMA **no está en este repositorio**: está en el *Fixed Income Toolkit*, el proyecto
-de renta fija de Felipe del que salió el motor de letras de esta herramienta (`src/cartera/_motor_letras/`).
-Ahí hay:
+El cliente de las APIs de BYMA **no está en este repositorio**: está en el
+[Fixed Income Toolkit](https://github.com/felipecagigaslemma123-code/Fixed-Income-Toolkit), el proyecto de renta
+fija de Felipe del que salió el motor de letras de esta herramienta (`src/cartera/_motor_letras/`). Su revisión
+de seguridad está en `docs/SEGURIDAD.md` de ese repositorio. Ahí hay:
 
 - un cliente de solo lectura con las consultas iniciales de cada API (`src/market_data/providers/byma.py`) y su
   contrato con los manuales oficiales (`docs/providers/byma_provider_contract.md`);
