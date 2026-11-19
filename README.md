@@ -5,7 +5,11 @@ desarrollo en [AGENTS.md](AGENTS.md) y etapas en [PLAN.md](PLAN.md).
 
 **Si llegás por primera vez, empezá por el [mapa del proyecto](docs/MAPA.md):** qué hace
 cada parte (pasado, presente y futuro de la cartera, en renta fija y renta variable),
-dónde está y en qué rama trabajar.
+dónde está y en qué rama trabajar. Para sistemas también están:
+
+- [Propuesta](docs/PROPUESTA.md): las tres funcionalidades que pueden servirle a Boston.
+- [Seguridad](docs/SEGURIDAD.md): cada conexión, programa externo y escritura en disco.
+- [Pedido de APIs de BYMA](docs/PEDIDO_APIS_BYMA.md): qué se pide y para qué.
 
 La herramienta sigue la cartera de cada cliente en tres tiempos:
 
