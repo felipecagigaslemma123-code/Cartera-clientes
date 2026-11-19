@@ -365,22 +365,42 @@ derivar_base(datos, slug, reemplazar=False) -> (PuntoPartida, dict)   # cartera.
 ```
 
 `derivar_base` devuelve lo mismo que `importar_cartera` y lanza `ErrorCartera` o `ErrorHistorial`, sin escribir nada.
-`clasificar` devuelve `amortizacion` para `IOL AMORTIZACION`; `construir_historial` la resuelve como cierre o renta.
+`clasificar` devuelve `amortizacion` para `IOL AMORTIZACION`; `construir_historial` la resuelve como cierre o
+capital devuelto (historial 1.1).
+
+Historial 1.1, amortizaciones parciales ([HISTORIAL.md](HISTORIAL.md#amortizaciones-parciales)), aprobada por Felipe
+el 18/11/2026:
+
+```python
+construir_historial(filas, ajustes=(), cierres=(), mep=None, cronogramas=None) -> Historial
+derivar_base(datos, slug, reemplazar=False, solo_costos=False) -> (PuntoPartida, dict)   # cartera.almacenamiento
+```
+
+- `cronogramas`: `{ticker: [[fecha, amortizacion, renta], ...]}`, el formato de `iamc.pagos_manuales.pagos`, por
+  100 VN originales. `None` (sin cronogramas) deja `RENTA Y AMORTIZ` como `renta`, sin avisos. `correr_historial`,
+  el dashboard y `derivar_base` los leen de `instrumentos.json`; un bloque inválido genera un aviso y esa especie
+  queda sin cronograma.
+- `derivar_base(..., solo_costos=True)` necesita una base existente y reemplaza solo `precio` y `costo` de los
+  lotes, con día cero o movimientos, si posiciones y lotes coinciden; si no, `ErrorCartera` sin escribir.
 
 `Historial`:
 
 - `realizados`: lista de `RealizadoHistorico`: `ticker`, `fecha`, `cantidad`, `cantidad_sin_lote`, `importe_ars`,
-  `costo_ars`, `resultado_ars`, `origen_costo`, `clase` (`venta`, `cierre`).
+  `costo_ars`, `resultado_ars`, `origen_costo`, `clase` (`venta`, `cierre`, `amortizacion`). `amortizacion` es
+  el capital devuelto que excede el costo de un lote.
 - `ingresos`: `dict` de clase (`dividendo`, `retencion`, `renta`, `caucion_colocada`, `caucion_tomada`, `fci`,
   `gastos`, `compensacion`) a `{"ARS": n, "USD": n, "equivalente_ars": n}`. Las clases sin datos valen cero.
-- `aportes`, `retiros`: el mismo formato.
+- `aportes`, `retiros`, `capital_devuelto`: el mismo formato. No entran en `total_conocido`.
+- `amortizaciones`: lista de `dict` con `ticker`, `fecha_pago`, `fecha_cobro` (`date`), `nominales`,
+  `amortizacion_100` y `renta_100` (`Decimal` o `None` en IOL), `moneda`, `cobrado`, `capital`, `renta` (en la
+  moneda) y `capital_ars` (`None` sin MEP).
 - `lotes`: lotes abiertos, como `Lote`, con costo en pesos o `None`.
 - `total_conocido`, `realizado_extracto`, `realizado_estimado`: números.
 - `ventas_sin_dato`, `valores_sin_dato`: enteros.
 - `sin_clasificar`: filas completas. `avisos`: textos.
 
-`datos-cartera` suma `historial`: `total_conocido`, `ingresos`, `aportes`, `retiros`, `realizados`,
-`ventas_sin_dato`, `valores_sin_dato`, `cantidad_sin_clasificar` y `avisos`.
+`datos-cartera` suma `historial`: `total_conocido`, `ingresos`, `aportes`, `retiros`, `capital_devuelto`,
+`amortizaciones`, `realizados`, `ventas_sin_dato`, `valores_sin_dato`, `cantidad_sin_clasificar` y `avisos`.
 
 ## `cartera.informe`
 
@@ -414,10 +434,11 @@ exportar_pdf(ruta_html, ruta_pdf, navegador=None) -> Path
   | `rendimientos` | lista de `{"ticker", "moneda", "tir", "tir_min", "tir_max", "estimada", "compras", "proximo_pago", "total_a_cobrar", "capital", "ganancia"}`; `proximo_pago` es `{"fecha", "importe"}` |
   | `a_cobrar` | `{moneda: total}` solo con las monedas presentes (`ARS`, `USD MEP`, `USD cable`) |
   | `a_cobrar_capital` | `{moneda: lo que devuelve lo invertido}` con las mismas monedas; `None` si a algún título de esa moneda le falta la separación |
+  | `a_ganar`, `a_ganar_estimada` | `{moneda: total − capital}` (`None` si falta la separación) y `{moneda: bool}`, verdadero si algún título de esa moneda tiene la TIR estimada |
   | `proximos_cobros` | lista de `{"fecha", "ticker", "concepto", "moneda", "importe", "capital", "estimado"}` |
   | `cobros_por_anio_capital` | `{"AAAA": {moneda: capital}}` de los pagos futuros; `None` en una moneda si a algún pago de ese año le falta la separación |
   | `cobros_por_anio` | `{"AAAA": {moneda: total}}` con todas las monedas del calendario |
-  | `resultados` | `None` sin `historial`; si no, `{"ganancia_realizada", "ventas", "rentas_ars", "rentas_usd", "rentas_equivalente", "otros", "aportes", "retiros", "tenencia", "desde_dia_cero", "incompletos", "faltantes", "acumulado", "operaciones"}`. `tenencia` es la suma de `posiciones[].resultado` (`None` si alguna falta); `desde_dia_cero`, el resultado de los movimientos posteriores al día cero; `incompletos`, la cantidad de operaciones del historial sin resultado; `faltantes`, la lista de textos que explican por qué `acumulado` es `None`; `operaciones` = lista de `{"ticker", "fecha", "resultado"}` por fecha |
+  | `resultados` | `None` sin `historial`; si no, `{"ganancia_realizada", "ventas", "rentas_ars", "rentas_usd", "rentas_equivalente", "otros", "aportes", "retiros", "tenencia", "desde_dia_cero", "incompletos", "cobrada", "dia_cero", "faltantes", "acumulado", "operaciones"}`. `ventas` = `realizado_extracto + realizado_estimado` y `otros` = ganancia realizada − ventas − `rentas_equivalente`, para que el desglose sume exacto (1.3); `tenencia` es la suma de `posiciones[].resultado` (`None` si alguna falta); `desde_dia_cero`, el resultado de los movimientos posteriores al día cero; `cobrada`, la ganancia ya cobrada (ganancia realizada + `desde_dia_cero`); `dia_cero`, su fecha (`date` o `None`); `incompletos`, la cantidad de operaciones del historial sin resultado; `faltantes`, la lista de textos que explican por qué `acumulado` es `None`; `operaciones` = lista de `{"ticker", "fecha", "resultado"}` por fecha |
 
   Fechas como `date`. Pesos y tasas en tanto por uno.
 - `informe_html` arma el documento completo de [INFORME.md](INFORME.md).
@@ -438,7 +459,7 @@ python3 -m cartera --datos RUTA efectivo-dia-cero --cliente SLUG --ars N --usd N
 python3 -m cartera --datos RUTA dashboard --cliente SLUG
 python3 -m cartera --datos RUTA alertas --cliente SLUG
 python3 -m cartera --datos RUTA historial --cliente SLUG [--actualizar-mep]
-python3 -m cartera --datos RUTA derivar-base --cliente SLUG [--reemplazar]
+python3 -m cartera --datos RUTA derivar-base --cliente SLUG [--reemplazar | --solo-costos]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha AAAA-MM-DD --tipo TIPO --importe N [--ticker T] [--cantidad N] [--moneda ARS|USD] [--tc N] [--tipo-activo TIPO] [--nota TEXTO]
 python3 -m cartera --datos RUTA movimiento --cliente SLUG --fecha F --tipo T --ticker X --cantidad N --importe I [--nota N]
 python3 -m cartera --datos RUTA informe --cliente SLUG [--salida CARPETA] [--pdf]
@@ -520,3 +541,53 @@ de clientes no pueden desviar la lectura ni la escritura fuera de esa ruta.
 etapa no consulta precios ni toma el costo como precio; indica "sin dato" para la
 valuación y los resultados que todavía no pueden calcularse. El resto de los
 comandos pertenece a las etapas siguientes.
+
+## `cartera.riesgo`
+
+Etapa 14. Reglas en [RIESGO.md](RIESGO.md); fórmulas en [RIESGO_METODOLOGIA.md](RIESGO_METODOLOGIA.md).
+
+```python
+class ErrorRiesgo(ValueError): ...
+
+PARAMETROS: dict           # ventana, minimo, cobertura_minima, ventana_cola, minimo_cola, confianza,
+                           # lambda_ewma, minimo_ewma, salto, periodos, escenarios_pb, pago_antes, pago_despues
+EVENTOS_CONOCIDOS: dict    # {(ticker, "AAAA-MM-DD"): motivo}
+
+segmento_historico(endpoint) -> str | None
+historicos_necesarios(datos) -> list
+armar_riesgo(datos, historicos, cierre_iamc=None, parametros=None) -> dict
+riesgo_html(modelo) -> str
+descargar_historicos(claves, cache, fetch=None, hoy=None, sin_red=False) -> tuple
+ejecutar_riesgo(opciones, datos) -> int
+```
+
+- `segmento_historico`: `arg_cedears` → `"cedears"`, `arg_stocks` → `"stocks"`, `arg_bonds` → `"bonds"`; otro
+  → `None`.
+- `historicos_necesarios`: claves `"segmento/TICKER"` sin repetir; primero `bonds/AL30`, `bonds/AL30C` y
+  `cedears/SPY`, después las posiciones en el orden del dashboard.
+- `armar_riesgo` es pura. `datos` es el bloque `datos-cartera`; `historicos`, `{clave: respuesta de data912 o
+  None}`; `cierre_iamc`, el JSON completo de un cierre o `None`; `parametros` reemplaza claves de `PARAMETROS`.
+  Sin historia de `AL30` o `AL30C` lanza `ErrorRiesgo`. Todo número es `float` y todo faltante `None`; fechas
+  como texto `AAAA-MM-DD`. El resultado se puede pasar a `json.dump` tal cual. Devuelve:
+
+  | Clave | Contenido |
+  |---|---|
+  | `cliente`, `fecha_tablero`, `fecha_datos` | `cliente` es `datos["cliente"]["nombre"]`; `fecha_tablero`, la fecha de `generado_en`; `fecha_datos`, la última rueda |
+  | `moneda`, `ccl` | `"USD CCL"` y el CCL de la última rueda |
+  | `parametros` | `PARAMETROS` con los reemplazos |
+  | `total_ars`, `total_usd` | suma de valuaciones y su valor en USD CCL |
+  | `concentracion` | `{"herfindahl", "numero_efectivo", "peso_maximo", "ticker_maximo"}` |
+  | `activos` | lista por peso descendente (empate: ticker) de `{"ticker", "tipo", "peso", "valor_ars", "valor_usd", "historia", "vol_anual", "ewma_anual", "ewma_n", "beta", "r2", "beta_ic95", "var95_usd", "es95_usd", "excluidos", "renta_fija"}`. `historia` = `{"estado", "motivo", "n", "ruedas", "cobertura"}`; `excluidos` = lista de `{"fecha", "motivo"}`; `renta_fija` = `{"familia", "dm", "cx", "tir", "dv01_ars"}` o `None` |
+  | `cartera` | `{"estado": "calculada" \| "sin_dato", "motivo", "cobertura_patrimonial", "incluidos", "excluidos", "filas", "vol_anual", "var95_usd", "es95_usd", "valor_medido_usd", "beta", "r2", "ratio_diversificacion", "correlacion_media", "contribuciones", "peor_dia"}`. `incluidos`: tickers en el orden de `activos`; `excluidos`: `{"ticker", "peso", "motivo"}`; `contribuciones`: `{"ticker", "peso_medido", "fraccion"}` de mayor a menor fracción; `peor_dia`: `{"fecha", "retorno"}` |
+  | `var_historico` | `{"estado": "calculado" \| "sin_dato", "motivo", "filas", "var95_usd", "es95_usd"}` |
+  | `renta_fija` | lista de `{"familia", "tickers", "valor_ars", "dm", "cx", "dv01_ars", "escenarios"}`; `escenarios` = `{"-200": P&L, "-100": ..., "100": ..., "200": ...}` en pesos |
+  | `avisos` | textos |
+
+- `descargar_historicos` devuelve `(historicos, avisos)`. `cache` es la carpeta de las copias; `fetch(url)`
+  devuelve el JSON (por defecto `transporte.consultar_json`); `hoy` es la fecha de Argentina (por defecto
+  `_hoy()`). Con `sin_red=True` no llama a `fetch`.
+- `ejecutar_riesgo` corre el comando `riesgo`. Para las pruebas, el módulo expone `_hoy()`.
+
+```bash
+python3 -m cartera --datos RUTA riesgo --cliente SLUG [--sin-red]
+```

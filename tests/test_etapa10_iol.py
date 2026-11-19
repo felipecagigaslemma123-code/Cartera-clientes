@@ -204,12 +204,14 @@ class EnElHistorial(Base):
         self.assertAlmostEqual(h.lotes[0].cantidad, 600)
         self.assertAlmostEqual(h.lotes[0].costo, 540000.0)
 
-    def test_amortizacion_sin_baja_es_renta(self):
+    def test_amortizacion_sin_baja_es_capital_devuelto(self):
+        # HISTORIAL.md 1.1: devuelve capital, no es renta; baja el costo y no los nominales.
         h = self.historial([mov(1, "Compra(BOND1)", F1, "-790.152,89", 45493), mov(2, "Pago de Amortización(BOND1)", F2, "114.200,62")])
         self.assertEqual(h.realizados, [])
-        self.assertAlmostEqual(h.ingresos["renta"]["ARS"], 114200.62)
+        self.assertAlmostEqual(h.ingresos["renta"]["ARS"], 0.0)
+        self.assertAlmostEqual(h.capital_devuelto["ARS"], 114200.62)
         self.assertAlmostEqual(h.lotes[0].cantidad, 45493)
-        self.assertAlmostEqual(h.lotes[0].costo, 790152.89)
+        self.assertAlmostEqual(h.lotes[0].costo, 790152.89 - 114200.62)
 
     def test_cierre_en_dolares_con_la_baja_en_la_cuenta_en_pesos(self):
         h = self.historial([mov(1, "Compra(ON1)", F1, "-400.000,00", 325), mov(2, "Pago de Renta(ON1 US$)", F2, "10,00", cuenta="Dolares"),
@@ -265,7 +267,8 @@ class EnElHistorial(Base):
         self.assertEqual(sorted((c["ticker"], c["moneda"], c["importe"]) for c in h.cobros),
                          [("BOND1", "USD", 5.0), ("BOND1", "USD", 12.84)])
         self.assertAlmostEqual(h.ingresos["gastos"]["ARS"], -30.05)
-        self.assertAlmostEqual(h.ingresos["renta"]["USD"], 17.84)
+        self.assertAlmostEqual(h.ingresos["renta"]["USD"], 12.84)
+        self.assertAlmostEqual(h.capital_devuelto["USD"], 5.0)
 
     def test_dos_archivos_superpuestos_no_duplican(self):
         filas = [mov(1, "Compra(AAA)", F1, "-100,00", 10), mov(2, "Pago de Amortización(AAA)", F2, "0,00", -4),

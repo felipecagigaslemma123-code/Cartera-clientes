@@ -85,7 +85,9 @@ su comisión. Va a `gastos`, no a `renta`, para que los cobros queden limpios.
 - Si alguna trae cantidad negativa, es un **cierre** por esa cantidad, no por toda la posición abierta. El importe
   es la suma de las filas del grupo, cada una en pesos. Consume lotes por FIFO, como una venta, y si no alcanzan
   el resultado es "sin dato". No hace falta `cierres.json`.
-- Si ninguna trae cantidad, es una devolución parcial de capital: los nominales no bajan y se suma como `renta`.
+- Si ninguna trae cantidad, es una devolución parcial de capital: los nominales no bajan y el importe es **capital
+  devuelto**, no renta (ver [Amortizaciones parciales](#amortizaciones-parciales)). No hace falta cronograma: IOL
+  ya lo informa separado de la renta. Una fila de importe negativo es un gasto de cobro y va a `gastos`.
 
 **Caución.** Las dos filas comparten `Nro. de Mov.` y tienen fechas distintas: se agrupan por moneda y número, y
 se suman. La fecha del ingreso es la de la liquidación. Si `IOL CAUCION` es negativa es `caucion_colocada`; si
@@ -100,7 +102,7 @@ es positiva, `caucion_tomada`. Un grupo sin alguna de las dos filas no se suma y
 | `COMPRA NORMAL`, `COMPRA TRADING`, `COMPRA PARIDAD`, `COMPRA CABLE` | `compra` | Lote nuevo |
 | `VENTA`, `VENTA TRADING`, `VENTA PARIDAD`, `VENTA CABLE` | `venta` | Consume lotes por FIFO |
 | `RENTA Y AMORTIZ` de especie en `cierres.json` | `cierre` | Cierra la posición |
-| `RENTA Y AMORTIZ` de otra especie | `renta` | Ingreso |
+| `RENTA Y AMORTIZ` de otra especie | `renta` | Ingreso; si el cronograma dice que el pago amortiza, se separa el capital ([Amortizaciones parciales](#amortizaciones-parciales)) |
 | `DIVIDENDOS` | `dividendo` | Ingreso, con su signo |
 | `RETENCION` | `retencion` | Se muestra aparte, con su signo |
 | `COMPRA CAUCION CONTADO` + `VENTA CAUCION TERMINO` | `caucion_colocada` | Ingreso: suma de las dos patas |
@@ -116,6 +118,91 @@ es positiva, `caucion_tomada`. Un grupo sin alguna de las dos filas no se suma y
 Las patas de una caución se agrupan por moneda, clase y `Operado`, que es la misma fecha en las dos patas.
 No se emparejan una a una, porque una pata de contado puede tener dos de término. Un grupo sin alguna de
 las dos patas no se suma y genera un aviso con sus números, porque solo contiene capital.
+
+## Amortizaciones parciales
+
+Versión 1.1 · 18/11/2026 · Especificación de Claude, aprobada por Felipe el 18/11/2026.
+
+Una amortización parcial devuelve parte de lo invertido: no es renta ni ganancia. Bull informa renta y
+amortización juntas en un solo renglón `RENTA Y AMORTIZ`, y hasta la 1.0 todo se sumaba como `renta`; con IOL,
+también un `Pago de Amortización` sin baja de nominales. Así la ganancia ya cobrada incluía capital y la posición
+mostraba una pérdida del mismo tamaño, porque conservaba el costo completo con la mitad del valor residual: el
+resultado total daba bien, pero no el desglose. En el informe, "Rentas" dice "intereses".
+
+**Regla:** el capital devuelto baja el costo de los lotes que cobraron, en proporción a sus nominales. No es
+ganancia ni pérdida, no entra en el total conocido y se informa aparte. Lo que queda del cobro es `renta`.
+
+- **Qué lotes cobran:** los abiertos al cierre del día anterior a la fecha del pago, la misma regla que el control
+  de cobros de [FLUJO_FONDOS.md](FLUJO_FONDOS.md): una compra o una venta de ese día no cambia quién cobra. `N`
+  es la suma de sus nominales.
+- **Costo:** cada lote baja `capital en pesos × nominales del lote / N`. Los nominales no cambian. Si a un lote
+  le queda menos costo que su parte, su costo queda en cero y el excedente es resultado realizado, con clase
+  `amortizacion`: ya se recuperó todo lo que se pagó. Un lote sin costo sigue sin costo.
+- **En pesos:** el capital en dólares se convierte con el MEP del día del cobro, como cualquier cobro. Sin MEP,
+  el costo de esos lotes pasa a "sin dato" y se avisa.
+
+Se descartó tratarla como una venta parcial a la par, que consume costo en proporción al valor residual y deja
+como ganancia o pérdida la diferencia con la par: reconoce antes el efecto de haber comprado sobre o bajo la
+par, pero necesita el cronograma completo desde la emisión de cada título (TX28 de sc no lo tiene) y suma como
+pérdida los intereses corridos pagados al comprar. Con esta regla ese efecto queda en lo que todavía se tiene
+hasta la venta o el pago final.
+
+### Bull: separar `RENTA Y AMORTIZ`
+
+El cronograma sale de `instrumentos.json` → `iamc.pagos_manuales`: fecha, amortización y renta por 100 VN
+originales, con los importes de los avisos de pago ([FLUJO_FONDOS.md](FLUJO_FONDOS.md)). No se usan los cierres
+de IAMC: son proyecciones anteriores al pago y, en los títulos CER o dólar linked, la amortización viene ajustada.
+
+1. A cada cobro `RENTA Y AMORTIZ` de una especie que no está en `cierres.json` le corresponde el pago del
+   cronograma de fecha igual o anterior más cercana, a 10 días corridos o menos. Los cobros de una especie que
+   caen en el mismo pago se tratan juntos.
+2. Si ese pago no amortiza (amortización 0), todo es `renta`, como hasta ahora.
+3. Si amortiza: `capital = amortización × N / 100`, en la moneda del cobro. El capital se toma de los cobros en
+   orden y el resto es `renta`. Si lo cobrado es menor que el capital, todo es capital y se avisa.
+4. **Pago final:** si con ese pago las amortizaciones del cronograma llegan a 100, el capital cierra la posición:
+   es un `cierre` por los `N` nominales, que consume lotes por FIFO, con resultado = capital − costo. La parte de
+   renta sigue siendo `renta`. Así un bono con cupones no necesita `cierres.json`, que queda para letras y títulos
+   de un solo pago: una especie en `cierres.json` cierra la posición con cualquier cobro, como hasta ahora.
+5. Si el pago amortiza y ningún lote cobra (`N` = 0), el cobro queda "sin dato": no entra al total y cuenta en
+   `valores_sin_dato`, porque no se sabe cuánto es capital.
+6. **Avisos, que no cambian números:**
+   - una especie con cobros `RENTA Y AMORTIZ` y sin cronograma: se cuentan enteros como renta. Uno por especie.
+   - un cobro sin pago del cronograma en la ventana: se cuenta entero como renta.
+   - un cobro que amortiza y difiere de `(amortización + renta) × N / 100` en más de 1 % y de 1 peso o 0,01 dólar.
+     Bull acredita alrededor de 0,16 % menos que el aviso de pago: eso no se avisa.
+   - cobros de un mismo pago en monedas distintas: no se separan y quedan como renta.
+
+Sin cronogramas (un llamador que no los pasa), `RENTA Y AMORTIZ` sigue siendo `renta`, sin avisos.
+
+### Salidas de las amortizaciones
+
+- `capital_devuelto`: `{"ARS", "USD", "equivalente_ars"}`, como los aportes. No entra en el total conocido.
+- `amortizaciones`: una fila por pago: especie, fecha del pago, fecha del último cobro, nominales `N`,
+  amortización y renta por 100 VN (vacías en IOL), moneda, cobrado, capital, renta y capital en pesos.
+- `ingresos.renta` queda solo con intereses. `cobros` no cambia: el control de cobros compara el total.
+
+### Base derivada antes de la 1.1
+
+La base derivada antes de esta versión tiene el costo completo en los títulos que ya amortizaron, y `historial`
+lo informa como diferencia de costo. `derivar-base --solo-costos` corrige solo precios y costos de los lotes,
+aunque haya día cero o movimientos, si las posiciones (especie, tipo y cantidad) y los lotes (especie, cantidad,
+fecha y origen, en el mismo orden) son los mismos; si no, falla sin escribir y lista las diferencias. Conserva la
+versión anterior en `historial_cartera/` y, sin cambios, no escribe. El día cero guarda cantidades y precios, no
+costos: no cambia.
+
+### Efecto en las carteras, al 18/11/2026
+
+| Cartera | Hoy | Con la 1.1 |
+|---|---|---|
+| fcl | Rentas $ 110.318; BAM27 (costo $ 157.264) y RVS1O muestran una pérdida que no es tal | Rentas $ 14.068 y capital devuelto $ 96.250: BAM27 $ 74.500 el 28/09/2026 (50 % de 149.000 VN) y RVS1O $ 21.750 el 27/08/2026 (25 % de 87.000 VN). Con la base corregida, ganancia ya cobrada −$ 96.250 y suba de lo que todavía tiene +$ 96.250; el total no cambia |
+| sc | TX28 (IOL): la amortización de $ 114.201 del 09/05/2025 suma como renta; su venta del 25/07/2025 da −$ 80.012 | Rentas −$ 114.201; la venta da +$ 34.188. Ganancia ya cobrada y total iguales: TX28 ya no está en la cartera |
+| mdm | No tiene amortizaciones parciales | Igual, con un aviso: MTCGO tiene un cobro y no tiene cronograma |
+
+### Pendiente
+
+Una amortización cargada como movimiento después del día cero tiene el mismo problema: no baja el costo de los
+lotes ([DOMINIO.md](DOMINIO.md)) y el informe la suma a la ganancia ya cobrada. Se corrige aparte, cuando se
+cierre el informe 1.3. La próxima en las carteras es la de AL29 del 09/01/2027.
 
 ## Orden y lotes
 
@@ -157,6 +244,8 @@ total conocido = realizado con costo + dividendos + retenciones + rentas
 ```
 
 - **Aportes y retiros:** se informan, nunca entran en el total.
+- **Capital devuelto** por amortizaciones parciales: se informa, nunca entra en el total. Las rentas son solo
+  intereses ([Amortizaciones parciales](#amortizaciones-parciales)).
 - **Sin dato:** el total suma solo lo conocido e indica cuántas ventas y valores quedaron afuera. Nunca se
   presenta como completo si falta algo. `sin_clasificar` también se indica.
 - **Origen:** el realizado se desglosa en `extracto` y en lo que incluye estimaciones.
@@ -189,15 +278,18 @@ No escribe nada, y termina con error, si:
 - no queda ningún lote abierto.
 - ya existe `cartera.json`. Con `--reemplazar` guarda la versión anterior en `historial_cartera/` y escribe la
   nueva, salvo que exista `dia_cero.json` o `movimientos.csv` tenga movimientos: ahí los movimientos posteriores
-  se contarían dos veces.
+  se contarían dos veces. Para corregir solo costos con día cero, `--solo-costos`
+  ([Base derivada antes de la 1.1](#base-derivada-antes-de-la-11)).
 
 Los renglones `sin_clasificar` sin cantidad y los avisos del historial no frenan: se muestran.
 Después de `derivar-base`, `historial` no informa diferencias de cantidad ni de costo.
 
 ## Salidas
 
-- `historial`: imprime ingresos, aportes y retiros, realizado por especie, total, avisos, renglones sin
-  clasificar y diferencias con la base. Escribe `realizado.csv`, solo para el usuario. Sin `extractos/`, o con
-  un archivo inválido, termina con error y no escribe nada.
+- `historial`: imprime ingresos, aportes y retiros, capital devuelto y sus amortizaciones, realizado por
+  especie, total, avisos, renglones sin clasificar y diferencias con la base. Escribe `realizado.csv`, solo para
+  el usuario. Sin `extractos/`, o con un archivo inválido, termina con error y no escribe nada. Lee los
+  cronogramas de `instrumentos.json`, que es opcional; si no es un JSON válido, termina con error.
 - `dashboard`: si existe `extractos/`, agrega `id="rendimiento-realizado"` y `historial` en `datos-cartera`.
-  Si el cálculo falla, el dashboard se genera igual, con un aviso. Sin `extractos/`, no muestra la sección.
+  Si el cálculo falla, el dashboard se genera igual, con un aviso. Sin `extractos/`, no muestra la sección. La
+  sección muestra el capital devuelto, aparte de los ingresos, y una tabla de amortizaciones.

@@ -1,0 +1,47 @@
+Excel: retorno log AH1280 | ref=-0.00403170423037 | fuente=-0.00403170423037 | diferencia=+0
+Historica SP500: ref vs statistics.stdev*sqrt(252) | ref=0.246811507296 | fuente=0.246811507296 | diferencia=-2.77556e-17
+Historica MA reconstruida: n=241; vol anual=0.698152632892; MA!C3:C243 VACIO; MA!J1=0; no hay resultado fuente.
+Diferencia de fuente: GARCH!L21 guarda #DIV/0!; apunta a D3:D1280 vacio. Historica reconstruida, no igualdad bibliografica.
+Excel: EWMA previa AJ1280 | ref=0.000170374974979 | fuente=0.000170374974979 | diferencia=+0
+Excel: EWMA anual AL1280 | ref=0.207206403605 | fuente=0.207206403605 | diferencia=-2.77556e-17
+Excel: max diferencia 1278 varianzas EWMA = 4.33681e-19; pronostico siguiente=0.000161127754821
+Clase 08: beta Alcoa R - Rf!D5 | ref=1.90279838366 | fuente=1.90279838366 | diferencia=-6.66134e-16
+Clase 08: alfa Alcoa R - Rf!D6 | ref=0.000370710470133 | fuente=0.000370710470133 | diferencia=+4.33681e-19
+Beta Alcoa: IC95=[1.501620001, 2.303976766]; t H0 beta=1: 4.504597925; p=0.000032699
+Clase 08 segunda pasada: pendiente G5 | ref=-0.00197243825245 | fuente=-0.00197243825245 | diferencia=+4.33681e-19
+Clase 08 segunda pasada: intercepto G4 | ref=0.000717588956774 | fuente=0.000717588956774 | diferencia=-4.33681e-19
+Markowitz: sigma B18 | ref=0.319075946659 | fuente=0.319075946659 | diferencia=+0
+Markowitz: varianza B18^2 | ref=0.101809459736 | fuente=0.101809459736 | diferencia=-1.38778e-17
+Bodie PDF168 p139: VaR vs 25.56% redondeado | ref=0.25558 | fuente=0.2556 | diferencia=-2e-05
+Bodie PDF169 p140: ES ref=0.359180952381 | fuente=.3594 | diferencia=-0.000219047619 (NO COINCIDE; se conserva discrepancia)
+ES Bodie: aritmetica independiente | ref=0.359180952381 | fuente=0.359180952381 | diferencia=-5.55112e-17
+Bodie PDF550: precio bono 2 anios | ref=964.540494958 | fuente=964.54 | diferencia=+0.000494958
+Bodie PDF549: Macaulay 2 anios | ref=1.88522950687 | fuente=1.8852 | diferencia=+2.95069e-05
+Bodie PDF556: duration modificada 30 anios | ref=11.2577833431 | fuente=11.26 | diferencia=-0.00221666
+Bodie PDF556: convexidad 30 anios | ref=212.432547085 | fuente=212.4 | diferencia=+0.0325471
+Bodie PDF556: precio TIR 10% | ref=811.46171066 | fuente=811.46 | diferencia=+0.00171066
+CFA FI PDF104: convexidad | ref=16.9163584303 | fuente=16.915 | diferencia=+0.00135843
+CFA FI PDF104: precio | ref=86.591379608 | fuente=86.59138 | diferencia=-3.92046e-07
+CFA FI PDF105: precio TIR 14.5% | ref=88.1272117593 | fuente=88.12721 | diferencia=+1.75935e-06
+CFA FI PDF120: perdida esperada % | ref=0.0075 | fuente=0.0075 | diferencia=+0
+Clase 1 estimacion prob PDF52: matriz RECHAZADA; rho23=9.899494937 >1 (error de fuente, no se corrige).
+Resumen VAR (inferencia c=99%): Global Macro ES umbral=0.029333333 vs publicado aprox 0.029; ES fraccional=0.029760076
+Resumen VAR (inferencia c=99%): Equity Market Neutral ES umbral=0.036100000 vs publicado aprox 0.036; ES fraccional=0.038210266
+MANUAL 1: varianza [-2%,0,2%] | ref=0.0004 | fuente=0.0004 | diferencia=+0
+MANUAL 1: EWMA .94*.0004+.06*.0001 | ref=0.000382 | fuente=0.000382 | diferencia=-5.42101e-20
+MANUAL 2: precio cero | ref=82.6446280992 | fuente=82.6446280992 | diferencia=-1.42109e-14
+MANUAL 2: duration cero | ref=1.81818181818 | fuente=1.81818181818 | diferencia=+0
+MANUAL 2: convexidad cero | ref=4.95867768595 | fuente=4.95867768595 | diferencia=-8.88178e-16
+MANUAL caso: HHI | ref=0.175 | fuente=0.175 | diferencia=+2.77556e-17
+MANUAL caso: bono cero DV01 | ref=0.015026296018 | fuente=0.015026296018 | diferencia=-3.46945e-18
+MANUAL caso: CEDEAR +10% suby +20% CCL | ref=0.32 | fuente=0.32 | diferencia=+5.55112e-17
+QIA PDF414 p406: t critico df60 | ref=2.00029782201 | fuente=2 | diferencia=+0.000297822
+QIA PDF414 p406: IC inferior beta | ref=1.0999404356 | fuente=1.1 | diferencia=-5.95644e-05
+QIA PDF414 p406: estadistico beta | ref=2.5 | fuente=2.5 | diferencia=+0
+Student bilateral t=1 df=1 | ref=0.5 | fuente=0.5 | diferencia=+7.77156e-16
+Student cuantil 97.5% df=10 | ref=2.22813885199 | fuente=2.22813885196 | diferencia=+2.13354e-11
+VaR/ES cola fraccional [1,2,3,4], c=.625 | ref=3.66666666667 | fuente=3.66666666667 | diferencia=+0
+Euler: suma componentes = sigma | ref=0.00252874910489 | fuente=0.00252874910489 | diferencia=+0
+Caso CSV vs esperado.json: 2383 valores numericos coinciden (rtol=1e-10, atol=1e-12).
+Controles de huecos, correlacion indefinida, drawdown, Euler, PSD y Monte Carlo: OK.
+RESULTADO: controles ejecutables OK; diferencias documentadas: historica Excel sin cache valido y ES Bodie no coincide.

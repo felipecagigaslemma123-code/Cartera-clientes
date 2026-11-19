@@ -160,8 +160,9 @@ Regla nueva:
 - Solo admite especies de tipo `bono`, `on` o `letra` ya conocidas.
 - En el realizado, las amortizaciones de un título se muestran junto a su venta final, porque el
   realizado de esa venta por sí sola subestima el resultado. No se cambia el cálculo del realizado.
-- En el historial de la etapa 6, `RENTA Y AMORTIZ` sigue llegando como un solo importe. Se mantiene su
-  clasificación y en el control de cobros se compara contra renta + amortización del mismo día.
+- En el historial de la etapa 6, `RENTA Y AMORTIZ` sigue llegando como un solo importe. En el control de cobros
+  se compara contra renta + amortización del mismo día. Desde el historial 1.1, para el resultado se separa con
+  `pagos_manuales`: el capital baja el costo de los lotes y no es renta ([HISTORIAL.md](HISTORIAL.md#amortizaciones-parciales)).
 - **Migración:** el comando `flujo --cliente SLUG --revisar` lista las `venta` de bonos u ON cuya nota
   contenga "amortiz" (sin distinguir mayúsculas ni acentos) y que no cierren la posición. No las cambia:
   Felipe decide cómo corregirlas.

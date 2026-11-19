@@ -1,0 +1,423 @@
+{
+ "cliente": "Cliente Demo Riesgo",
+ "fecha_tablero": "2026-11-18",
+ "fecha_datos": "2026-11-17",
+ "moneda": "USD CCL",
+ "ccl": 1309.9865347846635,
+ "parametros": {
+  "ventana": 252,
+  "minimo": 126,
+  "cobertura_minima": 0.95,
+  "ventana_cola": 504,
+  "minimo_cola": 250,
+  "confianza": 0.95,
+  "lambda_ewma": 0.94,
+  "minimo_ewma": 60,
+  "salto": 0.25,
+  "periodos": 252,
+  "escenarios_pb": [
+   -200,
+   -100,
+   100,
+   200
+  ],
+  "pago_antes": 6,
+  "pago_despues": 1
+ },
+ "total_ars": 1000000.0,
+ "total_usd": 763.3666251114411,
+ "concentracion": {
+  "herfindahl": 0.16599999999999998,
+  "numero_efectivo": 6.024096385542169,
+  "peso_maximo": 0.3,
+  "ticker_maximo": "AAA"
+ },
+ "activos": [
+  {
+   "ticker": "AAA",
+   "tipo": "cedear",
+   "peso": 0.3,
+   "valor_ars": 300000.0,
+   "valor_usd": 229.00998753343234,
+   "historia": {
+    "estado": "suficiente",
+    "n": 252,
+    "ruedas": 252,
+    "cobertura": 1.0,
+    "motivo": null
+   },
+   "vol_anual": 0.27276881569421013,
+   "ewma_anual": 0.21577763041466894,
+   "ewma_n": 252,
+   "beta": 1.1440650195289992,
+   "r2": 0.48138637260149686,
+   "beta_ic95": [
+    0.995850682931344,
+    1.2922793561266543
+   ],
+   "var95_usd": 6.472560634990475,
+   "es95_usd": 8.116852162649707,
+   "excluidos": [],
+   "renta_fija": null
+  },
+  {
+   "ticker": "BBB",
+   "tipo": "cedear",
+   "peso": 0.15,
+   "valor_ars": 150000.0,
+   "valor_usd": 114.50499376671617,
+   "historia": {
+    "estado": "suficiente",
+    "n": 249,
+    "ruedas": 252,
+    "cobertura": 0.9880952380952381,
+    "motivo": null
+   },
+   "vol_anual": 0.28834878207959286,
+   "ewma_anual": null,
+   "ewma_n": null,
+   "beta": 0.40285504658057,
+   "r2": 0.05472934777403704,
+   "beta_ic95": [
+    0.19260350580206437,
+    0.6131065873590755
+   ],
+   "var95_usd": 3.421129668517741,
+   "es95_usd": 4.2902346249946195,
+   "excluidos": [
+    {
+     "fecha": "2026-09-15",
+     "motivo": "salto de +39% en pesos sin evento conocido"
+    }
+   ],
+   "renta_fija": null
+  },
+  {
+   "ticker": "BON",
+   "tipo": "bono",
+   "peso": 0.12,
+   "valor_ars": 120000.0,
+   "valor_usd": 91.60399501337294,
+   "historia": {
+    "estado": "suficiente",
+    "n": 242,
+    "ruedas": 252,
+    "cobertura": 0.9603174603174603,
+    "motivo": null
+   },
+   "vol_anual": 0.1279266347061247,
+   "ewma_anual": 0.10957714017070425,
+   "ewma_n": 91,
+   "beta": 0.3017154699012496,
+   "r2": 0.1538530836068953,
+   "beta_ic95": [
+    0.2115539381766203,
+    0.3918770016258789
+   ],
+   "var95_usd": 1.214233962717967,
+   "es95_usd": 1.5226983758128299,
+   "excluidos": [
+    {
+     "fecha": "2026-01-05",
+     "motivo": "rueda cercana al pago del 2026-01-09"
+    },
+    {
+     "fecha": "2026-01-06",
+     "motivo": "rueda cercana al pago del 2026-01-09"
+    },
+    {
+     "fecha": "2026-01-07",
+     "motivo": "rueda cercana al pago del 2026-01-09"
+    },
+    {
+     "fecha": "2026-01-08",
+     "motivo": "rueda cercana al pago del 2026-01-09"
+    },
+    {
+     "fecha": "2026-01-09",
+     "motivo": "rueda cercana al pago del 2026-01-09"
+    },
+    {
+     "fecha": "2026-07-03",
+     "motivo": "rueda cercana al pago del 2026-07-09"
+    },
+    {
+     "fecha": "2026-07-06",
+     "motivo": "rueda cercana al pago del 2026-07-09"
+    },
+    {
+     "fecha": "2026-07-07",
+     "motivo": "rueda cercana al pago del 2026-07-09"
+    },
+    {
+     "fecha": "2026-07-08",
+     "motivo": "rueda cercana al pago del 2026-07-09"
+    },
+    {
+     "fecha": "2026-07-10",
+     "motivo": "rueda cercana al pago del 2026-07-09"
+    }
+   ],
+   "renta_fija": {
+    "familia": "USD",
+    "dm": 3.2,
+    "cx": 15.0,
+    "tir": 9.1,
+    "dv01_ars": 38.4
+   }
+  },
+  {
+   "ticker": "LCR",
+   "tipo": "letra",
+   "peso": 0.11,
+   "valor_ars": 110000.0,
+   "valor_usd": 83.97032876225852,
+   "historia": {
+    "estado": "sin_fuente",
+    "motivo": "data912 no tiene histórico de letras ni ON",
+    "n": null,
+    "ruedas": null,
+    "cobertura": null
+   },
+   "vol_anual": null,
+   "ewma_anual": null,
+   "ewma_n": null,
+   "beta": null,
+   "r2": null,
+   "beta_ic95": null,
+   "var95_usd": null,
+   "es95_usd": null,
+   "excluidos": [],
+   "renta_fija": {
+    "familia": "CER",
+    "dm": 0.4,
+    "cx": 0.5,
+    "tir": 4.0,
+    "dv01_ars": 4.4
+   }
+  },
+  {
+   "ticker": "SPY",
+   "tipo": "cedear",
+   "peso": 0.1,
+   "valor_ars": 100000.0,
+   "valor_usd": 76.33666251114411,
+   "historia": {
+    "estado": "suficiente",
+    "n": 251,
+    "ruedas": 252,
+    "cobertura": 0.996031746031746,
+    "motivo": null
+   },
+   "vol_anual": 0.1657496855952402,
+   "ewma_anual": 0.1541470357722257,
+   "ewma_n": 120,
+   "beta": 1.0,
+   "r2": 1.0,
+   "beta_ic95": [
+    1.0,
+    1.0
+   ],
+   "var95_usd": 1.311030719690112,
+   "es95_usd": 1.6440854141851617,
+   "excluidos": [
+    {
+     "fecha": "2026-05-29",
+     "motivo": "cambio de ratio 3:1"
+    }
+   ],
+   "renta_fija": null
+  },
+  {
+   "ticker": "ONX",
+   "tipo": "on",
+   "peso": 0.09,
+   "valor_ars": 90000.0,
+   "valor_usd": 68.70299626002969,
+   "historia": {
+    "estado": "sin_fuente",
+    "motivo": "data912 no tiene histórico de letras ni ON",
+    "n": null,
+    "ruedas": null,
+    "cobertura": null
+   },
+   "vol_anual": null,
+   "ewma_anual": null,
+   "ewma_n": null,
+   "beta": null,
+   "r2": null,
+   "beta_ic95": null,
+   "var95_usd": null,
+   "es95_usd": null,
+   "excluidos": [],
+   "renta_fija": {
+    "familia": "USD",
+    "dm": 1.9,
+    "cx": 4.6,
+    "tir": 8.0,
+    "dv01_ars": 17.1
+   }
+  },
+  {
+   "ticker": "DDD",
+   "tipo": "cedear",
+   "peso": 0.08,
+   "valor_ars": 80000.0,
+   "valor_usd": 61.06933000891529,
+   "historia": {
+    "estado": "sin_serie",
+    "motivo": "data912 no tiene su historia",
+    "n": null,
+    "ruedas": null,
+    "cobertura": null
+   },
+   "vol_anual": null,
+   "ewma_anual": null,
+   "ewma_n": null,
+   "beta": null,
+   "r2": null,
+   "beta_ic95": null,
+   "var95_usd": null,
+   "es95_usd": null,
+   "excluidos": [],
+   "renta_fija": null
+  },
+  {
+   "ticker": "CCC",
+   "tipo": "accion",
+   "peso": 0.05,
+   "valor_ars": 50000.0,
+   "valor_usd": 38.168331255572056,
+   "historia": {
+    "estado": "insuficiente",
+    "n": 89,
+    "ruedas": 252,
+    "cobertura": 0.3531746031746032,
+    "motivo": "89 retornos válidos de 252 ruedas"
+   },
+   "vol_anual": null,
+   "ewma_anual": null,
+   "ewma_n": null,
+   "beta": null,
+   "r2": null,
+   "beta_ic95": null,
+   "var95_usd": null,
+   "es95_usd": null,
+   "excluidos": [],
+   "renta_fija": null
+  }
+ ],
+ "cartera": {
+  "estado": "calculada",
+  "motivo": null,
+  "cobertura_patrimonial": 0.6699999999999999,
+  "incluidos": [
+   "AAA",
+   "BBB",
+   "BON",
+   "SPY"
+  ],
+  "excluidos": [
+   {
+    "ticker": "LCR",
+    "peso": 0.11,
+    "motivo": "data912 no tiene histórico de letras ni ON"
+   },
+   {
+    "ticker": "ONX",
+    "peso": 0.09,
+    "motivo": "data912 no tiene histórico de letras ni ON"
+   },
+   {
+    "ticker": "DDD",
+    "peso": 0.08,
+    "motivo": "data912 no tiene su historia"
+   },
+   {
+    "ticker": "CCC",
+    "peso": 0.05,
+    "motivo": "89 retornos válidos de 252 ruedas"
+   }
+  ],
+  "filas": 238,
+  "vol_anual": 0.17843289012247757,
+  "var95_usd": 9.456052340255662,
+  "es95_usd": 11.858271125836419,
+  "valor_medido_usd": 511.45563882466547,
+  "beta": 0.8187754860645519,
+  "r2": 0.5892928139652287,
+  "ratio_diversificacion": 1.3289376327372309,
+  "correlacion_media": 0.3124948439968655,
+  "contribuciones": [
+   {
+    "ticker": "AAA",
+    "peso_medido": 0.44776119402985076,
+    "fraccion": 0.6432517466766021
+   },
+   {
+    "ticker": "BBB",
+    "peso_medido": 0.22388059701492538,
+    "fraccion": 0.1960009383279654
+   },
+   {
+    "ticker": "SPY",
+    "peso_medido": 0.1492537313432836,
+    "fraccion": 0.10742157384418762
+   },
+   {
+    "ticker": "BON",
+    "peso_medido": 0.17910447761194032,
+    "fraccion": 0.05332574115124517
+   }
+  ],
+  "peor_dia": {
+   "fecha": "2026-01-29",
+   "retorno": -0.026602560034532142
+  }
+ },
+ "var_historico": {
+  "estado": "calculado",
+  "motivo": null,
+  "filas": 314,
+  "var95_usd": 8.548926375091229,
+  "es95_usd": 9.642977644492369
+ },
+ "renta_fija": [
+  {
+   "familia": "USD",
+   "tickers": [
+    "BON",
+    "ONX"
+   ],
+   "valor_ars": 210000.0,
+   "dm": 2.642857142857143,
+   "cx": 10.542857142857143,
+   "dv01_ars": 55.5,
+   "escenarios": {
+    "-200": 11542.800000000001,
+    "-100": 5660.7,
+    "100": -5439.3,
+    "200": -10657.2
+   }
+  },
+  {
+   "familia": "CER",
+   "tickers": [
+    "LCR"
+   ],
+   "valor_ars": 110000.0,
+   "dm": 0.4,
+   "cx": 0.5,
+   "dv01_ars": 4.4,
+   "escenarios": {
+    "-200": 891.0,
+    "-100": 442.75,
+    "100": -437.25,
+    "200": -869.0000000000001
+   }
+  }
+ ],
+ "avisos": [
+  "NOV: sin valuación; queda fuera de pesos y cálculos."
+ ]
+}

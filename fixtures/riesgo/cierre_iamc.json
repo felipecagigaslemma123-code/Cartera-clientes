@@ -1,0 +1,49 @@
+{
+ "fecha_cierre": "2026-11-17",
+ "informes": {
+  "titulos_publicos": {
+   "rows": [
+    {
+     "tk": "BON",
+     "me": "USD",
+     "aj": "No",
+     "idx": null,
+     "fc": "Semestral",
+     "pc": "2027-01-09",
+     "fe": "2020-09-04",
+     "ytm": 9.1,
+     "dm": 3.2,
+     "cx": 15.0
+    },
+    {
+     "tk": "LCR",
+     "me": "ARS",
+     "aj": "CER",
+     "idx": null,
+     "fc": null,
+     "pc": null,
+     "fe": "2026-01-15",
+     "ytm": 4.0,
+     "dm": 0.4,
+     "cx": 0.5
+    }
+   ]
+  },
+  "on": {
+   "rows": [
+    {
+     "tk": "ONX",
+     "me": "USD",
+     "aj": "No",
+     "idx": null,
+     "fc": "Semestral",
+     "pc": "2027-03-01",
+     "fe": "2024-03-01",
+     "ytm": 8.0,
+     "dm": 1.9,
+     "cx": 4.6
+    }
+   ]
+  }
+ }
+}

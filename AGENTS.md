@@ -26,6 +26,7 @@ Leé en este orden:
 9. `docs/FLUJO_FONDOS.md` y `docs/FUENTE_IAMC.md`: flujo de fondos por cliente, para la etapa 9.
 10. `docs/PROYECCIONES.md` y `docs/FUENTE_BCRA.md`: CER, TAMAR y dólar linked con BCRA y REM, para la etapa 11.
 11. `docs/INFORME.md`: informe para el cliente, para la etapa 12.
+12. `docs/RIESGO.md` y `docs/RIESGO_METODOLOGIA.md`: riesgo de la cartera, para la etapa 14.
 
 ## Cómo trabajar
 

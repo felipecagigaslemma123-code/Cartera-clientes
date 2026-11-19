@@ -223,6 +223,12 @@ def armar_informe(datos, instrumentos=None, perfil=None, cantidad_cobros=7):
             a_cobrar_capital[moneda] = (None if anterior is None or rendimiento["capital"] is None
                                         else anterior + rendimiento["capital"])
 
+    # Lo que se va a ganar: lo que se cobra por encima de lo invertido. Sin dato si a la moneda le falta la
+    # separación; "estimada" si algún título de esa moneda depende de un índice proyectado.
+    a_ganar = {mo: None if a_cobrar_capital.get(mo) is None else total - a_cobrar_capital[mo]
+               for mo, total in a_cobrar.items()}
+    a_ganar_estimada = {mo: any(r["estimada"] for r in rendimientos if r["moneda"] == mo) for mo in a_cobrar}
+
     vencimientos = {p["ticker"]: _f(p.get("vencimiento")) for p in posiciones}
     eventos = []
     for ticker, posicion in flujo.items():
@@ -316,14 +322,23 @@ def armar_informe(datos, instrumentos=None, perfil=None, cantidad_cobros=7):
             faltantes.append("el costo o el precio de " + ", ".join(sin_resultado))
         if sin_costo:
             faltantes.append("el costo de {} {} desde el día cero".format(sin_costo, "venta" if sin_costo == 1 else "ventas"))
+        # El desglose de la ganancia ya cobrada tiene que sumar exactamente el total: las ventas incluyen las
+        # que salen de lotes estimados, y "otros" es lo que queda (dividendos, cauciones, fondos, retenciones,
+        # compensaciones y gastos).
+        extracto, estimado = _d(historial.get("realizado_extracto")), _d(historial.get("realizado_estimado"))
+        ventas = None if extracto is None else extracto + (estimado or Decimal(0))
+        rentas = ingreso("renta")
+        dia_cero = datos.get("dia_cero") if isinstance(datos.get("dia_cero"), dict) else {}
         resultados = {
             "ganancia_realizada": ganancia,
-            "ventas": _d(historial.get("realizado_extracto")),
+            "ventas": ventas,
             "rentas_ars": ingreso("renta", "ARS"), "rentas_usd": ingreso("renta", "USD"),
-            "rentas_equivalente": ingreso("renta"),
-            "otros": ingreso("caucion_colocada") + ingreso("fci") + ingreso("dividendo") + ingreso("gastos"),
+            "rentas_equivalente": rentas,
+            "otros": None if None in (ganancia, ventas) else ganancia - ventas - rentas,
             "aportes": aportes, "retiros": retiros,
             "tenencia": no_realizado, "desde_dia_cero": desde_dia_cero, "incompletos": incompletos,
+            "cobrada": None if None in (ganancia, desde_dia_cero) else ganancia + desde_dia_cero,
+            "dia_cero": _f(dia_cero.get("fecha")),
             "faltantes": faltantes,
             "acumulado": None if faltantes else ganancia + desde_dia_cero + no_realizado,
             "operaciones": operaciones}
@@ -336,7 +351,7 @@ def armar_informe(datos, instrumentos=None, perfil=None, cantidad_cobros=7):
         "patrimonio": patrimonio, "invertido": invertido, "efectivo": efectivo,
         "composicion": composicion, "peso_dolares": _division(en_dolares, invertido),
         "tenencia": tenencia, "rendimientos": rendimientos, "a_cobrar": a_cobrar,
-        "a_cobrar_capital": a_cobrar_capital,
+        "a_cobrar_capital": a_cobrar_capital, "a_ganar": a_ganar, "a_ganar_estimada": a_ganar_estimada,
         "proximos_cobros": eventos[:cantidad_cobros], "cobros_por_anio": cobros_por_anio,
         "cobros_por_anio_capital": cobros_por_anio_capital,
         "resultados": resultados}
@@ -469,15 +484,15 @@ def _barras_tir(rendimientos):
     return _svg(ancho, base + 18, "TIR de compra", grilla + resto)
 
 
-def _barras_anuales(cobros_por_anio, monedas, colores, capital_por_anio=None):
+def _barras_anuales(cobros_por_anio, monedas, colores, capital_por_anio=None, anio_actual=None):
     """Una barra por año y moneda. Con la separación, la parte de abajo devuelve lo invertido (color de la
-    moneda) y la de arriba es ganancia (verde)."""
+    moneda) y la de arriba es ganancia (verde). El año en curso lleva "desde hoy" debajo: solo suma lo que
+    falta cobrar, y un cliente lo leía como lo cobrado en el año."""
     capital_por_anio = capital_por_anio or {}
     anios = sorted(a for a, valores in cobros_por_anio.items() if any(valores.get(m) for m in monedas))
     if not anios:
         return None
-    # 150 de alto: con doce años de cobros y muchas operaciones, la hoja de flujo entra en un A4.
-    ancho, alto, base, x0 = 640, 150, 120, 8
+    ancho, alto, base, x0 = 640, 160, 122, 8
     tope = max(float(cobros_por_anio[a].get(m, 0)) for a in anios for m in monedas) or 1
     paso = (ancho - x0) / len(anios)
     barra = paso * 0.62 / len(monedas)
@@ -503,7 +518,10 @@ def _barras_anuales(cobros_por_anio, monedas, colores, capital_por_anio=None):
             contenido.append('<text x="{:.1f}" y="{:.1f}" text-anchor="middle" class="bv2">{}</text>'.format(
                 x + barra / 2, base - alto_barra - 5, _n(valor)))
         contenido.append('<text x="{:.1f}" y="{}" text-anchor="middle" class="ax">{}</text>'.format(
-            x0 + i * paso + paso / 2, base + 18, anio))
+            x0 + i * paso + paso / 2, base + 17, anio))
+        if anio == anio_actual:
+            contenido.append('<text x="{:.1f}" y="{}" text-anchor="middle" class="bs">desde hoy</text>'.format(
+                x0 + i * paso + paso / 2, base + 30))
     return _svg(ancho, alto, "Cobros en dólares por año", contenido)
 
 
@@ -565,7 +583,7 @@ body{margin:0;background:#e9edf1;color:var(--ink);font:13px/1.45 -apple-system,B
 .hoja{width:210mm;min-height:297mm;margin:16px auto;background:#fff;padding:13mm 15mm 16mm;position:relative;box-shadow:0 2px 14px rgba(0,0,0,.08)}
 @page{size:A4;margin:0}
 @media print{body{background:#fff}.hoja{margin:0;box-shadow:none;break-after:page}.hoja:last-child{break-after:auto}}
-@media screen and (max-width:820px){.hoja{width:auto;min-height:0;margin:0 0 12px;padding:22px 16px}.kpis,.dos,.tres{grid-template-columns:1fr!important}.pie{position:static;margin-top:20px}}
+@media screen and (max-width:820px){.hoja{width:auto;min-height:0;margin:0 0 12px;padding:22px 16px}.kpis,.dos,.tres,.guia,.ecuacion,dl.glosario{grid-template-columns:1fr!important}.pie{position:static;margin-top:20px}}
 .marca{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--navy);padding-bottom:8px;margin-bottom:14px}
 .marca .firma{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);font-weight:700}
 .marca .fecha{font-size:11px;color:var(--mute)}
@@ -606,6 +624,28 @@ ul.prox li{display:grid;grid-template-columns:96px 62px 1fr auto;gap:10px;paddin
 .leyb span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(--c)}
 .parte{height:6px;border-radius:3px;background:var(--teal);margin:6px 0 5px;overflow:hidden}
 .parte span{display:block;height:100%;background:#9aa8b6}
+.guia-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);font-weight:700;margin:2px 0 6px}
+.guia{display:grid;gap:8px;margin:0 0 18px}
+.guia div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--mute);line-height:1.35}
+.guia b{display:block;color:var(--ink);font-size:12.5px;margin:6px 0 4px}
+.guia .gk{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.guia .gv{display:block;color:var(--ink);font-size:17px;font-weight:700;margin:0 0 4px;font-variant-numeric:tabular-nums;line-height:1.25}
+.guia .gv small{font-size:11px;font-weight:400;color:var(--mute)}
+table.cobros td:first-child{white-space:nowrap} table.cobros th{white-space:normal;vertical-align:bottom}
+.tag{display:inline-block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--navy);border:1px solid var(--navy);border-radius:10px;padding:1px 8px}
+.seccion{margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.seccion .ts{font-size:20px;font-weight:700;margin:6px 0 2px;color:var(--ink)}
+.seccion p{margin:0;color:var(--mute);font-size:12.5px}
+.ecuacion{display:grid;grid-template-columns:1fr 26px 1fr 26px 1fr;gap:6px;align-items:stretch}
+.op{display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--mute)}
+ul.desglose{list-style:none;margin:0;padding:0}
+ul.desglose li{display:grid;grid-template-columns:1fr auto;gap:14px;padding:6px 0;border-bottom:1px solid var(--line);break-inside:avoid}
+ul.desglose li.total{border-bottom:none;border-top:1.5px solid var(--ink)}
+.dv{font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.aclara{font-size:12px;color:var(--mute);margin:0}
+dl.glosario{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;margin:0}
+dl.glosario div{break-inside:avoid;padding:6px 0;border-bottom:1px solid var(--line)}
+dl.glosario dt{font-weight:700;font-size:12px} dl.glosario dd{margin:1px 0 0;font-size:11.5px;color:var(--mute)}
 .pie{position:absolute;left:15mm;right:15mm;bottom:9mm;font-size:9.5px;color:var(--mute);display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px}
 """
 
@@ -622,53 +662,11 @@ def _kpi(titulo, valor, detalle, principal=False):
         " main" if principal else "", escape(titulo), valor, detalle)
 
 
-def _hoja_resumen(m):
-    patrimonio, mep, efectivo = m["patrimonio"], m["mep"], m["efectivo"]
-    equivalente = ("Equivale a US$ {} al dólar MEP".format(_n(patrimonio / mep))
-                   if patrimonio is not None and mep else "")
-    peso_invertido = _division(m["invertido"], patrimonio)
-    pesos = (efectivo or {}).get("ARS")
-    dolares = (efectivo or {}).get("USD")
-    caja = _kpi("Efectivo disponible", "$ " + _n(pesos) if pesos is not None else "sin dato",
-                "y US$ " + _n(dolares, 2) if dolares is not None else "")
-    cuerpo = ['<h1>{}</h1>'.format(escape(m["cliente"] or "")),
-              '<p class="lead">Situación de la cartera al {}, valuada a precios de mercado{}.</p>'.format(
-                  _fecha_larga(m["fecha"]), " y dólar MEP de $ {}".format(_n(mep, 2)) if mep else ""),
-              '<div class="kpis">',
-              _kpi("Patrimonio total", "$ " + _n(patrimonio) if patrimonio is not None else "sin dato", equivalente, True),
-              _kpi("Invertido en títulos", "$ " + _n(m["invertido"]),
-                   "{} del patrimonio".format(_pct(peso_invertido)) if peso_invertido is not None else ""),
-              caja, '</div>']
-    if m["composicion"] and m["invertido"]:
-        leyenda = "".join(
-            '<li><span class="sw" style="background:{}"></span><span>{}</span><span class="lv">{}</span>'
-            '<span class="la">$ {}</span></li>'.format(_COLORES_CLASE[i % len(_COLORES_CLASE)], escape(c["clase"]),
-                                                       _pct(c["peso"]), _n(c["valuacion"]))
-            for i, c in enumerate(m["composicion"]))
-        cuerpo += ['<h2>Composición</h2><div class="dos"><div>{}</div><ul class="ley">{}</ul></div>'.format(
-            _dona(m["composicion"], len(m["tenencia"])), leyenda)]
-        if m["peso_dolares"]:
-            cuerpo.append('<div class="callout"><b>{} de la cartera está en títulos que pagan en dólares</b> '
-                          '(bonos y obligaciones negociables en dólares).</div>'.format(_pct(m["peso_dolares"])))
-    filas = []
-    for f in m["tenencia"]:
-        variacion = f["vs_compra"]
-        clase = "" if variacion is None or variacion == 0 else (" pos" if variacion > 0 else " neg")
-        filas.append('<tr><td><b>{}</b><span class="sub">{}</span></td><td class="r">{}</td><td class="r">{}</td>'
-                     '<td class="r">{}</td><td class="r">{}</td><td class="r{}">{}</td><td class="r">{}</td></tr>'.format(
-                         escape(f["ticker"]), escape(f["descripcion"]), _n(f["cantidad"]),
-                         "$ " + _n(f["precio"], 2) if f["precio"] is not None else "sin dato",
-                         "$ " + _n(f["valuacion"]) if f["valuacion"] is not None else "sin dato",
-                         _pct(f["peso"]), clase, _pct(variacion) if variacion is not None else "—",
-                         _fecha_larga(f["vencimiento"])))
-    if filas:
-        cuerpo.append('<h2>Tenencia</h2><table><thead><tr><th>Título</th><th class="r">Cantidad</th>'
-                      '<th class="r">Precio</th><th class="r">Valuación</th><th class="r">Peso</th>'
-                      '<th class="r">Vs. compra</th><th class="r">Vence</th></tr></thead><tbody>{}</tbody></table>'
-                      '<p class="nota">Vs. compra: variación de la valuación actual frente al costo pagado, en pesos. '
-                      'No incluye las rentas ya cobradas. Precios de bonos y letras por 100 nominales.</p>'.format(
-                          "".join(filas)))
-    return _hoja(m["asesor"], "Informe de cartera", m["fecha"], "".join(cuerpo))
+def _pesos(valor):
+    """Importe en pesos con el signo delante del símbolo: "−$ 1.234" y no "$ -1.234"."""
+    if valor is None:
+        return "sin dato"
+    return "−$ " + _n(-valor) if valor < 0 else "$ " + _n(valor)
 
 
 def _partes_cobro(total, capital, moneda):
@@ -693,8 +691,227 @@ def _detalle_capital(evento):
     return " ({} de ganancia)".format(_monto(ganancia, evento["moneda"]))
 
 
-def _hoja_renta_fija(m):
-    if not m["rendimientos"]:
+# Las partes del informe, en el orden en que se leen. Cada una dice a qué momento mira: es lo que más confunde a
+# un cliente sin experiencia, que tomaba los cobros futuros por ganancias pasadas (pedido de Felipe, 18/11/2026).
+_PARTES = {
+    "hoy": ("Hoy", "Tu cartera hoy", "Qué tenés y cuánto vale."),
+    "pasado": ("Hasta hoy", "Lo que ya ganaste", "El resultado desde que empezaste a invertir."),
+    "futuro": ("De acá en adelante", "Lo que vas a ganar desde hoy",
+               "Lo que vas a cobrar por encima de lo que pusiste. Todavía no lo cobraste."),
+}
+
+
+def _numeros(modelo):
+    """Número de cada parte presente; una parte sin datos no se muestra ni se cuenta."""
+    numeros = {"hoy": 1}
+    if modelo["resultados"] is not None:
+        numeros["pasado"] = len(numeros) + 1
+    if modelo["rendimientos"] or modelo["proximos_cobros"]:
+        numeros["futuro"] = len(numeros) + 1
+    return numeros
+
+
+def _seccion(parte, numeros, texto, titulo=None):
+    etiqueta, nombre, _ = _PARTES[parte]
+    return '<div class="seccion"><span class="tag">{}</span><div class="ts">{}. {}</div><p>{}</p></div>'.format(
+        escape(etiqueta), numeros[parte], escape(titulo or nombre), texto)
+
+
+def _guia(m, numeros):
+    """Resumen de la primera hoja: las partes del informe, cada una con su momento y su número principal."""
+    if len(numeros) < 2:
+        return ""
+    cifras = {"hoy": "$ " + _n(m["patrimonio"]) if m["patrimonio"] is not None else "$ " + _n(m["invertido"])}
+    if "pasado" in numeros:
+        cifras["pasado"] = _pesos(m["resultados"]["acumulado"])
+    if "futuro" in numeros:
+        # La ganancia y no el total a cobrar: el total incluye lo que vuelve de lo invertido y el cliente lo
+        # leía como ganancia. Cada moneda en su renglón, sin sumarlas.
+        orden = sorted(m["a_ganar"], key=lambda mo: ({"ARS": 0, "USD MEP": 1, "USD cable": 2}.get(mo, 3), mo))
+        renglones = []
+        for mo in orden:
+            valor = m["a_ganar"][mo]
+            texto = (_monto(valor, mo, sufijo=True) if valor is not None
+                     else "sin dato <small>{}</small>".format(escape(_moneda_corta(mo))))
+            if valor is not None and m["a_ganar_estimada"].get(mo):
+                texto += " <small>incluye estimados</small>"
+            renglones.append(texto)
+        cifras["futuro"] = "<br>".join(renglones) or "sin dato"
+    rotulos = {"hoy": "Patrimonio" if m["patrimonio"] is not None else "Invertido en títulos",
+               "pasado": "Resultado total hasta hoy", "futuro": "Ganancia en cada moneda"}
+    tarjetas = "".join(
+        '<div><span class="tag">{}</span><b>{}. {}</b><span class="gk">{}</span><span class="gv">{}</span>{}</div>'.format(
+            escape(_PARTES[parte][0]), numeros[parte], escape(_PARTES[parte][1]), escape(rotulos[parte]),
+            cifras[parte], escape(_PARTES[parte][2]))
+        for parte in ("hoy", "pasado", "futuro") if parte in numeros)
+    return ('<div class="guia-t">Este informe en {} partes</div>'
+            '<div class="guia" style="grid-template-columns:repeat({},1fr)">{}</div>'.format(
+                "dos" if len(numeros) == 2 else "tres", len(numeros), tarjetas))
+
+
+def _hoja_hoy(m, numeros):
+    patrimonio, mep, efectivo = m["patrimonio"], m["mep"], m["efectivo"]
+    equivalente = ("Equivale a US$ {} al dólar MEP".format(_n(patrimonio / mep))
+                   if patrimonio is not None and mep else "")
+    peso_invertido = _division(m["invertido"], patrimonio)
+    pesos = (efectivo or {}).get("ARS")
+    dolares = (efectivo or {}).get("USD")
+    cuerpo = ['<h1>{}</h1>'.format(escape(m["cliente"] or "")),
+              '<p class="lead">Informe al {}, con precios de mercado{}.</p>'.format(
+                  _fecha_larga(m["fecha"]), " y dólar MEP de $ {}".format(_n(mep, 2)) if mep else ""),
+              _guia(m, numeros),
+              _seccion("hoy", numeros, "Todo lo que tenés en tu cuenta al {}, valuado a los precios de ese día.".format(
+                  _fecha_larga(m["fecha"]))),
+              '<div class="kpis">',
+              _kpi("Patrimonio total", "$ " + _n(patrimonio) if patrimonio is not None else "sin dato",
+                   "Todo lo que tenés en la cuenta" + ("<br>" + equivalente if equivalente else ""), True),
+              _kpi("Invertido en títulos", "$ " + _n(m["invertido"]),
+                   "Lo que valen hoy tus títulos" + ("<br>{} del patrimonio".format(_pct(peso_invertido))
+                                                      if peso_invertido is not None else "")),
+              _kpi("Efectivo disponible", "$ " + _n(pesos) if pesos is not None else "sin dato",
+                   "Plata en la cuenta, sin invertir" + ("<br>y US$ " + _n(dolares, 2) if dolares is not None else "")),
+              '</div>']
+    if m["composicion"] and m["invertido"]:
+        leyenda = "".join(
+            '<li><span class="sw" style="background:{}"></span><span>{}</span><span class="lv">{}</span>'
+            '<span class="la">$ {}</span></li>'.format(_COLORES_CLASE[i % len(_COLORES_CLASE)], escape(c["clase"]),
+                                                       _pct(c["peso"]), _n(c["valuacion"]))
+            for i, c in enumerate(m["composicion"]))
+        cuerpo += ['<h2>Composición <small>cómo se reparte lo que tenés en títulos</small></h2>'
+                   '<div class="dos"><div>{}</div><ul class="ley">{}</ul></div>'.format(
+                       _dona(m["composicion"], len(m["tenencia"])), leyenda)]
+        frases = []
+        if m["peso_dolares"]:
+            frases.append("<b>{} de tu cartera está en títulos que pagan en dólares</b> (bonos y obligaciones "
+                          "negociables en dólares).".format(_pct(m["peso_dolares"])))
+        cedears = next((c["peso"] for c in m["composicion"] if c["clase"] == "CEDEARs"), None)
+        if cedears:
+            frases.append("Los CEDEARs ({}) cotizan en pesos, pero su precio sigue al dólar.".format(_pct(cedears)))
+        if frases:
+            cuerpo.append('<div class="callout">{}</div>'.format(" ".join(frases)))
+    return _hoja(m["asesor"], "Informe de cartera", m["fecha"], "".join(cuerpo))
+
+
+def _hoja_titulos(m, numeros):
+    filas = []
+    for f in m["tenencia"]:
+        variacion = f["vs_compra"]
+        clase = "" if variacion is None or variacion == 0 else (" pos" if variacion > 0 else " neg")
+        filas.append('<tr><td><b>{}</b><span class="sub">{}</span></td><td class="r">{}</td><td class="r">{}</td>'
+                     '<td class="r">{}</td><td class="r">{}</td><td class="r{}">{}</td><td class="r">{}</td></tr>'.format(
+                         escape(f["ticker"]), escape(f["descripcion"]), _n(f["cantidad"]),
+                         "$ " + _n(f["precio"], 2) if f["precio"] is not None else "sin dato",
+                         "$ " + _n(f["valuacion"]) if f["valuacion"] is not None else "sin dato",
+                         _pct(f["peso"]), clase, _pct(variacion) if variacion is not None else "—",
+                         _fecha_larga(f["vencimiento"])))
+    if not filas:
+        return None
+    cuerpo = [_seccion("hoy", numeros, "Cuánto vale hoy cada título y cuánto cambió desde que lo compraste.",
+                       titulo="Tu cartera hoy, título por título"),
+              '<h2 class="primero">Tus títulos</h2>'
+              '<table><thead><tr><th>Título</th><th class="r">Cantidad</th>'
+              '<th class="r">Precio</th><th class="r">Valuación</th><th class="r">Peso</th>'
+              '<th class="r">Desde la compra</th><th class="r">Vence</th></tr></thead><tbody>{}</tbody></table>'
+              '<p class="nota">Desde la compra: cuánto subió o bajó lo que vale cada título frente a lo que '
+              'pagaste, en pesos. Es una ganancia o una pérdida en papel: se concreta cuando lo vendés o '
+              'cuando vence. No incluye las rentas que ya cobraste. El precio de los bonos y las letras es '
+              'por cada 100 nominales.</p>'.format("".join(filas))]
+    return _hoja(m["asesor"], "Tu cartera hoy", m["fecha"], "".join(cuerpo))
+
+
+def _hoja_pasado(m, numeros):
+    r = m["resultados"]
+    if r is None:
+        return None
+    adelante = (" Los pagos que todavía no cobraste están en la parte {}.".format(numeros["futuro"])
+                if "futuro" in numeros else "")
+    partes = [_seccion("pasado", numeros, "Lo que ganaste o perdiste desde que empezaste a invertir hasta hoy. "
+                                          "Esta parte mira hacia atrás." + adelante)]
+    detalle = "En ventas, vencimientos, rentas y dividendos"
+    if r["incompletos"]:
+        detalle += "<br>suma lo conocido · {} sin dato".format(r["incompletos"])
+    tenencia = r["tenencia"]
+    if tenencia is None:
+        signo, caja = "+", _kpi("Lo que todavía tenés", "sin dato", "Falta el costo o el precio de algún título")
+    else:
+        signo = "+" if tenencia >= 0 else "−"
+        caja = _kpi("{} de lo que todavía tenés".format("Suba" if tenencia >= 0 else "Baja"), "$ " + _n(abs(tenencia)),
+                    "Lo que valen hoy tus títulos frente a lo que pagaste. Todavía no es plata cobrada")
+    partes.append('<div class="ecuacion">{}<div class="op">{}</div>{}<div class="op">=</div>{}</div>'.format(
+        _kpi("Ganancia ya cobrada", _pesos(r["cobrada"]), detalle), signo, caja,
+        _kpi("Resultado total hasta hoy", _pesos(r["acumulado"]), "Lo que ganaste desde que empezaste", True)))
+
+    filas = [("Ventas y vencimientos", r["ventas"],
+              "Lo que recibiste al vender un título o cuando venció, menos lo que habías pagado por él."),
+             ("Rentas", r["rentas_equivalente"],
+              "Lo que te pagaron tus bonos en intereses{}.".format(
+                  ", incluidos US$ {} convertidos al dólar MEP del día de cada cobro".format(_n(r["rentas_usd"], 2))
+                  if r["rentas_usd"] else "")),
+             ("Dividendos, cauciones y otros", r["otros"],
+              "Dividendos de acciones y CEDEARs, cauciones y fondos, menos gastos e impuestos.")]
+    if r["desde_dia_cero"]:
+        filas.append(("Desde el " + _fecha_larga(r["dia_cero"]) if r["dia_cero"] else "Desde el día cero",
+                      r["desde_dia_cero"], "Ventas y cobros registrados después del último extracto."))
+    items = "".join('<li><span><b>{}</b><span class="sub">{}</span></span><span class="dv">{}</span></li>'.format(
+        escape(titulo), texto, _pesos(valor)) for titulo, valor, texto in filas)
+    items += '<li class="total"><span><b>Ganancia ya cobrada</b></span><span class="dv">{}</span></li>'.format(
+        _pesos(r["cobrada"]))
+    partes.append('<h2>De dónde sale la ganancia ya cobrada</h2><ul class="desglose">{}</ul>'.format(items))
+
+    if r["operaciones"]:
+        agrupado = len(r["operaciones"]) > _MAXIMO_BARRAS
+        partes.append('<h2>Ganancia o pérdida en lo que vendiste o venció <small>{}</small></h2>{}'.format(
+            "por mes" if agrupado else "una barra por título", _barras_resultados(r["operaciones"])))
+        partes.append('<p class="nota">Cada barra compara lo que recibiste al vender un título (o cuando venció) con lo '
+                      'que habías pagado por él: hacia arriba, ganancia; hacia abajo, pérdida. No incluye rentas ni '
+                      'dividendos.{}</p>'.format(" {} operaciones, agrupadas por mes.".format(len(r["operaciones"]))
+                                                 if agrupado else ""))
+    if r["acumulado"] is None:
+        explicacion = "Resultado total: sin dato; falta {}.".format(escape("; ".join(r["faltantes"])))
+    else:
+        explicacion = ("Resultado total hasta hoy: la ganancia ya cobrada más {} en lo que todavía tenés, frente a lo "
+                       "que pagaste. No incluye la variación del dólar sobre el efectivo en dólares.".format(
+                           _en_palabras(r["tenencia"])))
+    partes.append('<p class="nota" id="nota-resultado">{} Los importes están en pesos de cada momento, sin ajuste por '
+                  'inflación.</p>'.format(explicacion))
+    return _hoja(m["asesor"], "Lo que ya ganaste", m["fecha"], "".join(partes))
+
+
+def _hoja_futuro(m, numeros):
+    if "futuro" not in numeros:
+        return None
+    partes = [_seccion("futuro", numeros,
+                       "Los pagos que tus bonos y letras van a hacer desde hoy hasta que vencen. Una parte te devuelve "
+                       "lo que pusiste y el resto es tu ganancia. <b>Todavía no los cobraste</b>: son pagos futuros y "
+                       "dependen de que cada emisor pague.")]
+    if m["proximos_cobros"]:
+        items = "".join(
+            '<li><span class="pf">{}</span><span class="pt">{}</span><span class="pk">{}{}{}</span>'
+            '<span class="pv">{}</span></li>'.format(
+                _fecha_larga(e["fecha"]), escape(e["ticker"]), escape(e["concepto"]),
+                " · estimado" if e["estimado"] else "", _detalle_capital(e),
+                _monto(e["importe"], e["moneda"], sufijo=True))
+            for e in m["proximos_cobros"])
+        partes.append('<h2>Próximos cobros <small>los pagos más cercanos, en orden de fecha</small></h2>'
+                      '<ul class="prox">{}</ul>'
+                      '<p class="nota"><b>Renta</b>: intereses. <b>Amortización</b>: te devuelven una parte de lo '
+                      'invertido. <b>Vencimiento</b>: el último pago, que devuelve lo que queda. Entre paréntesis, '
+                      'cuánto de ese pago es ganancia; el resto te devuelve lo invertido. <b>Estimado</b>: el importe '
+                      'depende de cómo sigan la inflación, la tasa o el dólar.</p>'.format(items))
+    if m["rendimientos"]:
+        partes.append('<h2>Rendimiento al precio de compra <small>ganancia anual si mantenés cada título hasta que '
+                      'vence</small></h2>{}'
+                      '<p class="nota">Es la tasa anual que ganás con cada título si lo mantenés hasta el vencimiento, '
+                      'según el precio al que lo compraste: no cambia con el precio de hoy. Si compraste varias veces, '
+                      'se muestra el promedio y la línea fina marca el rango entre compras. Bonos en dólares: tasa en '
+                      'dólares. Letras y bonos en pesos: tasa en pesos. Estimada: depende de la inflación, la tasa '
+                      'TAMAR o el dólar que vengan, según lo que esperan los analistas que consulta el BCRA.</p>'.format(
+                          _barras_tir(m["rendimientos"])))
+    return _hoja(m["asesor"], "Lo que vas a ganar desde hoy", m["fecha"], "".join(partes))
+
+
+def _hoja_futuro_titulos(m, numeros):
+    if "futuro" not in numeros or not m["rendimientos"]:
         return None
     filas = []
     for r in m["rendimientos"]:
@@ -714,38 +931,23 @@ def _hoja_renta_fija(m):
                            _partes_cobro(m["a_cobrar"][mo], m["a_cobrar_capital"].get(mo), mo)
                            or escape(detalle.get(mo, "")))
                       for mo in orden)
-    cuerpo = ('<h2 class="primero">Rendimiento al precio de compra <small>TIR anual si se mantienen hasta el '
-              'vencimiento</small></h2>{}'
-              '<p class="nota">Si hubo varias compras del mismo título se muestra el promedio ponderado por lo invertido; '
-              'la línea fina marca el rango entre compras. Títulos en dólares: tasa en dólares. Letras: tasa efectiva '
-              'anual en pesos. Los títulos ajustables dependen de supuestos sobre el índice, tomados del relevamiento de '
-              'expectativas del BCRA: su tasa figura como estimada.</p>'
-              '<h2>Cobros por título</h2><table><thead><tr><th>Título</th>'
-              '<th class="r">Próximo pago</th><th class="r">Total a cobrar</th><th class="r">Devuelve lo invertido</th>'
-              '<th class="r">Ganancia</th><th class="r">TIR de compra</th></tr></thead><tbody>{}</tbody></table>'
-              '<p class="nota">Total a cobrar: rentas y amortizaciones pendientes hasta el vencimiento, para los nominales '
-              'actuales. No todo es ganancia: una parte devuelve lo que se pagó al comprar, incluidos los intereses '
-              'corridos. La ganancia es lo que se cobra por encima: los intereses y la diferencia por haber comprado bajo '
-              'la par (en un título ajustable, también el ajuste por el índice). Cada moneda se suma por separado.</p>'
-              '<div class="tres" style="margin-top:14px">{}</div>').format(
-                  _barras_tir(m["rendimientos"]), "".join(filas), totales)
-    return _hoja(m["asesor"], "Renta fija", m["fecha"], cuerpo)
-
-
-def _hoja_flujo(m):
-    partes = []
-    if m["proximos_cobros"]:
-        items = "".join(
-            '<li><span class="pf">{}</span><span class="pt">{}</span><span class="pk">{}{}{}</span>'
-            '<span class="pv">{}</span></li>'.format(
-                _fecha_larga(e["fecha"]), escape(e["ticker"]), escape(e["concepto"]),
-                " · estimado" if e["estimado"] else "", _detalle_capital(e),
-                _monto(e["importe"], e["moneda"], sufijo=True))
-            for e in m["proximos_cobros"])
-        partes.append('<h2 class="primero">Próximos cobros</h2><ul class="prox">{}</ul>'.format(items))
+    partes = [_seccion("futuro", numeros, "Cuánto te va a pagar cada título de acá a su vencimiento, cuánto de eso es "
+                                          "ganancia y en qué año lo vas a cobrar.",
+                       titulo="Lo que vas a ganar desde hoy, título por título"),
+              '<h2 class="primero">Cobros futuros por título</h2><table class="cobros"><thead><tr><th>Título</th>'
+              '<th class="r">Próximo pago</th><th class="r">Total a cobrar desde hoy</th>'
+              '<th class="r">Devuelve lo invertido</th><th class="r">Ganancia</th><th class="r">TIR de compra</th>'
+              '</tr></thead><tbody>{}</tbody></table>'
+              '<p class="nota">Total a cobrar desde hoy: todo lo que te va a pagar cada título de acá a su vencimiento, '
+              'en intereses y devolución del capital, para lo que tenés hoy. No todo es ganancia: una parte te devuelve '
+              'lo que pagaste al comprar. La ganancia es lo que cobrás por encima: los intereses y la diferencia por '
+              'haber comprado por debajo de lo que paga el título (en uno ajustable, también el ajuste por el índice). '
+              'Cada moneda se suma por separado.</p>'
+              '<div class="tres" style="margin-top:12px">{}</div>'.format("".join(filas), totales)]
     monedas = [mo for mo in ("USD MEP", "USD cable") if any(v.get(mo) for v in m["cobros_por_anio"].values())]
+    anio_actual = str(m["fecha"].year) if m["fecha"] else None
     grafico = (_barras_anuales(m["cobros_por_anio"], monedas, [_AZUL, _CELESTE][:len(monedas)],
-                               m.get("cobros_por_anio_capital")) if monedas else None)
+                               m.get("cobros_por_anio_capital"), anio_actual) if monedas else None)
     if grafico:
         separado = any(valor is not None for anio in (m.get("cobros_por_anio_capital") or {}).values()
                        for mo, valor in anio.items() if mo in monedas)
@@ -754,47 +956,76 @@ def _hoja_flujo(m):
                           for mo, c in zip(monedas, (_AZUL, _CELESTE)))
         if separado:
             leyenda += '<span style="--c:{}">Ganancia</span>'.format(_VERDE)
-        partes.append('<h2>Cobros en dólares por año</h2>{}<div class="leyb">{}</div>'
-                      '<p class="nota">Rentas y amortizaciones de los títulos que pagan en dólares{}. Los cobros en '
-                      'pesos figuran en la hoja anterior.</p>'.format(
-                          grafico, leyenda, "; en cada barra, la parte verde es ganancia" if separado else ""))
-    r = m["resultados"]
-    if r is not None:
-        realizada = ("ventas, vencimientos y rentas" if not r["incompletos"] else
-                     "suma lo conocido · {} sin dato".format(r["incompletos"]))
-        partes.append('<h2>Resultados desde el inicio <small>en pesos</small></h2><div class="tres">{}{}{}</div>'.format(
-            _kpi("Ganancia realizada", "$ " + _n(r["ganancia_realizada"]), realizada),
-            _kpi("Rentas cobradas", "$ " + _n(r["rentas_ars"]), "y US$ " + _n(r["rentas_usd"], 2)),
-            _kpi("Resultado acumulado", "$ " + _n(r["acumulado"]) if r["acumulado"] is not None else "sin dato",
-                 "realizado + tenencia actual")))
-        if r["operaciones"]:
-            partes.append(_barras_resultados(r["operaciones"]))
-            if len(r["operaciones"]) > _MAXIMO_BARRAS:
-                partes.append('<p class="nota">{} operaciones, agrupadas por mes.</p>'.format(len(r["operaciones"])))
-        if r["acumulado"] is None:
-            acumulado = "Resultado acumulado: sin dato; falta {}.".format(escape("; ".join(r["faltantes"])))
-        else:
-            acumulado = "Resultado acumulado: la ganancia realizada más {} en lo que hoy está en cartera, frente a su costo".format(
-                _en_palabras(r["tenencia"]))
-            if r["desde_dia_cero"]:
-                acumulado += ", y {} en ventas y cobros desde el día cero".format(_en_palabras(r["desde_dia_cero"]))
-            acumulado += ". No incluye la variación del dólar sobre el efectivo."
-        partes.append(
-            '<p class="nota">Resultado de cada venta o vencimiento frente a su costo. Ganancia realizada: $\u00a0{} de '
-            'ventas y vencimientos, $\u00a0{} de rentas y $\u00a0{} de cauciones, fondos y dividendos, netos de gastos. {} '
-            'Importes en pesos '
-            'nominales, sin ajuste por inflación.</p>'.format(
-                _n(r["ventas"]), _n(r["rentas_equivalente"]), _n(r["otros"]), acumulado))
-    partes.append('<p class="nota" style="margin-top:14px"><b>Aclaraciones.</b> Los cobros futuros surgen de las '
-                  'condiciones de emisión de cada título y suponen que se mantienen hasta el vencimiento; están sujetos al '
-                  'pago del emisor. Los importes en dólares no se convierten ni se suman a los de pesos. Valuación con el '
-                  'último precio disponible al {}. Este informe no constituye una recomendación de inversión.</p>'.format(
-                      _fecha_larga(m["fecha"])))
-    return _hoja(m["asesor"], "Flujo de fondos", m["fecha"], "".join(partes))
+        en_curso = any((m["cobros_por_anio"].get(anio_actual) or {}).get(mo) for mo in monedas)
+        hoy = (" {} muestra solo lo que falta cobrar desde el {}.".format(anio_actual, _fecha_larga(m["fecha"]))
+               if en_curso else "")
+        partes.append('<h2>Cobros futuros en dólares, año por año</h2>{}<div class="leyb">{}</div>'
+                      '<p class="nota">Lo que vas a cobrar cada año de los títulos que pagan en dólares, desde hoy hasta '
+                      'su vencimiento. <b>No incluye lo que ya cobraste.</b>{}{} Lo que vas a cobrar en pesos está en el '
+                      'total «A cobrar en pesos».</p>'.format(
+                          grafico, leyenda, hoy, " En cada barra, la parte verde es ganancia y el resto te devuelve lo "
+                          "invertido." if separado else ""))
+    return _hoja(m["asesor"], "Lo que vas a ganar desde hoy", m["fecha"], "".join(partes))
+
+
+def _glosario(m):
+    """Palabras del informe, solo las que aparecen en esta cartera."""
+    clases = {c["clase"] for c in m["composicion"]}
+    monedas = {r["moneda"] for r in m["rendimientos"]}
+    terminos = []
+    if m["rendimientos"]:
+        terminos += [
+            ("Renta", "Los intereses que paga un bono."),
+            ("Amortización", "La devolución de una parte de lo invertido en un bono, antes del vencimiento."),
+            ("Vencimiento", "La fecha del último pago de un título: ese día devuelve lo que queda del capital."),
+            ("TIR", "Tasa interna de retorno: la ganancia anual que obtenés si mantenés un título hasta el "
+                    "vencimiento, según el precio al que lo compraste."),
+            ("Nominales", "La unidad en la que se cuenta un bono o una letra. Su precio se expresa cada 100 nominales."),
+        ]
+    terminos.append(("Dólar MEP", "El dólar que se obtiene comprando un bono con pesos y vendiéndolo en dólares, en "
+                                  "el mercado local. Con él se pasan a dólares los importes de este informe."))
+    if "USD cable" in monedas:
+        terminos.append(("Dólar cable", "Dólares que se cobran en una cuenta del exterior."))
+    if "CEDEARs" in clases:
+        terminos.append(("CEDEAR", "Certificado que representa acciones de una empresa del exterior. Cotiza en pesos "
+                                   "y su precio sigue al dólar."))
+    if "Obligaciones negociables en dólares" in clases:
+        terminos.append(("Obligación negociable", "Un bono emitido por una empresa."))
+    if "Letras y BONCAP en pesos" in clases:
+        terminos.append(("LECAP y BONCAP", "Títulos del Tesoro en pesos, a tasa fija, que pagan todo junto al "
+                                           "vencimiento."))
+    if "Ajustables por CER" in clases:
+        terminos.append(("CER", "Índice del Banco Central que sigue a la inflación. Un bono ajustable por CER "
+                                "actualiza su capital con ese índice."))
+    if "Tasa variable TAMAR" in clases:
+        terminos.append(("TAMAR", "La tasa que pagan los bancos privados por plazos fijos grandes, publicada por el "
+                                  "Banco Central. Un bono TAMAR paga esa tasa más un adicional."))
+    if "Dólar linked" in clases:
+        terminos.append(("Dólar linked", "Un bono en pesos cuyo capital se ajusta por el dólar oficial."))
+    if m["resultados"] is not None:
+        terminos += [
+            ("Ganancia ya cobrada", "Lo que ganaste con lo que vendiste, con lo que venció y con las rentas y "
+                                    "dividendos que cobraste."),
+            ("Ganancia o pérdida en papel", "La suba o la baja de un título que todavía tenés. Se concreta cuando lo "
+                                            "vendés o cuando vence."),
+        ]
+    return "".join('<div><dt>{}</dt><dd>{}</dd></div>'.format(escape(t), escape(d)) for t, d in terminos)
+
+
+def _hoja_cierre(m):
+    partes = ['<h2 class="primero">Aclaraciones</h2><p class="aclara">Los cobros futuros surgen de las condiciones de '
+              'emisión de cada título y suponen que se mantienen hasta el vencimiento; están sujetos al pago del emisor. '
+              'Los importes en dólares no se convierten ni se suman a los de pesos. Valuación con el último precio '
+              'disponible al {}. Este informe no constituye una recomendación de inversión.</p>'.format(
+                  _fecha_larga(m["fecha"])),
+              '<h2>Palabras que usamos</h2><dl class="glosario">{}</dl>'.format(_glosario(m))]
+    return _hoja(m["asesor"], "Aclaraciones", m["fecha"], "".join(partes))
 
 
 def informe_html(modelo):
-    hojas = [h for h in (_hoja_resumen(modelo), _hoja_renta_fija(modelo), _hoja_flujo(modelo)) if h]
+    numeros = _numeros(modelo)
+    hojas = [h for h in (_hoja_hoy(modelo, numeros), _hoja_titulos(modelo, numeros), _hoja_pasado(modelo, numeros),
+                         _hoja_futuro(modelo, numeros), _hoja_futuro_titulos(modelo, numeros), _hoja_cierre(modelo)) if h]
     titulo = "Informe de cartera · {}".format(modelo["cliente"] or "")
     return ('<!doctype html>\n<html lang="es"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1"><title>{}</title><style>{}</style>'

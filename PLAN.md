@@ -264,6 +264,23 @@ vuelve de cada compra suma su inversión.
 
 ---
 
+## Etapa 14: Riesgo de la cartera
+
+**Pedido de Felipe del 18/11/2026:** medir el riesgo de cada activo y de la cartera con la metodología de la
+materia Administración de Carteras (volatilidad, EWMA, beta, VaR y ES, contribuciones, concentración, duration
+y escenarios de tasa).
+
+- `cartera.riesgo`: arma el modelo desde el dashboard, los históricos de data912 y el cierre IAMC, sin
+  inventar datos: lo que no tiene historia queda afuera con su peso a la vista.
+- Comando `riesgo`: guarda el modelo en JSON y un reporte HTML interno para el asesor.
+
+Reglas en `docs/RIESGO.md`; fórmulas y citas en `docs/RIESGO_METODOLOGIA.md`; API en `docs/CONTRATO.md`.
+
+**Listo cuando** pasa `tests/test_etapa14_*` y Claude comprobó con las tres carteras reales que el comando da los
+mismos números que el análisis del 18/11 (`tools/riesgo/analizar_carteras.py`, versión estricta).
+
+---
+
 ## Fuera de alcance
 
 - Evaluar lo operado en otro broker antes de la llegada del cliente.

@@ -1,0 +1,48 @@
+{
+  "naturaleza": "100% sintética; no son cotizaciones de mercado",
+  "moneda": "USD_CCL ficticio",
+  "periodos_anio": 252,
+  "confianza": 0.95,
+  "lambda": 0.94,
+  "retornos": "simples, excepto EWMA que usa logaritmos",
+  "media_VaR_normal": 0.0,
+  "politica_pesos": "constantes, rebalanceo diario hipotético; no performance real",
+  "tipo_precios": "series sintéticas de retorno total ajustado; bonos escalados a precio sucio contractual al corte",
+  "orden_activos": [
+    "ACC_A",
+    "CED_B",
+    "ACC_C",
+    "BONO_FIJO",
+    "BONO_CERO",
+    "EFECTIVO"
+  ],
+  "pesos": [
+    0.2,
+    0.2,
+    0.15,
+    0.2,
+    0.15,
+    0.1
+  ],
+  "valor_cartera": 100000.0,
+  "bonos": {
+    "BONO_FIJO": {
+      "flujo": {
+        "nominal": 100,
+        "cupon": 0.08,
+        "anios": 3,
+        "frecuencia": 2
+      },
+      "tir": 0.1
+    },
+    "BONO_CERO": {
+      "flujo": {
+        "nominal": 100,
+        "cupon": 0.0,
+        "anios": 2,
+        "frecuencia": 1
+      },
+      "tir": 0.1
+    }
+  }
+}

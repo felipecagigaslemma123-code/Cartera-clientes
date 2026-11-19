@@ -18,6 +18,9 @@ _PATAS = {
     "caucion_colocada": {"COMPRA CAUCION CONTADO", "VENTA CAUCION TERMINO"},
     "caucion_tomada": {"VENTA CAUCION CONTADO", "COMPRA CAUCION TERMINO"},
 }
+# Un cobro corresponde al pago del cronograma de hasta 10 días corridos antes, como en el control de cobros.
+_VENTANA_COBRO = 10
+_TOLERANCIA_CRONOGRAMA = Decimal("0.01")
 
 
 def _bolsa():
@@ -54,6 +57,8 @@ class Historial:
     diferencias_tenencias: dict = field(default_factory=dict)
     diferencias_costos: dict = field(default_factory=dict)
     cobros: List[dict] = field(default_factory=list)
+    capital_devuelto: dict = field(default_factory=_bolsa)
+    amortizaciones: List[dict] = field(default_factory=list)
 
 
 def _numero(valor, nombre, positivo=False):
@@ -155,8 +160,34 @@ def _filas_ajustes(ajustes):
     return filas
 
 
-def construir_historial(filas, ajustes=(), cierres=(), mep=None):
-    """Calcula lotes abiertos y resultado observado sin tocar la base ni el día cero."""
+def _cronogramas(cronogramas):
+    """Pagos por 100 VN originales de cada especie, en orden de fecha; None si no se pasaron."""
+    if cronogramas is None:
+        return None
+    if not isinstance(cronogramas, dict):
+        raise ErrorHistorial("Los cronogramas deben ser un diccionario de especie a pagos.")
+    # El mismo formato y las mismas validaciones que iamc.pagos_manuales del flujo de fondos.
+    from .flujo_fondos import _manuales
+    pagos = {}
+    for ticker, registros in cronogramas.items():
+        if not isinstance(ticker, str) or not ticker.strip():
+            raise ErrorHistorial("Cada cronograma debe identificar una especie con texto no vacío.")
+        if not isinstance(registros, (list, tuple)):
+            raise ErrorHistorial("{}: el cronograma debe ser una lista de pagos.".format(ticker))
+        try:
+            manuales = _manuales(registros)
+        except ValueError as error:
+            raise ErrorHistorial("{}: cronograma inválido: {}".format(ticker, error)) from None
+        pagos[ticker.strip()] = [manuales[fecha] for fecha in sorted(manuales)]
+    return pagos
+
+
+def construir_historial(filas, ajustes=(), cierres=(), mep=None, cronogramas=None):
+    """Calcula lotes abiertos y resultado observado sin tocar la base ni el día cero.
+
+    Con ``cronogramas`` ({especie: [[fecha, amortizacion, renta], ...]} por 100 VN originales), un cobro
+    ``RENTA Y AMORTIZ`` que amortiza se separa: el capital baja el costo de los lotes y no es renta.
+    """
     cierres = set(cierres)
     if any(not isinstance(ticker, str) or not ticker for ticker in cierres):
         raise ErrorHistorial("Los cierres deben identificar especies con texto no vacío.")
@@ -164,11 +195,13 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
     for fecha, cambio in (mep or {}).items():
         mapa_mep[_fecha(fecha)] = _numero(cambio, "MEP", positivo=True)
     fechas_mep = sorted(mapa_mep)
+    pagos_cronograma = _cronogramas(cronogramas)
     origenes, avisos = consolidar([_fila_normalizada(fila) for fila in filas])
     historial = Historial(avisos=list(avisos))
     procesables = []
     cierres_agrupados, amortizaciones = {}, defaultdict(list)
     cauciones, cauciones_iol = defaultdict(list), defaultdict(list)
+    rentas_con_amortizacion = defaultdict(list)
     entradas = [(fila, False) for fila in origenes] + [(fila, True) for fila in _filas_ajustes(ajustes)]
     for indice, (original, es_ajuste) in enumerate(entradas):
         # Los metadatos que agregue un llamador a un renglón de extracto nunca
@@ -202,8 +235,16 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
         elif clase == "amortizacion":
             clave = (fila["especie"], fila["operado"])
             amortizaciones.setdefault(clave, []).append(fila)
+        elif (clase == "renta" and not es_ajuste and pagos_cronograma is not None
+              and fila["comprobante"] == "RENTA Y AMORTIZ" and fila["especie"]):
+            # Bull informa renta y amortización juntas: se separan con el cronograma más abajo.
+            rentas_con_amortizacion[fila["especie"]].append(fila)
         else:
             procesables.append(fila)
+
+    def orden_comprobante(fila):
+        return (fila["operado"], _orden_numero(fila.get("numero")), fila["_indice"])
+
     # Un cierre reúne todos los pagos de la especie en el día, incluso cuentas
     # o monedas distintas; su lugar en el orden es el primer comprobante.
     for grupo in cierres_agrupados.values():
@@ -224,15 +265,64 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
             procesables.append(evento)
         else:
             for fila in grupo:
-                if fila["importe"] != 0:
-                    evento = dict(fila)
-                    evento["_clase"] = "renta"
+                evento = dict(fila)
+                if fila["importe"] > 0:
+                    # Todo capital: IOL ya lo separa de la renta, no hace falta cronograma.
+                    evento.update(_clase="capital_devuelto", _fecha_pago=fila["operado"], _pago=None,
+                                  _cobros=[fila], _final=False)
                     procesables.append(evento)
+                elif fila["importe"] < 0:
+                    evento["_clase"] = "gastos"
+                    procesables.append(evento)
+    # RENTA Y AMORTIZ de Bull: cada cobro va al pago del cronograma de hasta 10 días antes. Si ese pago
+    # amortiza, el capital es devolución de lo invertido; si con él la amortización llega a 100, cierra.
+    sin_cronograma = defaultdict(set)
+    for ticker, cobros_especie in rentas_con_amortizacion.items():
+        pagos = pagos_cronograma.get(ticker) or []
+        if not pagos:
+            sin_cronograma[ticker].update(fila["operado"] for fila in cobros_especie)
+            procesables.extend(cobros_especie)
+            continue
+        por_pago = {}
+        for fila in sorted(cobros_especie, key=orden_comprobante):
+            candidatos = [pago for pago in pagos
+                          if pago.fecha <= fila["operado"] and (fila["operado"] - pago.fecha).days <= _VENTANA_COBRO]
+            if not candidatos:
+                historial.avisos.append(_contexto(fila) + "{}: el cobro del {} no tiene un pago del cronograma en los {} "
+                                        "días anteriores; se cuenta entero como renta.".format(
+                                            ticker, fila["operado"].isoformat(), _VENTANA_COBRO))
+                procesables.append(fila)
+                continue
+            pago = candidatos[-1]
+            por_pago.setdefault(pago.fecha, (pago, []))[1].append(fila)
+        for fecha_pago in sorted(por_pago):
+            pago, grupo = por_pago[fecha_pago]
+            if pago.amortizacion == 0:
+                procesables.extend(grupo)
+                continue
+            if len({fila["moneda"] for fila in grupo}) > 1:
+                historial.avisos.append("{}: los cobros del pago del {} están en monedas distintas; no se separa el "
+                                        "capital y se cuentan como renta.".format(ticker, fecha_pago.isoformat()))
+                procesables.extend(grupo)
+                continue
+            if _decimal(_suma(fila["importe"] for fila in grupo)) <= 0:
+                historial.avisos.append("{}: los cobros del pago del {} no suman un importe positivo; no se separa el "
+                                        "capital y se cuentan como renta.".format(ticker, fecha_pago.isoformat()))
+                procesables.extend(grupo)
+                continue
+            amortizado = sum((otro.amortizacion for otro in pagos if otro.fecha <= fecha_pago), Decimal(0))
+            evento = dict(grupo[0])
+            evento.update(_clase="capital_devuelto", _fecha_pago=fecha_pago, _pago=pago, _cobros=grupo,
+                          _final=amortizado >= 100 - _TOLERANCIA_CRONOGRAMA)
+            procesables.append(evento)
+    for ticker in sorted(sin_cronograma):
+        historial.avisos.append(
+            "{}: sin cronograma en instrumentos.json; sus cobros RENTA Y AMORTIZ ({}) se cuentan enteros como renta. "
+            "Si el título amortiza, cargá el cronograma en iamc.pagos_manuales.".format(
+                ticker, ", ".join(fecha.isoformat() for fecha in sorted(sin_cronograma[ticker]))))
 
-    def valor_ars(fila, importe=None):
-        valor = fila["importe"] if importe is None else importe
-        if fila["moneda"] == "ARS" or valor == 0:
-            return valor
+    def cambio_de(fila, valor):
+        """Pesos por unidad de una fila en dólares; sin MEP cercano, None con aviso."""
         cambio = fila.get("tc")
         if cambio is None:
             anteriores = [fecha for fecha in fechas_mep if fecha <= fila["operado"]]
@@ -242,25 +332,37 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
         if cambio is None:
             historial.valores_sin_dato += 1
             historial.avisos.append(_contexto(fila) + "Sin MEP del día o anterior de hasta cinco días para {} USD.".format(valor))
+        return cambio
+
+    def valor_ars(fila, importe=None):
+        valor = fila["importe"] if importe is None else importe
+        if fila["moneda"] == "ARS" or valor == 0:
+            return valor
+        cambio = cambio_de(fila, valor)
+        if cambio is None:
             return None
         return _numero(valor * cambio, "El valor histórico en pesos")
 
     conocidos = []
+    # El capital devuelto, como aportes y retiros, se informa y nunca entra al total conocido.
+    _fuera_del_total = ("aporte", "retiro", "capital_devuelto")
     componentes = {clase: {"ARS": [], "USD": [], "equivalente_ars": [], "incompleto": False}
-                   for clase in _CLASES_INGRESOS + ("aporte", "retiro")}
+                   for clase in _CLASES_INGRESOS + _fuera_del_total}
+    _calcular = object()
 
-    def agregar_ingreso(clase, fila, importe=None):
+    def agregar_ingreso(clase, fila, importe=None, equivalente=_calcular):
         importe = fila["importe"] if importe is None else importe
         if clase in ("aporte", "retiro"):
             importe = abs(importe)
-        equivalente = valor_ars(fila, importe)
+        if equivalente is _calcular:
+            equivalente = valor_ars(fila, importe)
         grupo = componentes[clase]
         grupo[fila["moneda"]].append(importe)
         if equivalente is None:
             grupo["incompleto"] = True
         else:
             grupo["equivalente_ars"].append(equivalente)
-            if clase not in ("aporte", "retiro"):
+            if clase not in _fuera_del_total:
                 conocidos.append(equivalente)
 
     for (_, clase, _), grupo in cauciones.items():
@@ -315,8 +417,104 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
                   if len(origenes_consumidos) == 1 else "mixto")
         return (None if incompleto else _numero(costo, "El costo realizado")), falta, origen
 
-    for fila in sorted(procesables, key=lambda actual: (actual["operado"], 0 if actual["_clase"] == "compra" else 1,
-                                                        _orden_numero(actual.get("numero")), actual["_indice"])):
+    def realizar(resultado, origen):
+        conocidos.append(resultado)
+        (importes_extracto if origen == "extracto" else importes_estimados).append(resultado)
+
+    def devolver_capital(evento):
+        """Separa capital y renta de un pago que amortiza y baja el costo de los lotes que lo cobraron."""
+        ticker, pago, cobros, fecha_pago = evento["especie"], evento["_pago"], evento["_cobros"], evento["_fecha_pago"]
+        # Se procesa antes que las compras del día del pago: estos son los lotes abiertos al cierre del día anterior.
+        lotes = list(abiertos[ticker])
+        nominales = _suma(lote.cantidad for lote in lotes)
+        moneda = cobros[0]["moneda"]
+        cobrado = _suma(fila["importe"] for fila in cobros)
+        fecha_cobro = max(fila["operado"] for fila in cobros)
+        registro = {"ticker": ticker, "fecha_pago": fecha_pago, "fecha_cobro": fecha_cobro, "nominales": nominales,
+                    "amortizacion_100": None if pago is None else _numero(pago.amortizacion, "La amortización"),
+                    "renta_100": None if pago is None else _numero(pago.renta, "La renta"),
+                    "moneda": moneda, "cobrado": cobrado, "capital": None, "renta": None, "capital_ars": None}
+        if nominales == 0:
+            historial.amortizaciones.append(registro)
+            historial.valores_sin_dato += 1
+            historial.avisos.append(_contexto(evento) + "{}: el pago del {} amortiza y ningún lote lo cobró; el cobro "
+                                    "queda sin dato.".format(ticker, fecha_pago.isoformat()))
+            return
+        if pago is None:
+            capital = _decimal(cobrado)
+        else:
+            capital = pago.amortizacion * _decimal(nominales) / 100
+            esperado = (pago.amortizacion + pago.renta) * _decimal(nominales) / 100
+            minimo = Decimal("1") if moneda == "ARS" else Decimal("0.01")
+            if abs(_decimal(cobrado) - esperado) > max(esperado / 100, minimo):
+                historial.avisos.append(_contexto(evento) + "{}: por el pago del {} se cobraron {} {} y el cronograma da "
+                                        "{} por {} VN; revisá nominales y cronograma.".format(
+                                            ticker, fecha_pago.isoformat(), round(cobrado, 2), moneda,
+                                            round(_numero(esperado, "El cobro esperado"), 2), nominales))
+            if capital > _decimal(cobrado):
+                historial.avisos.append(_contexto(evento) + "{}: lo cobrado por el pago del {} es menor que la amortización "
+                                        "del cronograma; se toma todo como capital.".format(ticker, fecha_pago.isoformat()))
+                capital = _decimal(cobrado)
+        # El capital se toma de los cobros en orden; lo que queda de cada uno es renta.
+        restante, capital_ars = capital, []
+        for fila in cobros:
+            importe = _decimal(fila["importe"])
+            tomado = min(restante, importe) if importe > 0 else Decimal(0)
+            restante -= tomado
+            capital_fila = _numero(tomado, "El capital devuelto")
+            renta_fila = _numero(importe - tomado, "La renta del cobro")
+            cambio = 1.0 if fila["moneda"] == "ARS" or fila["importe"] == 0 else cambio_de(fila, fila["importe"])
+            pesos = [None if cambio is None else _numero(valor * cambio, "El valor histórico en pesos")
+                     for valor in (capital_fila, renta_fila)]
+            if renta_fila:
+                agregar_ingreso("renta", fila, renta_fila, pesos[1])
+            if capital_fila and not evento["_final"]:
+                agregar_ingreso("capital_devuelto", fila, capital_fila, pesos[0])
+            capital_ars.append(pesos[0])
+        total_ars = None if any(valor is None for valor in capital_ars) else _suma(capital_ars)
+        registro.update(capital=_numero(capital, "El capital devuelto"),
+                        renta=_numero(_decimal(cobrado) - capital, "La renta del pago"), capital_ars=total_ars)
+        if evento["_final"]:
+            # Pago final: el capital cierra la posición, como un cierre por los nominales que cobraron.
+            costo, falta, origen = consumir(ticker, nominales)
+            resultado = None if costo is None or total_ars is None else _suma((total_ars, -costo))
+            historial.realizados.append(RealizadoHistorico(ticker, fecha_cobro, nominales, falta, total_ars, costo,
+                                                         resultado, origen, "cierre"))
+            if resultado is None:
+                historial.ventas_sin_dato += 1
+            else:
+                realizar(resultado, origen)
+            return
+        historial.amortizaciones.append(registro)
+        for lote in lotes:
+            if total_ars is None:
+                # Sin el capital en pesos tampoco se conoce lo que queda del costo.
+                lote.costo = None
+                continue
+            if lote.costo is None:
+                continue
+            parte = _decimal(total_ars) * _decimal(lote.cantidad) / _decimal(nominales)
+            costo = _decimal(lote.costo)
+            if parte <= costo:
+                lote.costo = _numero(costo - parte, "El costo restante")
+                continue
+            # Ya se recuperó todo lo pagado por el lote: el excedente es ganancia realizada.
+            resultado = _numero(parte - costo, "El resultado de la amortización")
+            lote.costo = 0.0
+            historial.realizados.append(RealizadoHistorico(ticker, fecha_cobro, lote.cantidad, 0.0,
+                                                         _numero(parte, "El capital del lote"),
+                                                         _numero(costo, "El costo del lote"), resultado,
+                                                         lote.origen, "amortizacion"))
+            realizar(resultado, lote.origen)
+
+    def orden_proceso(actual):
+        if actual["_clase"] == "capital_devuelto":
+            # Cobran los lotes abiertos al cierre del día anterior al pago: va antes que las compras de ese día.
+            return (actual["_fecha_pago"], -1, _orden_numero(actual.get("numero")), actual["_indice"])
+        return (actual["operado"], 0 if actual["_clase"] == "compra" else 1,
+                _orden_numero(actual.get("numero")), actual["_indice"])
+
+    for fila in sorted(procesables, key=orden_proceso):
         clase = fila["_clase"]
         if clase == "compra":
             costo = valor_ars(fila, abs(fila["importe"]))
@@ -349,8 +547,9 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
                 elif clase == "cierre" and cantidad == 0:
                     historial.avisos.append(_contexto(fila) + "Cierre de {} sin lotes abiertos; resultado sin dato.".format(ticker))
             else:
-                conocidos.append(resultado)
-                (importes_extracto if origen == "extracto" else importes_estimados).append(resultado)
+                realizar(resultado, origen)
+        elif clase == "capital_devuelto":
+            devolver_capital(fila)
         elif clase in componentes:
             agregar_ingreso(clase, fila)
         else:
@@ -366,6 +565,8 @@ def construir_historial(filas, ajustes=(), cierres=(), mep=None):
             historial.aportes = bolsa
         elif clase == "retiro":
             historial.retiros = bolsa
+        elif clase == "capital_devuelto":
+            historial.capital_devuelto = bolsa
         else:
             historial.ingresos[clase] = bolsa
     historial.lotes = [lote for lote in creados if lote.cantidad > 0]

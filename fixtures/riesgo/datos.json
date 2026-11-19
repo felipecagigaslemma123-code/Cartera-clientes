@@ -1,0 +1,99 @@
+{
+ "generado_en": "2026-11-18T11:00:00-03:00",
+ "cliente": {
+  "slug": "demo",
+  "nombre": "Cliente Demo Riesgo"
+ },
+ "posiciones": [
+  {
+   "ticker": "AAA",
+   "especie": "Ficticia AAA",
+   "tipo": "cedear",
+   "endpoint": "arg_cedears",
+   "valuacion": 300000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "BBB",
+   "especie": "Ficticia BBB",
+   "tipo": "cedear",
+   "endpoint": "arg_cedears",
+   "valuacion": 150000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "SPY",
+   "especie": "Ficticia SPY",
+   "tipo": "cedear",
+   "endpoint": "arg_cedears",
+   "valuacion": 100000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "CCC",
+   "especie": "Ficticia CCC",
+   "tipo": "accion",
+   "endpoint": "arg_stocks",
+   "valuacion": 50000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "DDD",
+   "especie": "Ficticia DDD",
+   "tipo": "cedear",
+   "endpoint": "arg_cedears",
+   "valuacion": 80000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "BON",
+   "especie": "Ficticia BON",
+   "tipo": "bono",
+   "endpoint": "arg_bonds",
+   "valuacion": 120000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "ONX",
+   "especie": "Ficticia ONX",
+   "tipo": "on",
+   "endpoint": "arg_corp",
+   "valuacion": 90000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "LCR",
+   "especie": "Ficticia LCR",
+   "tipo": "letra",
+   "endpoint": "arg_notes",
+   "valuacion": 110000.0,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  },
+  {
+   "ticker": "NOV",
+   "especie": "Ficticia NOV",
+   "tipo": "cedear",
+   "endpoint": "arg_cedears",
+   "valuacion": null,
+   "cantidad": 1.0,
+   "cotiza_cada": 1,
+   "estado": "vivo"
+  }
+ ]
+}

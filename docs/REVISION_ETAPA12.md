@@ -75,3 +75,35 @@ fórmula anterior en `tests/test_etapa12_informe.py`. Suite: 1010 pruebas, todas
 Sigue pendiente: Bull informa juntas renta y amortización, así que en una cartera con amortizaciones parciales
 "Rentas cobradas" incluye capital devuelto. El resultado acumulado no cambia: esa parte se compensa con la
 tenencia.
+
+## Versión 1.3 del 18/11/2026: hoy, hasta hoy y de acá en adelante
+
+Felipe mostró el informe a una clienta sin experiencia y no distinguió los cobros futuros de las ganancias
+pasadas: leyó el "29" de 2026 en los cobros en dólares por año (dos rentas que todavía no cobró) como lo cobrado
+en el año. En la misma hoja convivían el futuro y el pasado, y "Rentas cobradas" mostraba $ 124.432 mientras la
+nota decía $ 202.678 (una cifra solo en pesos y la otra con los dólares convertidos).
+
+Cambios, implementados por Claude con el pedido de Felipe:
+
+- Tres partes en orden, cada una con su etiqueta de tiempo y una frase de qué muestra: **1. Tu cartera hoy**
+  (Hoy), **2. Lo que ya ganaste** (Hasta hoy) y **3. Lo que vas a cobrar** (De acá en adelante, "Todavía no los
+  cobraste"). La primera hoja abre con un resumen de las tres partes y su número principal.
+- Lo pasado se lee como una cuenta: ganancia ya cobrada ± suba o baja de lo que todavía tenés = resultado total
+  hasta hoy, con un desglose que suma exacto (antes las ventas de lotes estimados quedaban fuera de la nota).
+- Lo futuro empieza por los próximos cobros. "Cobros por título" pasa a "Cobros futuros por título" y el gráfico
+  anual dice "No incluye lo que ya cobraste" y marca el año en curso "desde hoy".
+- Textos de vos y en lenguaje llano; la tabla de títulos dice "Desde la compra"; los CEDEARs se nombran en la
+  frase de los dólares; glosario al final con solo las palabras de esa cartera.
+- La tabla de títulos va en su propia hoja y la de cobros futuros no parte el título en tres renglones.
+- Ajuste del mismo día, pedido de Felipe al ver el resumen: la parte 3 pasa a llamarse **Lo que vas a ganar
+  desde hoy** y su tarjeta muestra la ganancia que falta cobrar en cada moneda, no el total a cobrar, que incluye
+  lo invertido y se leía como ganancia. Una moneda sin la separación dice "sin dato" y una que depende de un
+  índice proyectado, "incluye estimados".
+
+Con los dashboards reales, cada hoja entra en un A4 salvo la tabla de títulos de las carteras de 20 y 28
+posiciones, que ocupa dos páginas. Pruebas nuevas en `tests/test_extra_informe_lectura.py`; se adaptaron las que
+buscaban los textos anteriores. Suite: 1045 pruebas, todas aprobadas.
+
+Sigue pendiente: Bull informa juntas renta y amortización. En una cartera con amortizaciones parciales, "Rentas"
+incluye capital devuelto y el renglón dice "intereses": la ganancia ya cobrada da de más y la baja de lo que
+todavía se tiene, en la misma medida. El resultado total no cambia.

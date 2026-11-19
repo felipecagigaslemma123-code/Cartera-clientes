@@ -19,7 +19,7 @@ def cargar():
 
 
 def nota_de_resultados(html):
-    return html.split("Resultado de cada venta o vencimiento")[1].split("</p>")[0]
+    return html.split('id="nota-resultado">')[1].split("</p>")[0]
 
 
 class TenenciaAnteriorAlPrimerExtracto(unittest.TestCase):
@@ -57,7 +57,7 @@ class TenenciaAnteriorAlPrimerExtracto(unittest.TestCase):
     def test_la_nota_lo_explica_con_palabras(self):
         datos, instrumentos = self.datos()
         nota = nota_de_resultados(informe_html(armar_informe(datos, instrumentos)))
-        self.assertIn("la ganancia realizada más una ganancia de $\u00a050 en lo que hoy está en cartera", nota)
+        self.assertIn("la ganancia ya cobrada más una ganancia de $\u00a050 en lo que todavía tenés", nota)
         self.assertIn("No incluye la variación del dólar sobre el efectivo", nota)
         self.assertNotIn("aportes", nota)
 
@@ -70,7 +70,7 @@ class SinDato(unittest.TestCase):
         self.assertIsNone(m["resultados"]["acumulado"])
         self.assertIsNone(m["resultados"]["tenencia"])
         h = informe_html(m)
-        self.assertIn("Resultado acumulado: sin dato; falta el costo o el precio de AL30.", nota_de_resultados(h))
+        self.assertIn("Resultado total: sin dato; falta el costo o el precio de AL30.", nota_de_resultados(h))
 
     def test_historial_incompleto(self):
         datos, instrumentos = cargar()
@@ -104,8 +104,13 @@ class DesdeElDiaCero(unittest.TestCase):
         r = armar_informe(datos, instrumentos)["resultados"]
         self.assertEqual(r["desde_dia_cero"], D("11300"))
         self.assertEqual(r["acumulado"], D("300000") + D("11300") + D("95000"))
-        nota = nota_de_resultados(informe_html(armar_informe(datos, instrumentos)))
-        self.assertIn("y una ganancia de $\u00a011.300 en ventas y cobros desde el día cero", nota)
+        self.assertEqual(r["cobrada"], D("311300"))
+        h = informe_html(armar_informe(datos, instrumentos))
+        # Lo registrado desde el día cero suma a la ganancia ya cobrada y tiene su renglón en el desglose.
+        desglose = h.split('class="desglose">')[1].split("</ul>")[0]
+        self.assertIn("Desde el 10 nov 2026", desglose)
+        self.assertIn("$ 11.300", desglose)
+        self.assertIn("$ 311.300", desglose)
 
     def test_venta_sin_costo(self):
         datos, instrumentos = cargar()
@@ -119,7 +124,7 @@ class DesdeElDiaCero(unittest.TestCase):
         for posicion in datos["posiciones"]:
             posicion["resultado"] = -1000.0
         nota = nota_de_resultados(informe_html(armar_informe(datos, instrumentos)))
-        self.assertIn("una pérdida de $\u00a05.000 en lo que hoy está en cartera", nota)
+        self.assertIn("una pérdida de $\u00a05.000 en lo que todavía tenés", nota)
         self.assertNotIn("$\u00a0-", nota)
         self.assertNotIn("$ ", nota, "en la nota el signo pesos no se separa del número")
 

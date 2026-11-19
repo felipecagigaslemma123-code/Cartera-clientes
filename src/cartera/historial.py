@@ -155,14 +155,37 @@ def _construir_desde_archivos(carpeta, fetch=None, actualizar_mep=False):
     ajustes = leer_ajustes(_ruta(carpeta, "ajustes_historial.csv"))
     cierres = _leer_cierres(_ruta(carpeta, "cierres.json"))
     mep = leer_mep(_ruta(carpeta, "mep_diario.csv"))
+    cronogramas, avisos_cronogramas = _leer_cronogramas(_ruta(carpeta, "instrumentos.json"))
     # Validar también la semántica antes de consultar la fuente o publicar salidas.
     # Al actualizar no convertir con un MEP viejo que está por reemplazarse.
     historial = construir_historial(filas, ajustes=ajustes, cierres=cierres,
-                                    mep={} if actualizar_mep else mep)
+                                    mep={} if actualizar_mep else mep, cronogramas=cronogramas)
     if actualizar_mep:
         mep = _actualizar_mep(mep, fetch)
-        historial = construir_historial(filas, ajustes=ajustes, cierres=cierres, mep=mep)
+        historial = construir_historial(filas, ajustes=ajustes, cierres=cierres, mep=mep, cronogramas=cronogramas)
+    historial.avisos[:0] = avisos_cronogramas
     return historial, mep
+
+
+def _leer_cronogramas(ruta):
+    """Pagos manuales de instrumentos.json por especie (historial 1.1); un bloque inválido queda afuera con aviso."""
+    if not ruta.exists():
+        return {}, []
+    try:
+        contenido = json.loads(ruta.read_text(encoding="utf-8"))
+    except (ValueError, UnicodeError):
+        raise ErrorHistorial("instrumentos.json no es un JSON válido.") from None
+    if not isinstance(contenido, dict):
+        raise ErrorHistorial("instrumentos.json debe contener un objeto por especie.")
+    from .flujo_fondos import _configuracion_manual
+    cronogramas, avisos = {}, []
+    for ticker, configuracion in contenido.items():
+        vinculo = configuracion.get("iamc") if isinstance(configuracion, dict) else None
+        if not isinstance(ticker, str) or not ticker.strip() or not isinstance(vinculo, dict):
+            continue
+        if _configuracion_manual(vinculo, ticker, avisos) is not None:
+            cronogramas[ticker.strip()] = vinculo["pagos_manuales"]["pagos"]
+    return cronogramas, avisos
 
 
 def _preparar_historial(carpeta, punto, fetch=None, actualizar_mep=False):

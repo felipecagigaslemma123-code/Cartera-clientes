@@ -179,7 +179,7 @@ class Html(unittest.TestCase):
         del datos["historial"]
         h = informe_html(armar_informe(datos, self.instrumentos))
         self.assertIn("sin dato", h)
-        self.assertNotIn("Resultados desde el inicio", h)
+        self.assertNotIn("Lo que ya ganaste", h)
         self.assertEqual(h.count("<svg"), 3)
 
     def test_escapa_los_textos(self):

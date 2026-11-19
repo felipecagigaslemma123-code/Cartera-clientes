@@ -3,7 +3,8 @@
 Versión 1.2 · 18/11/2026 · Pedido de Felipe para la etapa 12. La 1.1 cambia el cálculo del resultado acumulado
 (sección 8): restarle los aportes al patrimonio daba de más en una cartera con tenencias anteriores al primer
 extracto. La 1.2 separa, en lo que se va a cobrar, lo que devuelve lo invertido de la ganancia (secciones 5 y
-6; etapa 13).
+6; etapa 13). La 1.3 ordena el informe en tres partes que dicen a qué momento miran: hoy, hasta hoy y de acá
+en adelante (pedido de Felipe del 18/11/2026).
 
 ## Qué se busca
 
@@ -48,20 +49,50 @@ python3 -m cartera --datos RUTA informe --cliente SLUG [--salida CARPETA] [--pdf
 
 ## Contenido
 
-Las secciones van en este orden. Una sección sin datos no se muestra: no queda un recuadro vacío.
+Pedido de Felipe del 18/11/2026: una clienta sin experiencia leyó los cobros futuros como ganancias pasadas (el
+"US$ 29" de 2026 eran dos rentas que todavía no había cobrado). El informe va en **tres partes**, en este orden,
+y cada una dice a qué momento mira:
 
-### 1. Resumen
+| Parte | Etiqueta | Qué responde |
+|---|---|---|
+| 1. Tu cartera hoy | Hoy | Qué tenés y cuánto vale |
+| 2. Lo que ya ganaste | Hasta hoy | El resultado desde que empezaste a invertir |
+| 3. Lo que vas a ganar desde hoy | De acá en adelante | Los pagos que van a hacer tus bonos y letras, que todavía no cobraste, y cuánto de eso es ganancia |
+
+Al final, aclaraciones y glosario. Una parte sin datos no se muestra ni se numera: sin `historial` no hay parte 2
+y la de cobros pasa a ser la 2; sin renta fija no hay parte de cobros. Una sección sin datos no deja un recuadro
+vacío.
+
+Cada parte empieza con un encabezado: la etiqueta en un recuadro, "N. Título" y una frase que dice qué muestra.
+La parte 3 dice "**Todavía no los cobraste**", en negrita.
+
+### Lenguaje
+
+- Se le habla al cliente de vos ("tenés", "ganaste", "vas a cobrar").
+- Cada número dice qué es con una frase debajo. Los títulos de lo futuro dicen que es futuro ("Cobros futuros por
+  título", "Total a cobrar desde hoy").
+- Un importe negativo en pesos lleva el signo antes del símbolo ("−$ 1.234"). En las notas, un resultado se dice
+  con palabras ("una pérdida de $ 1.234") y el signo pesos no se separa del número.
+
+### Hoja 1: resumen y tu cartera hoy
 
 - Encabezado con el nombre del asesor (`perfil.asesor`), "Informe de cartera" y la fecha. Abajo, el nombre del
   cliente (`perfil.nombre` o `datos.cliente.nombre`) y una línea con la fecha y el dólar MEP de valuación.
-- Tres indicadores:
-  - **Patrimonio total** = `integral.patrimonio_final`, con su equivalente en dólares al MEP. Si no hay dato,
-    dice "sin dato".
-  - **Invertido en títulos**: la suma de las valuaciones y su peso en el patrimonio.
-  - **Efectivo**: el de `integral.efectivo`, con pesos y dólares por separado. Un saldo faltante dice "sin dato", sin
-    signo de moneda.
+- **Este informe en tres partes** (o dos): una tarjeta por parte, con su etiqueta, "N. Título", el número
+  principal con su rótulo y una frase. Números: patrimonio total (o invertido en títulos si no hay patrimonio),
+  resultado total hasta hoy y **la ganancia que falta cobrar en cada moneda** (`a_ganar`: total a cobrar menos lo
+  que devuelve lo invertido), cada moneda en su renglón, sin sumarlas. No se muestra el total a cobrar: incluye
+  lo invertido y el cliente lo leía como ganancia (pedido de Felipe del 18/11/2026). Una moneda sin la separación
+  dice "sin dato"; una que depende de un índice proyectado agrega "incluye estimados".
+- Encabezado de la parte 1 y tres indicadores, cada uno con una frase:
+  - **Patrimonio total** = `integral.patrimonio_final` ("todo lo que tenés en la cuenta"), con su equivalente en
+    dólares al MEP. Si no hay dato, dice "sin dato".
+  - **Invertido en títulos**: la suma de las valuaciones ("lo que valen hoy tus títulos") y su peso en el
+    patrimonio.
+  - **Efectivo disponible**: el de `integral.efectivo` ("plata en la cuenta, sin invertir"), con pesos y dólares
+    por separado. Un saldo faltante dice "sin dato", sin signo de moneda.
 
-### 2. Composición
+#### Composición
 
 Un gráfico de dona con su leyenda: clase, peso y valuación. La clase sale de los datos y nunca del ticker:
 
@@ -81,21 +112,97 @@ Un gráfico de dona con su leyenda: clase, peso y valuación. La clase sale de l
 El flujo cobra en USD cuando la posición de `flujo_fondos.posiciones` tiene `moneda` `USD`. Las clases se
 ordenan por valuación, de mayor a menor, y a igual valuación por nombre.
 
-Debajo de la dona va una frase: "**N % de la cartera está en títulos que pagan en dólares**". N es el peso de
-las dos clases en dólares. La frase no se muestra si N es cero.
+Debajo de la dona va una frase: "**N % de tu cartera está en títulos que pagan en dólares**". N es el peso de
+las dos clases en dólares. Si hay CEDEARs, se agrega "Los CEDEARs (M %) cotizan en pesos, pero su precio sigue
+al dólar.": sin esa frase, una cartera con mayoría de CEDEARs parecía estar en pesos. Sin ninguna de las dos
+condiciones no hay recuadro.
 
-### 3. Tenencia
+### Hoja 2: tu cartera hoy, título por título
 
-Tabla con título (ticker en negrita y descripción abajo), cantidad, precio, valuación, peso, "Vs. compra" y
-vencimiento.
+Tabla con título (ticker en negrita y descripción abajo), cantidad, precio, valuación, peso, "Desde la compra"
+y vencimiento.
 
 - Descripción: la `especie`. En una letra se usa "<familia> dd/mm/aaaa", con la familia y el vencimiento del
   bloque `letras`.
-- "Vs. compra" = `resultado / costo`. Si falta el costo, "—". Una nota aclara que es la variación de precio en
-  pesos y **no incluye las rentas cobradas**.
+- "Desde la compra" = `resultado / costo`. Si falta el costo, "—". Una nota aclara que es la variación frente a
+  lo pagado, en pesos, que es una ganancia o pérdida **en papel** hasta que se vende o vence, y que **no incluye
+  las rentas cobradas**.
 - Orden: por clase (en el orden de la composición) y, dentro de cada clase, por valuación.
 
-### 4. Rendimiento al precio de compra
+### Hoja 3: lo que ya ganaste (hasta hoy)
+
+Solo si existe `historial`. Primero, una cuenta que se lee de izquierda a derecha:
+
+> **Ganancia ya cobrada** + (o −) **Suba (o baja) de lo que todavía tenés** = **Resultado total hasta hoy**
+
+- **Ganancia ya cobrada** = `historial.total_conocido` + resultado desde el día cero ("en ventas, vencimientos,
+  rentas y dividendos"). Si el historial tiene operaciones sin resultado (`ventas_sin_dato`, `valores_sin_dato` o
+  `cantidad_sin_clasificar` mayores que cero), aclara que suma solo lo conocido y cuántas faltan.
+- **Suba o baja de lo que todavía tenés**: la suma de `posiciones[].resultado` ("lo que valen hoy tus títulos
+  frente a lo que pagaste; todavía no es plata cobrada"). Se muestra sin signo: el rótulo dice "Suba" o "Baja" y
+  el operador cambia a "−".
+- **Resultado total hasta hoy**: el resultado acumulado, con la definición de abajo.
+
+Debajo, **De dónde sale la ganancia ya cobrada**, un desglose que suma exactamente ese total:
+
+| Renglón | Valor | Frase |
+|---|---|---|
+| Ventas y vencimientos | `realizado_extracto + realizado_estimado` | lo recibido al vender o al vencer, menos lo pagado |
+| Rentas | `ingresos.renta.equivalente_ars` | intereses de los bonos; si hubo cobros en dólares, cuántos y que se convirtieron al MEP del día de cada cobro |
+| Dividendos, cauciones y otros | ganancia realizada − ventas − rentas | dividendos, cauciones y fondos, menos gastos e impuestos |
+| Desde el <día cero> | resultado desde el día cero | solo si no es cero: ventas y cobros registrados después del último extracto |
+
+**Resultado acumulado** (versión 1.1) = ganancia realizada + resultado desde el día cero + resultado de la
+tenencia actual:
+
+- Resultado desde el día cero: la suma de `realizados[].resultado` (ventas registradas como movimientos) más
+  `integral.rentas`, `integral.dividendos` e `integral.amortizaciones`, menos `integral.gastos`. Sin movimientos
+  es cero.
+- Resultado de la tenencia actual: la suma de `posiciones[].resultado`, valuación menos costo.
+
+No usa el patrimonio ni los aportes. Una tenencia anterior al primer extracto o un título transferido desde
+otro broker entra en la cartera sin un aporte registrado, pero con su costo de entrada: restar los aportes al
+patrimonio la contaba como ganancia. Por eso tampoco necesita el día cero. No incluye la variación del dólar
+sobre el efectivo en dólares.
+
+Es "sin dato", con el motivo en la nota, si falta la ganancia realizada, si el historial tiene operaciones sin
+resultado, si a una posición le falta el resultado (costo o precio) o si una venta desde el día cero no tiene
+resultado. Supone que el historial llega hasta el día cero y lo posterior está en los movimientos: si un mismo
+período figura en los dos, se cuenta dos veces.
+
+Después, **Ganancia o pérdida en lo que vendiste o venció**: barras con el resultado de cada operación de
+`historial.realizados`, ordenadas por fecha. Las positivas van hacia arriba en un color y las negativas hacia abajo
+en otro. Cada barra lleva el ticker y el mes. Con más de 14 operaciones, una barra por mes con la suma del
+resultado, solo con el mes, y la nota dice cuántas operaciones son: con 40 barras no se lee nada. Una nota explica
+que cada barra compara lo recibido al vender o al vencer con lo pagado y que no incluye rentas ni dividendos.
+
+Al final, una nota explica el resultado total con palabras ("la ganancia ya cobrada más una pérdida de $ 1.234
+en lo que todavía tenés") o qué falta si es "sin dato", y aclara que los importes son **pesos nominales sin
+ajuste por inflación**.
+
+### Hoja 4: lo que vas a ganar desde hoy (de acá en adelante)
+
+Encabezado de la parte 3, "Lo que vas a ganar desde hoy": los pagos desde hoy hasta el vencimiento; una parte
+devuelve lo invertido y el resto es ganancia; todavía no se cobraron y dependen de que cada emisor pague.
+
+#### Próximos cobros
+
+Lista con los próximos siete eventos posteriores a la fecha del informe: fecha, título, concepto ("Renta",
+"Renta y amortización" o "Vencimiento") e importe con su moneda. Un pago estimado dice "estimado". Un pago
+que amortiza agrega entre paréntesis cuánto es ganancia ("Vencimiento ($ 53.744 de ganancia)"): el resto
+devuelve lo invertido. Una renta sola no lleva el paréntesis: es toda ganancia, salvo unos centavos de
+intereses corridos de una compra reciente.
+
+- Sale de los pagos `proyectado` de cada posición del flujo y de los vencimientos de las letras.
+- Concepto: "Vencimiento" si la fecha es el `vencimiento` de la posición (o, si la posición no lo tiene, si
+  es el último pago de su lista) y en las letras; si no, "Renta y amortización" cuando amortiza y "Renta"
+  cuando no.
+- Orden: por fecha y, a igual fecha, por ticker.
+
+Una nota explica los conceptos: renta (intereses), amortización (devuelve una parte de lo invertido),
+vencimiento (el último pago), qué es el paréntesis de ganancia y qué significa "estimado".
+
+#### Rendimiento al precio de compra
 
 Barras horizontales con la TIR de cada título del flujo de fondos y la TEA de cada letra.
 
@@ -109,13 +216,16 @@ Barras horizontales con la TIR de cada título del flujo de fondos y la TEA de c
 - Color según la moneda de cobro: dólares en un color y pesos en otro.
 - Orden (vale también para la tabla de la sección 5): primero los que cobran en dólares y después los de
   pesos; dentro de cada grupo, en el orden de la tenencia.
-- Nota: la tasa de un bono en dólares está expresada en dólares, la de una letra es efectiva anual en pesos y
-  un título ajustable depende de supuestos del REM del BCRA.
+- Nota en lenguaje llano: es la tasa anual que se gana si se mantiene el título hasta el vencimiento, según el
+  precio de compra, y no cambia con el precio de hoy; la de un bono en dólares es en dólares, la de una letra o
+  un bono en pesos es en pesos, y "estimada" depende de lo que esperan los analistas que consulta el BCRA.
 
-### 5. Cobros por título
+### Hoja 5: lo que vas a ganar desde hoy, título por título
 
-Tabla con título (cantidad de compras y moneda de cobro abajo), próximo pago (fecha y monto), total a cobrar
-hasta el vencimiento, **cuánto de eso devuelve lo invertido**, **cuánto es ganancia** y TIR. Debajo, un
+#### Cobros futuros por título
+
+Tabla con título (cantidad de compras y moneda de cobro abajo, en un renglón), próximo pago (fecha y monto),
+**total a cobrar desde hoy** hasta el vencimiento, **cuánto de eso devuelve lo invertido**, **cuánto es ganancia** y TIR. Debajo, un
 indicador por moneda con el **total a cobrar**, sumado solo dentro de cada moneda: `ARS`, `USD MEP` y
 `USD cable` van en indicadores separados. **Nunca se suman monedas.** Cada indicador lleva una barra con las
 dos partes y el texto "X devuelve lo invertido · Y de ganancia".
@@ -135,21 +245,7 @@ dos partes y el texto "X devuelve lo invertido · Y de ganancia".
   flujo, que tiene el pago proyectado.
 - Próximo pago de un título del flujo: `proximo_pago`. De una letra: el vencimiento.
 
-### 6. Próximos cobros
-
-Lista con los próximos siete eventos posteriores a la fecha del informe: fecha, título, concepto ("Renta",
-"Renta y amortización" o "Vencimiento") e importe con su moneda. Un pago estimado dice "estimado". Un pago
-que amortiza agrega entre paréntesis cuánto es ganancia ("Vencimiento ($ 53.744 de ganancia)"): el resto
-devuelve lo invertido. Una renta sola no lleva el paréntesis: es toda ganancia, salvo unos centavos de
-intereses corridos de una compra reciente.
-
-- Sale de los pagos `proyectado` de cada posición del flujo y de los vencimientos de las letras.
-- Concepto: "Vencimiento" si la fecha es el `vencimiento` de la posición (o, si la posición no lo tiene, si
-  es el último pago de su lista) y en las letras; si no, "Renta y amortización" cuando amortiza y "Renta"
-  cuando no.
-- Orden: por fecha y, a igual fecha, por ticker.
-
-### 7. Cobros por año
+#### Cobros futuros en dólares, año por año
 
 Barras por año con los cobros en dólares de `flujo_fondos.calendario`, una barra por moneda (MEP y cable,
 juntas pero sin apilarse) y el valor arriba de cada una. Cada barra se parte en dos tonos: abajo, en el color
@@ -158,54 +254,37 @@ del capital de los pagos de ese año y moneda). Si a algún pago de ese año y m
 la barra va de un solo color. La leyenda suma "Ganancia" solo si alguna barra está partida. Los pesos se informan en el indicador de la
 sección 5, no en este gráfico, porque su escala lo aplastaría.
 
-### 8. Resultados desde el inicio
+- El año en curso lleva "desde hoy" debajo del año: solo suma lo que falta cobrar.
+- La nota dice, en negrita, que **no incluye lo que ya se cobró**, y, si el año en curso tiene cobros en dólares,
+  "AAAA muestra solo lo que falta cobrar desde el <fecha del informe>".
 
-Solo si existe `historial`. Tres indicadores:
+### Hoja 6: aclaraciones y palabras que usamos
 
-- **Ganancia realizada** = `historial.total_conocido`. Si el historial tiene operaciones sin resultado
-  (`ventas_sin_dato`, `valores_sin_dato` o `cantidad_sin_clasificar` mayores que cero), el indicador aclara que
-  suma solo lo conocido y cuántas faltan.
-- **Rentas cobradas**: pesos y dólares de `ingresos.renta`, por separado.
-- **Resultado acumulado** = ganancia realizada + resultado desde el día cero + resultado de la tenencia actual:
-  - Resultado desde el día cero: la suma de `realizados[].resultado` (ventas registradas como movimientos) más
-    `integral.rentas`, `integral.dividendos` e `integral.amortizaciones`, menos `integral.gastos`. Sin movimientos
-    es cero.
-  - Resultado de la tenencia actual: la suma de `posiciones[].resultado`, valuación menos costo.
+Aclaraciones, texto fijo: los cobros futuros salen de las condiciones de emisión y suponen mantener los títulos
+hasta el vencimiento, sujetos al pago del emisor; los dólares no se convierten ni se suman a los pesos; la
+valuación es la del último precio de la fecha del informe; el informe **no constituye una recomendación de
+inversión**.
 
-  No usa el patrimonio ni los aportes. Una tenencia anterior al primer extracto o un título transferido desde
-  otro broker entra en la cartera sin un aporte registrado, pero con su costo de entrada: restar los aportes al
-  patrimonio la contaba como ganancia. Por eso tampoco necesita el día cero. No incluye la variación del dólar
-  sobre el efectivo en dólares.
+**Palabras que usamos**: un glosario con solo las palabras que aparecen en esa cartera.
 
-  Es "sin dato", con el motivo en la nota, si falta la ganancia realizada, si el historial tiene operaciones sin
-  resultado, si a una posición le falta el resultado (costo o precio) o si una venta desde el día cero no tiene
-  resultado. Supone que el historial llega hasta el día cero y lo posterior está en los movimientos: si un mismo
-  período figura en los dos, se cuenta dos veces.
-
-Debajo, barras con el resultado de cada operación de `historial.realizados`, ordenadas por fecha. Las positivas
-van hacia arriba en un color y las negativas hacia abajo en otro. Cada barra lleva el ticker y el mes. Con más de
-14 operaciones, una barra por mes con la suma del resultado, solo con el mes, y una nota con la cantidad de
-operaciones: con 40 barras no se lee nada.
-
-Nota con el desglose: ventas y vencimientos (`realizado_extracto`), rentas (`ingresos.renta.equivalente_ars`) y
-otros (cauciones, FCI y dividendos, netos de gastos). Explica el resultado acumulado con el resultado de la
-tenencia actual y, si no es cero, el de los movimientos desde el día cero, dichos en palabras ("una pérdida de
-$ 1.234"), o qué falta si es "sin dato". Aclara que los importes son **pesos nominales sin ajuste por
-inflación**.
-
-### 9. Aclaraciones
-
-Texto fijo: los cobros futuros salen de las condiciones de emisión y suponen mantener los títulos hasta el
-vencimiento, sujetos al pago del emisor; los dólares no se convierten ni se suman a los pesos; la valuación es
-la del último precio de la fecha del informe; el informe **no constituye una recomendación de inversión**.
+| Término | Cuándo aparece |
+|---|---|
+| Renta, Amortización, Vencimiento, TIR, Nominales | Hay renta fija |
+| Dólar MEP | Siempre |
+| Dólar cable | Algún título cobra en dólar cable |
+| CEDEAR | Clase CEDEARs |
+| Obligación negociable | Clase Obligaciones negociables en dólares |
+| LECAP y BONCAP | Clase Letras y BONCAP en pesos |
+| CER, TAMAR, Dólar linked | Clase Ajustables por CER, Tasa variable TAMAR o Dólar linked |
+| Ganancia ya cobrada, Ganancia o pérdida en papel | Hay historial |
 
 ## Diseño
 
 - Un único HTML **sin recursos externos**: sin CDN, fuentes web, imágenes remotas ni JavaScript. Los gráficos
   son SVG en línea, generados en Python.
-- Pensado para imprimir en **A4 vertical**: `@page {size: A4; margin: 0}` y una hoja por bloque (1: resumen,
-  composición y tenencia; 2: rendimiento y cobros por título; 3: próximos cobros, cobros por año, resultados y
-  aclaraciones). Pie de página con el nombre del asesor, "Uso exclusivo del cliente" y el título de la hoja. No se numeran
+- Pensado para imprimir en **A4 vertical**: `@page {size: A4; margin: 0}` y una hoja por bloque (1: resumen, tu
+  cartera hoy y composición; 2: tus títulos; 3: lo que ya ganaste; 4: próximos cobros y rendimiento; 5: cobros
+  futuros por título y por año; 6: aclaraciones y glosario). Pie de página con el nombre del asesor, "Uso exclusivo del cliente" y el título de la hoja. No se numeran
   las páginas: una tenencia larga ocupa más de una página impresa y el número quedaría mal.
 - Las reglas para pantallas angostas van dentro de `@media screen`. Si no, Chrome las aplica al imprimir
   (210 mm ≈ 794 px) y desarma la grilla: es lo que pasó en el prototipo.
