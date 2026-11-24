@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 _NAVEGADOR = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 _ANTIGUEDAD_MAXIMA = 3
+_FILAS_SIN_COMPACTAR = 15  # con más títulos, la tabla de la hoja 2 usa filas más bajas
 _BLOQUE = re.compile(r'<script id="datos-cartera" type="application/json">(.*?)</script>', re.S)
 _MESES = "ene feb mar abr may jun jul ago sep oct nov dic".split()
 _CLASES_USD = ("Bonos en dólares", "Obligaciones negociables en dólares")
@@ -597,7 +598,7 @@ h2 small{text-transform:none;letter-spacing:0;color:var(--mute);font-weight:400;
 .kpi{background:var(--soft);border-radius:8px;padding:12px 14px}
 .kpi.main{background:var(--navy);color:#fff}
 .kpi .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.75}
-.kpi .v{font-size:22px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .v{font-size:22px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .kpi.main .v{font-size:27px}
 .kpi .s{font-size:11.5px;opacity:.8}
 .dos{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center}
@@ -632,11 +633,14 @@ ul.prox li{display:grid;grid-template-columns:96px 62px 1fr auto;gap:10px;paddin
 .guia .gv{display:block;color:var(--ink);font-size:17px;font-weight:700;margin:0 0 4px;font-variant-numeric:tabular-nums;line-height:1.25}
 .guia .gv small{font-size:11px;font-weight:400;color:var(--mute)}
 table.cobros td:first-child{white-space:nowrap} table.cobros th{white-space:normal;vertical-align:bottom}
+table.titulos th{white-space:normal;vertical-align:bottom}
+table.compacta td{padding:2px 6px;line-height:1.3} table.compacta .sub{font-size:10.5px}
 .tag{display:inline-block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--navy);border:1px solid var(--navy);border-radius:10px;padding:1px 8px}
 .seccion{margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .seccion .ts{font-size:20px;font-weight:700;margin:6px 0 2px;color:var(--ink)}
 .seccion p{margin:0;color:var(--mute);font-size:12.5px}
 .ecuacion{display:grid;grid-template-columns:1fr 26px 1fr 26px 1fr;gap:6px;align-items:stretch}
+.ecuacion .kpi.main .v{font-size:24px}
 .op{display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--mute)}
 ul.desglose{list-style:none;margin:0;padding:0}
 ul.desglose li{display:grid;grid-template-columns:1fr auto;gap:14px;padding:6px 0;border-bottom:1px solid var(--line);break-inside:avoid}
@@ -701,6 +705,16 @@ _PARTES = {
 }
 
 
+def _nombre(parte, m):
+    """Título de la parte. Con resultado total negativo, "Lo que ya ganaste" contradice al número: la parte 2 pasa a
+    llamarse "Tu resultado hasta hoy" (pedido de Felipe, 19/11/2026)."""
+    if parte == "pasado" and m["resultados"] is not None:
+        acumulado = m["resultados"]["acumulado"]
+        if acumulado is not None and acumulado < 0:
+            return "Tu resultado hasta hoy"
+    return _PARTES[parte][1]
+
+
 def _numeros(modelo):
     """Número de cada parte presente; una parte sin datos no se muestra ni se cuenta."""
     numeros = {"hoy": 1}
@@ -741,7 +755,7 @@ def _guia(m, numeros):
                "pasado": "Resultado total hasta hoy", "futuro": "Ganancia en cada moneda"}
     tarjetas = "".join(
         '<div><span class="tag">{}</span><b>{}. {}</b><span class="gk">{}</span><span class="gv">{}</span>{}</div>'.format(
-            escape(_PARTES[parte][0]), numeros[parte], escape(_PARTES[parte][1]), escape(rotulos[parte]),
+            escape(_PARTES[parte][0]), numeros[parte], escape(_nombre(parte, m)), escape(rotulos[parte]),
             cifras[parte], escape(_PARTES[parte][2]))
         for parte in ("hoy", "pasado", "futuro") if parte in numeros)
     return ('<div class="guia-t">Este informe en {} partes</div>'
@@ -809,13 +823,15 @@ def _hoja_titulos(m, numeros):
     cuerpo = [_seccion("hoy", numeros, "Cuánto vale hoy cada título y cuánto cambió desde que lo compraste.",
                        titulo="Tu cartera hoy, título por título"),
               '<h2 class="primero">Tus títulos</h2>'
-              '<table><thead><tr><th>Título</th><th class="r">Cantidad</th>'
+              '<table class="titulos{}"><thead><tr><th>Título</th><th class="r">Cantidad</th>'
               '<th class="r">Precio</th><th class="r">Valuación</th><th class="r">Peso</th>'
               '<th class="r">Desde la compra</th><th class="r">Vence</th></tr></thead><tbody>{}</tbody></table>'
               '<p class="nota">Desde la compra: cuánto subió o bajó lo que vale cada título frente a lo que '
               'pagaste, en pesos. Es una ganancia o una pérdida en papel: se concreta cuando lo vendés o '
               'cuando vence. No incluye las rentas que ya cobraste. El precio de los bonos y las letras es '
-              'por cada 100 nominales.</p>'.format("".join(filas))]
+              'por cada 100 nominales.</p>'.format(
+                  # Con muchos títulos, filas más bajas para que la tabla y su nota entren en la hoja.
+                  " compacta" if len(filas) > _FILAS_SIN_COMPACTAR else "", "".join(filas))]
     return _hoja(m["asesor"], "Tu cartera hoy", m["fecha"], "".join(cuerpo))
 
 
@@ -826,7 +842,7 @@ def _hoja_pasado(m, numeros):
     adelante = (" Los pagos que todavía no cobraste están en la parte {}.".format(numeros["futuro"])
                 if "futuro" in numeros else "")
     partes = [_seccion("pasado", numeros, "Lo que ganaste o perdiste desde que empezaste a invertir hasta hoy. "
-                                          "Esta parte mira hacia atrás." + adelante)]
+                                          "Esta parte mira hacia atrás." + adelante, titulo=_nombre("pasado", m))]
     detalle = "En ventas, vencimientos, rentas y dividendos"
     if r["incompletos"]:
         detalle += "<br>suma lo conocido · {} sin dato".format(r["incompletos"])
@@ -837,9 +853,11 @@ def _hoja_pasado(m, numeros):
         signo = "+" if tenencia >= 0 else "−"
         caja = _kpi("{} de lo que todavía tenés".format("Suba" if tenencia >= 0 else "Baja"), "$ " + _n(abs(tenencia)),
                     "Lo que valen hoy tus títulos frente a lo que pagaste. Todavía no es plata cobrada")
+    perdida = r["acumulado"] is not None and r["acumulado"] < 0
     partes.append('<div class="ecuacion">{}<div class="op">{}</div>{}<div class="op">=</div>{}</div>'.format(
         _kpi("Ganancia ya cobrada", _pesos(r["cobrada"]), detalle), signo, caja,
-        _kpi("Resultado total hasta hoy", _pesos(r["acumulado"]), "Lo que ganaste desde que empezaste", True)))
+        _kpi("Resultado total hasta hoy", _pesos(r["acumulado"]),
+             "Lo que {} desde que empezaste".format("perdiste" if perdida else "ganaste"), True)))
 
     filas = [("Ventas y vencimientos", r["ventas"],
               "Lo que recibiste al vender un título o cuando venció, menos lo que habías pagado por él."),
@@ -874,7 +892,7 @@ def _hoja_pasado(m, numeros):
                            _en_palabras(r["tenencia"])))
     partes.append('<p class="nota" id="nota-resultado">{} Los importes están en pesos de cada momento, sin ajuste por '
                   'inflación.</p>'.format(explicacion))
-    return _hoja(m["asesor"], "Lo que ya ganaste", m["fecha"], "".join(partes))
+    return _hoja(m["asesor"], _nombre("pasado", m), m["fecha"], "".join(partes))
 
 
 def _hoja_futuro(m, numeros):

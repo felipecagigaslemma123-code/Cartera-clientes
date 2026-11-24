@@ -124,6 +124,31 @@ class LoQueYaGanaste(unittest.TestCase):
         self.assertIn("$ 200.000", ecuacion)  # 300.000 − 100.000
         self.assertNotIn("$ -", ecuacion)
 
+    def test_un_resultado_negativo_dice_perdiste(self):
+        ecuacion = html(self.datos, self.instrumentos).split('class="ecuacion">')[1].split('<h2>')[0]
+        self.assertIn("Lo que ganaste desde que empezaste", ecuacion)
+        for p in self.datos["posiciones"]:
+            p["resultado"] = -200000.0
+        ecuacion = html(self.datos, self.instrumentos).split('class="ecuacion">')[1].split('<h2>')[0]
+        self.assertIn("−$ 700.000", ecuacion)  # 300.000 − 1.000.000
+        self.assertIn("Lo que perdiste desde que empezaste", ecuacion)
+        self.assertNotIn("Lo que ganaste desde que empezaste", ecuacion)
+
+    def test_con_perdida_la_parte_dos_se_llama_tu_resultado(self):
+        # Pedido de Felipe del 19/11/2026: "Lo que ya ganaste" arriba de una pérdida se contradice.
+        for p in self.datos["posiciones"]:
+            p["resultado"] = -200000.0
+        h = html(self.datos, self.instrumentos)
+        guia = h.split('class="guia"')[1].split('<div class="seccion">')[0]
+        self.assertIn("<b>2. Tu resultado hasta hoy</b>", guia)
+        self.assertIn('class="ts">2. Tu resultado hasta hoy<', h)
+        self.assertIn("Tu resultado hasta hoy · ", h)  # encabezado de la hoja
+        self.assertNotIn("Lo que ya ganaste", h)
+
+    def test_los_importes_de_las_tarjetas_no_se_parten(self):
+        # Un "−$" en un renglón y el número en otro: pasó con un resultado negativo de millones.
+        self.assertRegex(html(self.datos, self.instrumentos), r"\.kpi \.v\{[^}]*white-space:nowrap")
+
     def test_el_desglose_suma_la_ganancia_ya_cobrada(self):
         # Con ventas de lotes estimados y retenciones, el desglose tiene que cerrar igual.
         historial = self.datos["historial"]
@@ -168,6 +193,16 @@ class LoQueVasACobrar(unittest.TestCase):
         for texto in ("Cobros futuros por título", "Total a cobrar desde hoy", "Cobros futuros en dólares, año por año",
                       "<b>Renta</b>: intereses", "<b>Vencimiento</b>: el último pago"):
             self.assertIn(texto, h)
+
+
+class TusTitulos(unittest.TestCase):
+    def test_con_muchos_titulos_las_filas_son_mas_bajas(self):
+        # Con 19 títulos la nota de la tabla quedaba sola en otra hoja.
+        datos, instrumentos = cargar()
+        self.assertIn('<table class="titulos">', html(datos, instrumentos))
+        base = datos["posiciones"][0]
+        datos["posiciones"] += [dict(base, ticker="EXTRA{:02d}".format(n)) for n in range(16 - len(datos["posiciones"]))]
+        self.assertIn('<table class="titulos compacta">', html(datos, instrumentos))
 
 
 class Glosario(unittest.TestCase):

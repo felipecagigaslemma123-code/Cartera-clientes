@@ -4,7 +4,10 @@ Versión 1.2 · 18/11/2026 · Pedido de Felipe para la etapa 12. La 1.1 cambia e
 (sección 8): restarle los aportes al patrimonio daba de más en una cartera con tenencias anteriores al primer
 extracto. La 1.2 separa, en lo que se va a cobrar, lo que devuelve lo invertido de la ganancia (secciones 5 y
 6; etapa 13). La 1.3 ordena el informe en tres partes que dicen a qué momento miran: hoy, hasta hoy y de acá
-en adelante (pedido de Felipe del 18/11/2026).
+en adelante (pedido de Felipe del 18/11/2026). La 1.3.1 (19/11/2026) corrige tres detalles que aparecieron con
+una cartera de 19 títulos y resultado negativo: el importe del resultado se partía en dos renglones, decía "lo
+que ganaste" debajo de una pérdida y la nota de la tabla de títulos quedaba sola en otra hoja. Con resultado
+negativo, además, la parte 2 se llama "Tu resultado hasta hoy" (pedido de Felipe).
 
 ## Qué se busca
 
@@ -128,6 +131,8 @@ y vencimiento.
   lo pagado, en pesos, que es una ganancia o pérdida **en papel** hasta que se vende o vence, y que **no incluye
   las rentas cobradas**.
 - Orden: por clase (en el orden de la composición) y, dentro de cada clase, por valuación.
+- Los encabezados pueden ocupar dos renglones, para dejarle ancho a la columna del título. Con más de 15
+  títulos las filas son más bajas (clase `compacta`): así 19 títulos y la nota entran en una hoja.
 
 ### Hoja 3: lo que ya ganaste (hasta hoy)
 
@@ -141,7 +146,12 @@ Solo si existe `historial`. Primero, una cuenta que se lee de izquierda a derech
 - **Suba o baja de lo que todavía tenés**: la suma de `posiciones[].resultado` ("lo que valen hoy tus títulos
   frente a lo que pagaste; todavía no es plata cobrada"). Se muestra sin signo: el rótulo dice "Suba" o "Baja" y
   el operador cambia a "−".
-- **Resultado total hasta hoy**: el resultado acumulado, con la definición de abajo.
+- **Resultado total hasta hoy**: el resultado acumulado, con la definición de abajo. Debajo dice "Lo que ganaste
+  desde que empezaste" o, si es negativo, "Lo que perdiste desde que empezaste".
+
+Si el resultado total es negativo, la parte se llama **Tu resultado hasta hoy** en vez de "Lo que ya ganaste": en
+la guía de la primera hoja, en el título de la sección y en el encabezado y el pie de la hoja (pedido de Felipe del
+19/11/2026).
 
 Debajo, **De dónde sale la ganancia ya cobrada**, un desglose que suma exactamente ese total:
 
@@ -294,6 +304,8 @@ inversión**.
   2026"). Importes en pesos sin decimales y en dólares con dos.
 - Una cartera con muchas posiciones puede ocupar más hojas. Ninguna fila se parte entre páginas
   (`break-inside: avoid`).
+- Los importes de las tarjetas nunca se parten en dos renglones (`white-space: nowrap`). En la cuenta de la hoja
+  3 el resultado va en 24 px, para que entre un importe negativo de millones.
 - El texto se escapa siempre: especies, nombres y tickers vienen de archivos.
 
 ## Privacidad
