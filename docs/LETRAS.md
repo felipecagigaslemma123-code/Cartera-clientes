@@ -1,12 +1,17 @@
 # Tenencia de letras en el dashboard
 
-Versión 1 · 05/11/2026. Pedido de Felipe: panel de lectura, sin calculadora ni formularios.
+Versión 1.1 · 25/11/2026 (original: 05/11/2026). Pedido de Felipe: panel de lectura, sin calculadora ni formularios.
 
 ## Alcance y fuentes
 
 El panel usa la base importada más los movimientos posteriores al día cero y su FIFO. Las letras aparecen automáticamente por su tipo explícito `letra`; nunca se deduce familia, moneda o vencimiento del ticker. Los nominales vendidos dejan de integrar el pago previsto. Una letra vencida no se considera cobrada hasta registrar el movimiento correspondiente.
 
-Se reutiliza una copia versionada del motor puro de **Fixed Income Toolkit**, funciones `calculate_maturity_value` (R001) y `calculate_letra_yield` (R002–R004). Solo están aprobadas LECAP/BONCAP en pesos. El manifiesto en `src/cartera/_motor_letras/MANIFIESTO.json` registra archivos y huellas de origen; no se necesita acceder a OneDrive ni instalar otra dependencia para ejecutar cartera. Cambios futuros del Toolkit requieren revisión explícita de esta copia.
+Se instala **Fixed Income Toolkit 0.2.0** desde el repositorio privado de GitHub,
+con versión fija en `requirements.txt`. `cartera.letras` importa de `financial_engine`
+las funciones `calculate_maturity_value` (R001) y `calculate_letra_yield` (R002–R004).
+Se eliminó `_motor_letras/` y su manifiesto de copia. El panel conserva su alcance
+LECAP/BONCAP en pesos; R006 sigue sin aprobación. Cambios futuros del motor requieren
+revisar y actualizar explícitamente la dependencia fija. No cambian fórmulas ni números.
 
 El VPV contractual conserva la capitalización y el 30/360 adaptado del Tesoro del Toolkit. El rendimiento de compra usa el precio limpio manual y los días corridos reales desde su liquidación hasta vencimiento (ACT/365). La TEM de emisión es contractual: no se confunde con el rendimiento del comprador. Los gastos quedan en los costos patrimoniales existentes; el rendimiento indicativo del panel no los incluye. El HTML presenta el pago y el rendimiento con dos decimales (redondeo HALF_EVEN solo de presentación); el cálculo y el JSON conservan sus decimales originales. Precio de compra y nominales conservan los decimales informados.
 

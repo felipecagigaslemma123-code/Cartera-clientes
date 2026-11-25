@@ -22,7 +22,7 @@ La herramienta sigue la cartera de cada cliente en tres tiempos:
 Las salidas son un dashboard HTML para el asesor, un informe PDF para el cliente,
 descargas en Excel y alertas. El desarrollo se entregó por etapas (14 hasta hoy, ver
 [PLAN.md](PLAN.md)): Codex implementa, Claude especifica y revisa, y Felipe valida los
-criterios. Hay 1079 pruebas automáticas, sin acceso a la red:
+criterios. Hay 1027 pruebas automáticas, sin acceso a la red:
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests
@@ -40,6 +40,27 @@ python3 -m venv ~/.venvs/cartera
 ```
 
 El entorno queda fuera de OneDrive. El paquete se usa con `PYTHONPATH=src`.
+`requirements.txt` instala `fixed-income-toolkit` desde el repositorio privado de
+GitHub, fijado a `v0.2.0`. Git debe tener acceso a ese repositorio; no se guardan
+credenciales en el código. El tag debe publicarse antes de esa instalación:
+este encargo solo prepara los clones locales, sin push ni tags.
+
+Cartera depende del Toolkit instalado: los cálculos y las fuentes públicas de
+renta fija viven allí. Cartera conserva clientes, lotes, precios manuales,
+archivos de `--datos`, flujo por cliente, informe, riesgo, alertas y dashboard.
+`iamc.py` sigue acá porque también descarga acciones y CEDEARs. La API en español
+se conserva mediante módulos de compatibilidad; no cambia ningún cálculo.
+
+Para comprobar ambos clones sin red, desde esta carpeta de trabajo:
+
+```bash
+cd toolkit && ../venv/bin/python -m pytest -q -p no:cacheprovider
+cd ../cartera && PYTHONPATH=src:../toolkit/src ../venv/bin/python -m unittest discover -s tests
+```
+
+Se trasladaron 56 pruebas al Toolkit (189 → 245); Cartera pasa de 1083 a 1027.
+Detalle de API, pruebas e investigación:
+[separación de renta fija](docs/SEPARACION_RENTA_FIJA.md).
 
 ## Demostración de la etapa 1
 
@@ -421,7 +442,7 @@ de datos, separada del código; las demostraciones y pruebas usan datos ficticio
 
 El dashboard incluye un panel de letras: cantidad vigente, vencimiento, días corridos restantes y pago contractual previsto. Se pueden desplegar las compras para ver su precio manual, fecha de liquidación y rendimiento hasta el vencimiento. El pago futuro se informa aparte del patrimonio y del resultado de la cartera.
 
-Los cálculos habilitados corresponden a LECAP/BONCAP en pesos y reutilizan el motor validado de Fixed Income Toolkit, guardado con su huella y versión dentro del proyecto. No hace falta conectar esa carpeta para ejecutar cartera. El contador toma la fecha argentina e incluye fines de semana y feriados.
+Los cálculos habilitados corresponden a LECAP/BONCAP en pesos y reutilizan el motor validado de Fixed Income Toolkit 0.2.0, instalado como dependencia fija desde GitHub. Se eliminó la copia interna del motor. El contador toma la fecha argentina e incluye fines de semana y feriados.
 
 Primero se completan los datos contractuales en `instrumentos.json`. Para asociar el precio limpio de cada compra, expresado por 100 nominales:
 
@@ -464,7 +485,10 @@ PYTHONPATH=src ~/.venvs/cartera/bin/python -m cartera --datos RUTA dashboard --c
 
 3. Si la compra es anterior al primer cierre guardado, agregar en el vínculo los `pagos_manuales` del prospecto. Sin ellos se ven los pagos futuros, pero la TIR y el resultado a vencimiento quedan "sin dato": nunca se calculan solo con los pagos que faltan.
 
-Los pagos futuros se muestran aunque falte el precio, porque dependen solo de los nominales. Hoy está habilitada la tasa fija y las LECAP/BONCAP; CER, TAMAR, dólar linked y duales figuran como "proyección pendiente: requiere supuestos", sin importes.
+Los pagos futuros se muestran aunque falte el precio, porque dependen solo de los nominales. Están habilitadas la tasa fija y las LECAP/BONCAP. Los flujos CER, TAMAR, dólar linked
+y duales con contrato explícito `iamc.indice` usan el Toolkit y conservan su origen
+publicado o estimado. Sin contrato suficiente figuran como pendientes. Esto no
+habilita la metodología LELINK de R-006, que sigue sin aprobación.
 
 Una amortización parcial se carga como movimiento `amortizacion`, que no cambia los nominales. `flujo --cliente SLUG --revisar` lista las ventas viejas que parecen amortizaciones parciales, sin modificarlas.
 

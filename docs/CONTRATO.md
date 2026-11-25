@@ -591,3 +591,16 @@ ejecutar_riesgo(opciones, datos) -> int
 ```bash
 python3 -m cartera --datos RUTA riesgo --cliente SLUG [--sin-red]
 ```
+
+
+## Implementación compartida de renta fija (25/11/2026)
+
+El contrato anterior conserva nombres, firmas, atributos, esquemas y mensajes.
+`indices.py` y `pagos_indexados.py` reexportan el Toolkit instalado 0.2.0 con nombres
+en español; `flujo_fondos.py` reexporta `Pago`, `Cronograma`, `CronogramaCompra`,
+`cronograma_iamc`, `cronograma_compra` y `tir_compra`, y conserva el flujo por cliente.
+`ErrorLetra` es el mismo tipo compartido que usa la validación financiera del
+Toolkit: las excepciones siguen capturándose con el nombre de Cartera y conservan
+`errores`. `Rem`, `Valor` y los cronogramas conservan sus campos en español.
+No hay una copia local del motor de letras. La dependencia es unidireccional.
+La correspondencia con la API inglesa figura en [SEPARACION_RENTA_FIJA.md](SEPARACION_RENTA_FIJA.md).

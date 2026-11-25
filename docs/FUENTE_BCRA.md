@@ -1,42 +1,25 @@
-# Prueba de la API del BCRA
+# BCRA y REM: archivos en Cartera
 
-`tools/bcra_extraer.py` consulta el catálogo y los históricos públicos de
-[Estadísticas Monetarias v4](https://www.bcra.gob.ar/apis-banco-central/).
-El [manual](https://www.bcra.gob.ar/archivos/Catalogo/Content/files/pdf/principales-variables-v4.pdf)
-documenta los rangos, la paginación y el acceso sin credenciales.
+Actualizado el 25/11/2026. El proveedor de series públicas, sus validaciones,
+el guardado de capturas y el lector del REM pertenecen a `fixed-income-toolkit`
+0.2.0 (`market_data.providers.bcra`). Las proyecciones y la evidencia del
+13/11/2026 se documentan en las investigaciones del Toolkit:
+[CER R-010](https://github.com/felipecagigaslemma123-code/Fixed-Income-Toolkit/blob/separacion-renta-fija/docs/research/010_cer_projection.md),
+[TAMAR R-011](https://github.com/felipecagigaslemma123-code/Fixed-Income-Toolkit/blob/separacion-renta-fija/docs/research/011_tamar_projection.md) y
+[A3500 R-012](https://github.com/felipecagigaslemma123-code/Fixed-Income-Toolkit/blob/separacion-renta-fija/docs/research/012_a3500_bond_projection.md).
+La rama todavía debe publicarse; este traslado no crea tags ni hace push.
 
-| Serie | ID v4 | Unidad publicada |
-| --- | --- | --- |
-| CER | 30 | Índice base 02/02/2002 = 1 |
-| TAMAR de bancos privados | 44 | Porcentaje nominal anual |
-| Tipo de cambio mayorista de referencia, Comunicación A 3500 | 5 | ARS por USD |
+Cartera mantiene `indices_archivos.py`: decide cuándo actualizar y selecciona
+las capturas y Excel del REM bajo `--datos`, sin enviar datos de clientes.
+La organización, periodicidad, fallos y supuestos están en
+[PROYECCIONES.md](PROYECCIONES.md).
 
-Se verificaron los identificadores en el catálogo de la API y se contrastaron
-las definiciones con las [principales variables del BCRA](https://www.bcra.gob.ar/principales-variables/).
-
-## Cómo generar una muestra
-
-Desde la carpeta de Cartera, elegí un archivo nuevo fuera del proyecto.
+El comando de muestra conserva sus opciones y mensajes; es un envoltorio del
+CLI instalado del Toolkit:
 
 ```bash
-python3 tools/bcra_extraer.py --desde 2026-09-23 --hasta 2026-09-30 \
-  --salida /tmp/bcra-septiembre-2026.json
+PYTHONPATH=src python tools/bcra_extraer.py --desde 2026-09-24 --hasta 2026-09-30 --salida /tmp/bcra-muestra.json
 ```
 
-Las fechas del rango son inclusivas. El JSON guarda la fecha de cada observación,
-la hora de captura en Argentina, el identificador, la URL, la unidad y las
-fechas que informa el catálogo. Los valores se guardan como texto decimal para
-conservar los dígitos de la fuente. TAMAR conserva el porcentaje anual publicado.
-La hora de captura y la fecha de la observación son campos distintos. La API no
-entrega la fecha de publicación de cada observación en el histórico consultado.
-
-Una serie vacía se marca como `sin dato`. Los días sin observación quedan
-ausentes. La captura se escribe después de validar las tres series y se conserva
-cada archivo previo. El script se ejecuta por separado del dashboard y usa
-exclusivamente datos macroeconómicos públicos.
-
-En el piloto D30S6, el A3500 consultado para el **25/09/2026** fue **1.523,9662
-ARS/USD**. La [condición de emisión](https://www.argentina.gob.ar/normativa/nacional/resoluci%C3%B3n-13-2026-423892/texto)
-define el tercer día hábil previo al pago como fecha de referencia. Esta prueba
-documenta el dato publicado. La aplicación de las reglas del título y la
-validación del pago quedan para el siguiente paso.
+Requiere un archivo nuevo fuera del proyecto y conserva capturas anteriores.
+No se rellenan observaciones ausentes ni se escribe una captura parcial.

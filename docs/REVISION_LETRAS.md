@@ -2,6 +2,17 @@
 
 05/11/2026 · Implementación de Codex. Revisada por Claude el 11/11/2026: ver al final.
 
+## Actualización del 25/11/2026 — motor instalado
+
+Por decisión de Felipe, el motor deja de ser una copia: `requirements.txt` fija
+Fixed Income Toolkit a `v0.2.0` desde GitHub privado, y `letras.py` importa
+`financial_engine`. Se elimina `_motor_letras/`, incluido su manifiesto. La
+comparación del código previo confirma los mismos cálculos (el único ajuste de
+la copia era el import de `day_count`). R006 continúa sin aprobación. El resto
+de esta revisión conserva la evidencia histórica de la entrega y de la copia
+que existía entonces; ya no describe el mecanismo de instalación vigente.
+Ver [separación de renta fija](SEPARACION_RENTA_FIJA.md).
+
 ## Entrega
 
 Se agregó un panel de lectura al dashboard, sin calculadora ni formulario, para las posiciones de tipo `letra`: nominales vigentes, vencimiento, días corridos restantes y pago contractual previsto. Cada especie permite desplegar las compras con precio limpio manual por 100 VN, fecha de compra, liquidación, nominales remanentes y rendimiento hasta el vencimiento.

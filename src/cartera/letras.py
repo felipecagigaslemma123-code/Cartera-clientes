@@ -7,26 +7,23 @@ Las letras dólar linked se listan sin activar su metodología todavía pendient
 
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation, localcontext
+from decimal import Decimal, localcontext
 import hashlib
 import json
 import re
 from zoneinfo import ZoneInfo
 
-from ._motor_letras.letras_yield import LetraYieldInput, calculate_letra_yield
-from ._motor_letras.maturity_value import (
+from financial_engine.letras_yield import LetraYieldInput, calculate_letra_yield
+from financial_engine.maturity_value import (
     InstrumentType, MaturityValueInput, calculate_maturity_value,
 )
+from financial_engine._common import (
+    FinancialInputError as ErrorLetra, parse_date as _fecha,
+    parse_decimal as _decimal, decimal_text as _texto_decimal,
+)
+
 from .movimientos import aplicar_movimientos, cartera_actual
 from .punto_partida import Lote
-
-
-class ErrorLetra(ValueError):
-    """Datos de letras inválidos; no se sustituyen por valores supuestos."""
-
-    def __init__(self, errores):
-        self.errores = [errores] if isinstance(errores, str) else list(errores)
-        super().__init__("\n".join(self.errores))
 
 
 @dataclass
@@ -36,35 +33,6 @@ class _LoteReferenciado(Lote):
 
 def _hoy_argentina():
     return datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
-
-
-def _fecha(valor, campo):
-    if isinstance(valor, datetime):
-        raise ErrorLetra("{} debe ser una fecha sin hora.".format(campo))
-    if isinstance(valor, date):
-        return valor
-    if isinstance(valor, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", valor):
-        try:
-            return date.fromisoformat(valor)
-        except ValueError:
-            pass
-    raise ErrorLetra("{} inválida; usá AAAA-MM-DD.".format(campo))
-
-
-def _decimal(valor, campo, cero=False):
-    if isinstance(valor, bool) or not isinstance(valor, (str, int, float, Decimal)):
-        raise ErrorLetra("{} debe ser un número finito {}.".format(campo, "no negativo" if cero else "positivo"))
-    try:
-        numero = Decimal(str(valor))
-    except (InvalidOperation, ValueError):
-        raise ErrorLetra("{} inválido; usá punto decimal y sin separadores de miles.".format(campo))
-    if not numero.is_finite() or numero < 0 or not cero and numero == 0:
-        raise ErrorLetra("{} debe ser un número finito {}.".format(campo, "no negativo" if cero else "positivo"))
-    return numero
-
-
-def _texto_decimal(valor):
-    return format(valor, "f")
 
 
 def _canonico(valor):

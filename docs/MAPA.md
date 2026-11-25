@@ -56,6 +56,16 @@ flowchart LR
     FUTURO --> SALIDAS
 ```
 
+## Biblioteca de renta fija
+
+Desde el 25/11/2026, **Cartera → Fixed Income Toolkit 0.2.0**, instalado desde
+GitHub privado con versión fija. El Toolkit contiene cálculos y fuentes públicas
+de renta fija, sin clientes; nunca importa Cartera. Cartera conserva carteras,
+lotes, precios manuales, archivos en `--datos`, flujo por cliente, informe, riesgo,
+alertas y dashboard. `iamc.py` permanece acá por su cobertura de acciones y CEDEARs.
+Los módulos finos mantienen la API española de [CONTRATO.md](CONTRATO.md).
+Mapa de nombres, traslado y pruebas: [SEPARACION_RENTA_FIJA.md](SEPARACION_RENTA_FIJA.md).
+
 ## Las tres áreas del código
 
 Los módulos están en `src/cartera/`. Los comandos se corren con
@@ -99,10 +109,10 @@ Qué le va a pagar cada título desde hoy, por cada nominal comprado, y a qué r
 
 | Módulo | Qué hace | Comando | Especificación |
 |---|---|---|---|
-| `flujo_fondos.py` | Cronograma de pagos y TIR de compra de bonos y ON; se ve en el dashboard y el informe | `dashboard`, `flujo` | [FLUJO_FONDOS.md](FLUJO_FONDOS.md) |
-| `letras.py`, `_motor_letras/` | Calculadora de letras: valor al vencimiento y rendimiento (LECAP, BONCAP) | `letras` | [LETRAS.md](LETRAS.md) |
-| `pagos_indexados.py` | Proyección de títulos ajustables por CER, TAMAR o dólar | — | [PROYECCIONES.md](PROYECCIONES.md) |
-| `indices.py`, `indices_archivos.py` | Series del BCRA por API y curvas del REM | `indices` | [FUENTE_BCRA.md](FUENTE_BCRA.md) |
+| `flujo_fondos.py` | Flujo por cliente, lotes y separación capital/ganancia; importa cronogramas y TIR del Toolkit | `dashboard`, `flujo` | [FLUJO_FONDOS.md](FLUJO_FONDOS.md) |
+| `letras.py` + `financial_engine` instalado | Panel por cliente y motor de letras del Toolkit (LECAP, BONCAP) | `letras` | [LETRAS.md](LETRAS.md) |
+| `pagos_indexados.py` | Compatibilidad en español: reexporta pagos indexados del Toolkit | — | [PROYECCIONES.md](PROYECCIONES.md) |
+| `indices.py`, `indices_archivos.py` | Compatibilidad con BCRA/REM del Toolkit y gestión de archivos en `--datos` | `indices` | [FUENTE_BCRA.md](FUENTE_BCRA.md) |
 
 **Renta fija:** completa. **Renta variable:** sin proyección todavía; es la próxima área a desarrollar.
 
@@ -139,11 +149,11 @@ cliente y los datos se manejan por los canales de la empresa.
 
 ## Cómo comprobar que todo funciona
 
-Con Python 3.9 y `openpyxl` instalado (`pip install -r requirements.txt`):
+Con Python 3.9, `openpyxl` y `fixed-income-toolkit` instalados (`pip install -r requirements.txt`):
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
-Son 1079 pruebas y no acceden a la red. El orden de desarrollo y el criterio de cada etapa están en
+Son 1027 pruebas y no acceden a la red. El orden de desarrollo y el criterio de cada etapa están en
 [PLAN.md](../PLAN.md); las revisiones, en `docs/REVISION_ETAPA*.md`.

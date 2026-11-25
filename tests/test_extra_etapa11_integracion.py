@@ -33,23 +33,7 @@ class ProyeccionesIntegradas(unittest.TestCase):
         contrato = {"tipo": tipo, "fuente": "fixture", "rezago_habiles": 3, **datos}
         return cronograma_iamc(self.cierre, ticker, "tp", contrato=contrato, indices=self.indices, avisos=avisos)
 
-    def test_familias_en_pesos_y_pago_estimado_proveniente_del_rem(self):
-        for ticker, tipo, adicionales in (
-            ("TZV28", "A3500", {}), ("X29E7", "CER", {"valor_inicial": "850"}),
-            ("TMF27", "TAMAR", {}), ("TMVE8", "DUAL", {}),
-        ):
-            with self.subTest(ticker=ticker):
-                flujo = self.cronograma(ticker, tipo, **adicionales)
-                self.assertEqual(flujo.moneda, "ARS")
-                self.assertGreater(flujo.pagos[0].total, Decimal(0))
-                self.assertIn("estimado · REM 2026-10", flujo.pagos[0].origen)
-        self.assertIn(self.cronograma("TMVE8", "DUAL").pagos[0].dual[0], ("TAMAR", "A3500", "empate"))
 
-    def test_cupon_tamar_vigente_y_proyectado(self):
-        flujo = self.cronograma("BAF27", "TAMAR")
-        self.assertEqual(flujo.pagos[0].renta, Decimal("8.333333") * Decimal("0.31666126"))
-        self.assertTrue(flujo.pagos[0].origen.startswith("definitivo"))
-        self.assertTrue(flujo.pagos[1].origen.startswith("estimado"))
 
     def test_dashboard_intenta_una_vez_por_dia_y_conserva_la_captura_previa(self):
         with patch("cartera.indices_archivos.extraer", side_effect=OSError("sin red")) as extraer:
@@ -75,16 +59,3 @@ class ProyeccionesIntegradas(unittest.TestCase):
             with patch("cartera.indices_archivos._bajar_rem"):
                 self.assertEqual(actualizar_indices(self.datos, fecha), [])
         extraer.assert_called_once_with(date(2025, 1, 1), fecha, hasta_cer=date(2027, 1, 15))
-
-    def test_pago_cer_estimado_identifica_el_ultimo_dato_oficial(self):
-        flujo = self.cronograma("X29E7", "CER", valor_inicial="850")
-        self.assertIn("CER publicado hasta 2026-12-15", flujo.pagos[0].origen)
-
-    def test_referencia_cer_cubierta_aunque_sea_posterior_a_la_captura(self):
-        fila = next(fila for fila in self.cierre["calculadora_bonos"]["ins"] if fila["tk"] == "X29E7")
-        # Liquidación 06/11, pago 08/12, referencia 03/12 con 3 días hábiles de rezago.
-        fila["f"] = [[32, 105, 0, 0]]
-        flujo = self.cronograma("X29E7", "CER", valor_inicial="850")
-        pago = flujo.pagos[0]
-        self.assertEqual(pago.origen, "definitivo · BCRA publicado")
-        self.assertAlmostEqual(pago.total, 100 * self.indices["cer"][date(2026, 12, 3)] / 850, places=24)

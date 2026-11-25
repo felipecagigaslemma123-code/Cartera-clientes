@@ -47,7 +47,7 @@ Leé en este orden:
 ## Restricciones técnicas
 
 - Python **3.9**: nada de `match`, ni `X | Y` en anotaciones evaluadas en ejecución.
-- Solo biblioteca estándar más `openpyxl`. Si necesitás otra dependencia, preguntá.
+- Solo biblioteca estándar, `openpyxl` y `fixed-income-toolkit` (versión fija desde GitHub). Si necesitás otra dependencia, preguntá.
 - Entorno virtual **fuera de esta carpeta**, que está en OneDrive:
   `~/.venvs/cartera`.
 - Código e identificadores en español, como en `docs/CONTRATO.md`.
